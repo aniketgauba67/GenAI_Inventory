@@ -1,12 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: "export",
-  basePath: "/GenAI_Inventory",
-  assetPrefix: "/GenAI_Inventory/",
-  images: {
-    unoptimized: true,
-  },
+  // Removed output: "export" — NextAuth requires a running server
 };
 
 export default nextConfig;
