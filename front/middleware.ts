@@ -15,7 +15,7 @@ export async function middleware(req: NextRequest) {
   return NextResponse.next();
 }
 
-export const config = {
-  // Protect all routes EXCEPT: home (/), /login, /api/auth/*, and static assets
-  matcher: ["/((?!login|api/auth|_next/static|_next/image|favicon.ico)(?!$).*)"],
-};
+// export const config = {
+//   // Protect all routes EXCEPT: home (/), /login, /api/auth/*, and static assets
+//   matcher: ["/((?!login|api/auth|_next/static|_next/image|favicon.ico)(?!$).*)"],
+// };
