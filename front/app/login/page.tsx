@@ -25,7 +25,7 @@ export default function LoginPage() {
     setLoading(false);
 
     if (result?.error) {
-      setError("Invalid username or password. Please try again.");
+      setError("Invalid pantry ID or password. Please try again.");
     } else {
       // Redirect to home page after successful login
       router.push("/");
@@ -40,7 +40,7 @@ export default function LoginPage() {
           Pantry Login
         </h1>
         <p className="mb-8 text-center text-sm text-zinc-500 dark:text-zinc-400">
-          Enter your credentials to access your inventory.
+          Enter your credentials to access your inventory management.
         </p>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
@@ -55,12 +55,12 @@ export default function LoginPage() {
               htmlFor="username"
               className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
             >
-              Username
+              Pantry ID
             </label>
             <input
               id="username"
               type="text"
-              placeholder="jsmith"
+              placeholder="pantry1234"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
