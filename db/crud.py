@@ -1,5 +1,5 @@
 """Example usage of SQLAlchemy ORM for pantry inventory"""
-
+from sqlalchemy import text
 from database import SessionLocal
 from models import Pantry, InventoryItem
 
@@ -21,16 +21,31 @@ def add_pantry(name: str, location: str = None) -> Pantry:
     finally:
         db.close()
 
+def get_pantry_id_by_name(name: str) -> int:
+    """Get pantry ID by name"""
+    db = SessionLocal()
+    try:
+        pantry = db.query(Pantry).filter(Pantry.name == name).first()
+        if pantry:
+            print(f"✓ Found pantry: {pantry}")
+            return pantry.id
+        else:
+            print(f"✗ Pantry '{name}' not found")
+            return None
+    except Exception as e:
+        print(f"✗ Error fetching pantry: {e}")
+        raise
+    finally:
+        db.close()
 
-def add_item(pantry_id: int, item_name: str, quantity: int) -> InventoryItem:
+def add_items(pantry_id: int, category_name: str, quantity: int) -> InventoryItem:
     """Add a new item to a pantry"""
     db = SessionLocal()
     try:
         item = InventoryItem(
             pantry_id=pantry_id,
-            item_name=item_name,
-            original_quantity=quantity,
-            current_quantity=quantity
+            category_name=category_name,
+            original_quantity=quantity
         )
         db.add(item)
         db.commit()
@@ -45,13 +60,13 @@ def add_item(pantry_id: int, item_name: str, quantity: int) -> InventoryItem:
         db.close()
 
 
-def update_quantity(item_id: int, new_quantity: int) -> InventoryItem:
-    """Update item quantity and status"""
+def update_status(item_id: int, new_quantity: int) -> InventoryItem:
+    """Update category status"""
     db = SessionLocal()
     try:
         item = db.query(InventoryItem).filter(InventoryItem.id == item_id).first()
         if item:
-            item.update_quantity(new_quantity)
+            item.update_status(new_quantity)
             db.commit()
             db.refresh(item)
             print(f"✓ Updated item: {item} - Status: {item.status}")
@@ -76,7 +91,7 @@ def get_pantry_items(pantry_id: int) -> list:
             print(f"\n📦 Pantry: {pantry.name} ({pantry.location})")
             print("-" * 50)
             for item in pantry.items:
-                print(f"  {item.item_name}: {item.current_quantity}/{item.original_quantity} [{item.status}]")
+                print(f"  {item.category_name}: {item.original_quantity} [{item.status}]")
             return pantry.items
         else:
             print(f"✗ Pantry {pantry_id} not found")
@@ -109,6 +124,10 @@ def delete_all_data():
     try:
         num_items_deleted = db.query(InventoryItem).delete()
         num_pantries_deleted = db.query(Pantry).delete()
+        # reset auto-incrementing IDs (PostgreSQL specific)
+        db.execute(text("ALTER SEQUENCE pantries_id_seq RESTART WITH 1;"))
+        db.execute(text("ALTER SEQUENCE inventory_items_id_seq RESTART WITH 1;"))
+        
         db.commit()
         print(f"✓ Deleted {num_pantries_deleted} pantries and {num_items_deleted} items")
     except Exception as e:
@@ -130,13 +149,13 @@ if __name__ == "__main__":
     pantry2 = add_pantry("Storage Room", "Basement")
     
     # Add items
-    add_item(pantry1.id, "Rice", 10)
-    add_item(pantry1.id, "Flour", 5)
-    add_item(pantry2.id, "Canned Beans", 20)
+    add_items(pantry1.id, "Rice", 10)
+    add_items(pantry1.id, "Flour", 5)
+    add_items(pantry2.id, "Canned Beans", 20)
     
-    # Update quantities
-    update_quantity(1, 3)  # Rice down to 3 (low status)
-    update_quantity(2, 0)  # Flour out (out status)
+    # Update statuses
+    update_status(1, 3)  # Rice down to 3 (low status)
+    update_status(2, 0)  # Flour out (out status)
     
     # Get all pantries
     get_all_pantries()

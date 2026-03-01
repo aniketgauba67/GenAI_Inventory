@@ -23,14 +23,13 @@ class Pantry(Base):
 
 
 class InventoryItem(Base):
-    """InventoryItem table - represents individual items in a pantry"""
+    """InventoryItem table - represents categories of items in a pantry"""
     __tablename__ = "inventory_items"
 
     id = Column(Integer, primary_key=True, index=True)
     pantry_id = Column(Integer, ForeignKey("pantries.id", ondelete="CASCADE"), nullable=False)
-    item_name = Column(String(255), nullable=False)
+    category_name = Column(String(255), nullable=False)
     original_quantity = Column(Integer, nullable=False)
-    current_quantity = Column(Integer, nullable=False)
     status = Column(String(50), default="normal")
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -39,11 +38,10 @@ class InventoryItem(Base):
     pantry = relationship("Pantry", back_populates="items")
 
     def __repr__(self):
-        return f"<InventoryItem(id={self.id}, item_name='{self.item_name}', current_qty={self.current_quantity})>"
+        return f"<InventoryItem(id={self.id}, category_name='{self.category_name}', original_qty={self.original_quantity}, status='{self.status}')>"
 
-    def update_quantity(self, new_quantity: int):
-        """Update current quantity and automatically set status"""
-        self.current_quantity = new_quantity
+    def update_status(self, new_quantity: int):
+        """Automatically set status"""
         self.updated_at = datetime.utcnow()
         
         # Set status based on quantity
