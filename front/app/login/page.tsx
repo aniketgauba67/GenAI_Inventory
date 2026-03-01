@@ -2,10 +2,11 @@
 
 import { signIn } from "next-auth/react";
 import { FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -27,9 +28,21 @@ export default function LoginPage() {
     if (result?.error) {
       setError("Invalid pantry ID or password. Please try again.");
     } else {
-      // Redirect to home page after successful login
-      router.push("/");
-      router.refresh();
+      const raw = searchParams.get("callbackUrl");
+      let target = `/${username}/upload`;
+      if (raw && raw !== "/") {
+        if (raw.startsWith("/")) {
+          target = raw;
+        } else {
+          try {
+            const u = new URL(raw, window.location.origin);
+            if (u.origin === window.location.origin) target = u.pathname + u.search;
+          } catch {
+            // keep /${username}/upload
+          }
+        }
+      }
+      window.location.href = target;
     }
   }
 

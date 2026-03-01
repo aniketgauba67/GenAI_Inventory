@@ -25,10 +25,10 @@ export const authOptions: NextAuthOptions = {
             id: "1",
             name: "Admin",
             email: "admin@example.com",
+            pantryId: credentials.username,
           };
         }
 
-        // Return null to indicate invalid credentials
         return null;
       },
     }),
@@ -46,23 +46,26 @@ export const authOptions: NextAuthOptions = {
 
   callbacks: {
     async jwt({ token, user }) {
-      // Persist user id in the token right after sign-in
       if (user) {
         token.id = user.id;
+        token.pantryId = (user as { pantryId?: string }).pantryId;
       }
       return token;
     },
     async session({ session, token }) {
-      // Expose the user id on the client-side session object
       if (session.user) {
         (session.user as { id?: string }).id = token.id as string;
+        (session.user as { pantryId?: string }).pantryId = token.pantryId as string;
       }
       return session;
     },
   },
 
-  // IMPORTANT: set a strong secret in production via NEXTAUTH_SECRET env var
-  secret: process.env.NEXTAUTH_SECRET,
+  secret:
+    process.env.NEXTAUTH_SECRET ||
+    (process.env.NODE_ENV === "production"
+      ? undefined
+      : "dev-secret-min-32-chars-for-nextauth-jwt"),
 };
 
 const handler = NextAuth(authOptions);
