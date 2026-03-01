@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "env PATH=\"$(brew --prefix 2>/dev/null || echo /opt/homebrew)/bin:$PATH\" next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
