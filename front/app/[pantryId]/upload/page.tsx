@@ -94,18 +94,34 @@ export default function UploadPage() {
     try {
       const form = new FormData();
       files.forEach((f) => form.append("files", f));
+      form.append("pantryId", pantryId);
       const res = await fetch(`${apiBase}/upload`, {
         method: "POST",
         body: form,
       });
       const data = await res.json();
       if (res.ok && data.ok) {
+        const successfulFiles = data.files?.filter((x: { ok?: boolean }) => x.ok).map((x: { filename?: string; size_bytes?: number }) => ({ filename: x.filename, size_bytes: x.size_bytes ?? 0 }));
+
         setUploadResult({
           ok: true,
           message: `${data.count} file(s) received`,
-          files: data.files?.filter((x: { ok?: boolean }) => x.ok).map((x: { filename?: string; size_bytes?: number }) => ({ filename: x.filename, size_bytes: x.size_bytes ?? 0 })),
+          files: successfulFiles,
           inventory: data.inventory,
         });
+
+        if (typeof window !== "undefined" && data.inventory) {
+          window.sessionStorage.setItem(
+            "latestInventoryReview",
+            JSON.stringify({
+              pantryId,
+              inventory: data.inventory,
+              files: successfulFiles,
+              createdAt: new Date().toISOString(),
+            })
+          );
+          router.push(`/${pantryId}/review`);
+        }
       } else {
         setUploadResult({ ok: false, message: data.error || "Upload failed" });
       }
