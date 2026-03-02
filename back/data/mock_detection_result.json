@@ -1,0 +1,39 @@
+{
+  "ok": true,
+  "count": 2,
+  "files": [
+    {
+      "filename": "full-shelves-at-walmart-supermarket-different-kinds-of-cornflakes-cereals-nevada-usa-2CBPC1C.jpg",
+      "content_type": "image/jpeg",
+      "size_bytes": 381190,
+      "ok": true
+    },
+    {
+      "filename": "walmart-various-cereals-shelf-north-augusta-sc-usa-422074193.jpg.webp",
+      "content_type": "image/webp",
+      "size_bytes": 331704,
+      "ok": true
+    }
+  ],
+  "rawInventory": {
+    "Beverages": 0,
+    "Juices": 0,
+    "Cereal": 86,
+    "Breakfast": 0,
+    "Meat": 0,
+    "Fish": 0,
+    "Poultry": 0,
+    "Frozen": 0,
+    "Vegetables": 0,
+    "Fruits": 0,
+    "Nuts": 0,
+    "Soup": 0,
+    "Grains": 0,
+    "Pasta": 0,
+    "Snacks": 0,
+    "Spices": 0,
+    "Sauces": 0,
+    "Condiments": 0,
+    "Misc Products": 0
+  }
+}
