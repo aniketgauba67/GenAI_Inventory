@@ -94,7 +94,7 @@ export default function UploadPage() {
     try {
       const form = new FormData();
       files.forEach((f) => form.append("files", f));
-      form.append("pantryId", pantryId);
+      form.append("pantry_id", pantryId);
       const res = await fetch(`${apiBase}/upload`, {
         method: "POST",
         body: form,
