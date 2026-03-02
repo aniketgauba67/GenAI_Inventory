@@ -68,6 +68,13 @@ This script:
 - defaults to `DRY_RUN=true` when database environment variables are missing
 - writes one run record to the existing AWS RDS Postgres database when `DRY_RUN=false`
 
+Live upload flow:
+- start the FastAPI backend and the Next.js frontend
+- upload an image through the app or `POST /upload`
+- Gemini returns the detected inventory map
+- the backend now automatically runs the same classification/comparison/persistence pipeline used by the Sprint 1 script
+- if `DRY_RUN=false` and the database is reachable, the upload result is persisted to `inventory_runs`
+
 Environment variables:
 
 ```bash

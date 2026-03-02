@@ -1,9 +1,12 @@
 """Boundary tests for Sprint 1 inventory classification."""
 
+import asyncio
 import json
 import tempfile
 import unittest
+from io import BytesIO
 from pathlib import Path
+from unittest.mock import patch
 
 from back.inventory_processing import (
     CATEGORY_KEYS,
@@ -14,6 +17,16 @@ from back.inventory_processing import (
     classify_percentage,
     write_json,
 )
+from back.inventory_pipeline import process_inventory_payload
+
+try:
+    from fastapi import UploadFile
+    from back.routers.upload import upload_images
+    FASTAPI_AVAILABLE = True
+except ModuleNotFoundError:
+    UploadFile = None
+    upload_images = None
+    FASTAPI_AVAILABLE = False
 
 
 class TestInventoryClassificationBoundaries(unittest.TestCase):
@@ -290,6 +303,66 @@ class TestInventoryClassificationBoundaries(unittest.TestCase):
 
             self.assertTrue(output_path.exists())
             self.assertEqual(json.loads(output_path.read_text(encoding="utf-8")), payload)
+
+    @patch("back.inventory_pipeline.should_dry_run", return_value=True)
+    def test_process_inventory_payload_writes_artifacts_in_dry_run(self, _: object) -> None:
+        required_output = build_required_output(
+            {
+                "ok": True,
+                "count": 1,
+                "files": [
+                    {
+                        "filename": "image.jpg",
+                        "content_type": "image/jpeg",
+                        "size_bytes": 123,
+                        "ok": True,
+                    }
+                ],
+                "rawInventory": {"Cereal": 86},
+            }
+        )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            result = process_inventory_payload(required_output, output_dir=Path(temp_dir))
+
+            self.assertTrue(result["persistence"]["dryRun"])
+            self.assertTrue((Path(temp_dir) / "mock_inventory_output.json").exists())
+            self.assertTrue((Path(temp_dir) / "mock_inventory_levels.json").exists())
+            self.assertEqual(result["levelsArtifact"]["classification"]["Cereal"], "High")
+
+    @unittest.skipUnless(FASTAPI_AVAILABLE, "fastapi is not installed")
+    @patch("back.routers.upload.process_inventory_payload")
+    @patch("back.routers.upload.save_inventory_draft")
+    @patch("back.routers.upload.call_gemini_inventory")
+    def test_upload_route_runs_pipeline_and_saves_draft(
+        self,
+        mock_gemini: object,
+        mock_save_draft: object,
+        mock_process_payload: object,
+    ) -> None:
+        mock_gemini.return_value = {category: 0 for category in CATEGORY_KEYS}
+        mock_gemini.return_value["Cereal"] = 86
+        mock_process_payload.return_value = {
+            "persistence": {"dryRun": True, "wouldPersist": {}},
+            "previousInventoryLookupError": None,
+        }
+
+        upload_file = UploadFile(
+            filename="shelf.jpg",
+            file=BytesIO(b"fake-image-bytes"),
+            headers={"content-type": "image/jpeg"},
+        )
+
+        response = asyncio.run(upload_images(files=[upload_file], pantry_id="pantry-1"))
+
+        self.assertTrue(response["ok"])
+        self.assertEqual(response["inventory"]["Cereal"], 86)
+        mock_process_payload.assert_called_once()
+        mock_save_draft.assert_called_once()
+        saved_args = mock_save_draft.call_args[0]
+        self.assertEqual(saved_args[0], "pantry-1")
+        self.assertEqual(saved_args[1]["Cereal"], 86)
+        self.assertEqual(saved_args[2][0]["filename"], "shelf.jpg")
 
 
 if __name__ == "__main__":

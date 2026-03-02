@@ -3,9 +3,16 @@ from typing import Any
 
 from fastapi import APIRouter, File, Form, UploadFile
 
-from routers.review import save_inventory_draft
-from schemas import INVENTORY_CATEGORIES
-from services.gemini import call_gemini_inventory
+try:
+    from ..inventory_pipeline import process_inventory_payload
+    from .review import save_inventory_draft
+    from ..schemas import INVENTORY_CATEGORIES
+    from ..services.gemini import call_gemini_inventory
+except ImportError:
+    from inventory_pipeline import process_inventory_payload
+    from routers.review import save_inventory_draft
+    from schemas import INVENTORY_CATEGORIES
+    from services.gemini import call_gemini_inventory
 
 log = logging.getLogger(__name__)
 
@@ -53,7 +60,20 @@ async def upload_images(
     out: dict[str, Any] = {"ok": True, "count": len(results), "files": results}
     if inventory is not None:
         out["inventory"] = inventory
-    
-        if pantry_id is not None and inventory is not None:
-            save_inventory_draft(pantry_id, inventory)
+
+        pipeline_result = process_inventory_payload(out)
+        if pipeline_result["previousInventoryLookupError"] is not None:
+            log.warning(
+                "Previous inventory lookup skipped: %s",
+                pipeline_result["previousInventoryLookupError"],
+            )
+
+        persistence = pipeline_result["persistence"]
+        if persistence.get("dryRunFallback"):
+            log.warning("Inventory persistence fallback: %s", persistence["reason"])
+        elif persistence.get("persistedRunId"):
+            log.info("Persisted inventory run: %s", persistence["persistedRunId"])
+
+        if pantry_id is not None:
+            save_inventory_draft(pantry_id, inventory, results)
     return out
