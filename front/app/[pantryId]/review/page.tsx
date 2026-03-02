@@ -90,8 +90,12 @@ export default function ReviewPage() {
     const payload = {
       pantryId,
       reviewedAt: new Date().toISOString(),
-      reviewedInventory: inventory,
       source: "volunteer-review",
+      ok: true,
+      count: draftMeta?.files?.length ?? 0,
+      files: draftMeta?.files ?? [],
+      rawInventory: inventory,
+      reviewedInventory: inventory,
     };
     window.sessionStorage.setItem("inventoryReviewHandoff", JSON.stringify(payload));
     setHandoffReady(true);
