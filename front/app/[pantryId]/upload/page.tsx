@@ -242,6 +242,9 @@ export default function UploadPage() {
                 {uploadResult.ok && uploadResult.inventory && Object.keys(uploadResult.inventory).length > 0 && (
                   <div className="mt-2 p-3 rounded-lg bg-zinc-200 dark:bg-zinc-700 text-sm">
                     <p className="font-medium text-zinc-800 dark:text-zinc-200 mb-2">Inventory by category</p>
+                    <p className="mb-2 text-xs text-zinc-500 dark:text-zinc-400">
+                      After upload, you will be taken to the review page to edit quantities and submit final stock levels.
+                    </p>
                     <ul className="space-y-1 text-zinc-700 dark:text-zinc-300">
                       {Object.entries(uploadResult.inventory)
                         .filter(([, q]) => q !== 0 && q !== undefined)

@@ -19,7 +19,7 @@ from inventory_run_model import InventoryRun  # noqa: E402
 
 def main() -> None:
     """Fetch and print the most recent inventory run."""
-    load_dotenv()
+    load_dotenv(Path(__file__).resolve().parent / ".env")
 
     session = SessionLocal()
     try:

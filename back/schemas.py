@@ -1,26 +1,8 @@
 from pydantic import BaseModel, Field
-
-INVENTORY_CATEGORIES = [
-    "Beverages",
-    "Juices",
-    "Cereal",
-    "Breakfast",
-    "Meat",
-    "Fish",
-    "Poultry",
-    "Frozen",
-    "Vegetables",
-    "Fruits",
-    "Nuts",
-    "Soup",
-    "Grains",
-    "Pasta",
-    "Snacks",
-    "Spices",
-    "Sauces",
-    "Condiments",
-    "Misc Products",
-]
+try:
+    from .inventory_domain import INVENTORY_CATEGORIES
+except ImportError:
+    from inventory_domain import INVENTORY_CATEGORIES
 
 
 class InventoryCount(BaseModel):

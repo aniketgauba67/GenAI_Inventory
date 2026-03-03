@@ -25,7 +25,7 @@ export const authOptions: NextAuthOptions = {
             id: "1",
             name: "Admin",
             email: "admin@example.com",
-            pantryId: credentials.username,
+            pantryId: "1",
           };
         }
 
