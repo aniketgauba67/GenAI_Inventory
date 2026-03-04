@@ -138,7 +138,7 @@ export default function UploadPage() {
   return (
     <div className="min-h-screen bg-zinc-100 dark:bg-zinc-900 pb-[env(safe-area-inset-bottom)] pb-8">
       <header className="sticky top-0 z-10 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-sm border-b border-zinc-200 dark:border-zinc-700 px-4 pt-[env(safe-area-inset-top)] pt-6 pb-4">
-        <div className="flex items-center gap-2 mb-2">
+        <div className="flex items-center gap-2 mb-2 pt-2">
           <Link href="/" className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300">
             ←
           </Link>
