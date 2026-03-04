@@ -3,9 +3,10 @@
 Volunteer inventory workflow:
 - upload shelf photos
 - detect item counts in the fixed 19 categories with Gemini
+- store the latest warehouse form totals in the database
 - review and edit the detected counts
 - submit the reviewed inventory
-- compute current inventory levels from the previous stored snapshot
+- compute current inventory levels from the latest warehouse import
 - store the result in Postgres
 
 ## Project Structure
@@ -91,11 +92,12 @@ That login currently maps to pantry id `1`.
 2. Start the frontend
 3. Open `http://localhost:3000/login`
 4. Log in with `admin` / `password`
-5. Upload a shelf photo
-6. Review the detected counts
-7. Edit values if needed
-8. Click `Submit inventory`
-9. Review the returned ratio and `High / Mid / Low` level for each category
+5. Make sure a warehouse import exists for that pantry
+6. Upload a shelf photo
+7. Review the detected counts
+8. Edit values if needed
+9. Click `Submit inventory`
+10. Review the returned ratio and `High / Mid / Low` level for each category
 
 ## Upload Endpoint
 
@@ -113,12 +115,61 @@ That route:
 - returns detected inventory
 - stores a draft for the review page
 
+## Warehouse Import Endpoint
+
+The pulled schema stores warehouse form imports in `inventory_runs` too, using:
+- `source = "warehouse-snapshot"`
+- `inventory = parsed warehouse totals`
+- `comparison.note = optional import context`
+
+Why this matters:
+- this warehouse row is the denominator source for later volunteer ratio calculations
+- the newest `warehouse-snapshot` row for a pantry is the one the backend compares against
+
+Store a parsed warehouse form with:
+
+```bash
+curl -X POST http://localhost:8000/warehouse/inventory/snapshot \
+  -H "Content-Type: application/json" \
+  -d '{
+    "pantryId": "1",
+    "inventory": {
+      "Beverages": 10,
+      "Juices": 5,
+      "Cereal": 20,
+      "Breakfast": 8,
+      "Meat": 4,
+      "Fish": 3,
+      "Poultry": 6,
+      "Frozen": 7,
+      "Vegetables": 12,
+      "Fruits": 9,
+      "Nuts": 2,
+      "Soup": 5,
+      "Grains": 11,
+      "Pasta": 13,
+      "Snacks": 15,
+      "Spices": 6,
+      "Sauces": 4,
+      "Condiments": 3,
+      "Misc Products": 1
+    },
+    "files": []
+  }'
+```
+
+For local testing before the manager form parser is ready:
+
+```bash
+python back/seed_warehouse_snapshot.py
+```
+
 ## Volunteer Submit Endpoint
 
 The active workflow computes status from:
 
 ```text
-current stock / previous stored stock
+current pantry stock / latest warehouse import
 ```
 
 Thresholds:
@@ -126,7 +177,17 @@ Thresholds:
 - `Mid` if ratio `> 0.30` and `<= 0.70`
 - `Low` if ratio `<= 0.30`
 
-First submit for pantry `1`:
+Volunteer submit is stored in `inventory_runs` with:
+- `source = "volunteer-submit"`
+- `inventory = current reviewed pantry stock`
+- `comparison.warehouseRunId = the warehouse run used as denominator`
+- `comparison.ratios = computed category ratios`
+- `comparison.levels = computed High / Mid / Low values`
+- `comparison.summaryCounts = High / Mid / Low totals`
+
+This keeps the table schema lean while still preserving the full calculation context in one row.
+
+Example volunteer submit for pantry `1`:
 
 ```bash
 curl -X POST http://localhost:8000/volunteer/inventory/submit \
@@ -153,37 +214,6 @@ curl -X POST http://localhost:8000/volunteer/inventory/submit \
       "Sauces": 4,
       "Condiments": 3,
       "Misc Products": 1
-    }
-  }'
-```
-
-Second submit for pantry `1`:
-
-```bash
-curl -X POST http://localhost:8000/volunteer/inventory/submit \
-  -H "Content-Type: application/json" \
-  -d '{
-    "pantryId": "1",
-    "inventory": {
-      "Beverages": 5,
-      "Juices": 2,
-      "Cereal": 14,
-      "Breakfast": 4,
-      "Meat": 1,
-      "Fish": 1,
-      "Poultry": 3,
-      "Frozen": 2,
-      "Vegetables": 6,
-      "Fruits": 4,
-      "Nuts": 1,
-      "Soup": 2,
-      "Grains": 8,
-      "Pasta": 7,
-      "Snacks": 10,
-      "Spices": 4,
-      "Sauces": 2,
-      "Condiments": 1,
-      "Misc Products": 0
     }
   }'
 ```

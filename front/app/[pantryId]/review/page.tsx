@@ -47,7 +47,6 @@ export default function ReviewPage() {
   const [inventory, setInventory] = useState<InventoryRecord | null>(null);
   const [draftMeta, setDraftMeta] = useState<DraftData | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [handoffReady, setHandoffReady] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitResult, setSubmitResult] = useState<SubmitResponse | null>(null);
@@ -92,25 +91,8 @@ export default function ReviewPage() {
     const quantity = Number(value);
     if (Number.isNaN(quantity)) return;
     setInventory((prev) => ({ ...(prev ?? {}), [category]: Math.max(0, quantity) }));
-    setHandoffReady(false);
     setSubmitError(null);
     setSubmitResult(null);
-  }
-
-  function prepareHandoff() {
-    if (!inventory) return;
-    const payload = {
-      pantryId,
-      reviewedAt: new Date().toISOString(),
-      source: "volunteer-review",
-      ok: true,
-      count: draftMeta?.files?.length ?? 0,
-      files: draftMeta?.files ?? [],
-      rawInventory: inventory,
-      reviewedInventory: inventory,
-    };
-    window.sessionStorage.setItem("inventoryReviewHandoff", JSON.stringify(payload));
-    setHandoffReady(true);
   }
 
   async function submitInventory() {
@@ -218,14 +200,6 @@ export default function ReviewPage() {
                 {submitting ? "Submitting…" : "Submit inventory"}
               </button>
 
-              <button
-                type="button"
-                onClick={prepareHandoff}
-                className="w-full rounded-xl bg-zinc-900 py-3 text-sm font-medium text-white transition hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
-              >
-                Prepare handoff data for teammate
-              </button>
-
               {submitError && (
                 <div className="rounded-lg bg-red-100 dark:bg-red-900/40 p-3 text-sm text-red-700 dark:text-red-200">
                   {submitError}
@@ -248,13 +222,6 @@ export default function ReviewPage() {
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
-
-              {handoffReady && (
-                <div className="rounded-lg bg-emerald-100 dark:bg-emerald-900/40 p-3 text-sm text-emerald-800 dark:text-emerald-200 space-y-2">
-                  <p className="font-medium">Handoff payload saved.</p>
-                  <p>Teammate can read <code>sessionStorage["inventoryReviewHandoff"]</code>.</p>
                 </div>
               )}
             </section>

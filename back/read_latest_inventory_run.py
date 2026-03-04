@@ -1,4 +1,9 @@
-"""Read back the latest persisted inventory run from AWS RDS/Postgres."""
+"""Read back the latest persisted inventory run from AWS RDS/Postgres.
+
+The output mirrors the lean `inventory_runs` schema:
+- `inventory` = stored counts
+- `comparison` = derived context such as warehouseRunId, ratios, and levels
+"""
 
 from __future__ import annotations
 

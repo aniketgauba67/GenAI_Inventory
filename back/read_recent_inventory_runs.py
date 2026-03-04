@@ -1,4 +1,8 @@
-"""Read back the most recent persisted inventory runs from AWS RDS/Postgres."""
+"""Read back the most recent persisted inventory runs from AWS RDS/Postgres.
+
+Useful for confirming which `warehouse-snapshot` row is currently acting as the denominator
+for volunteer ratio calculations.
+"""
 
 from __future__ import annotations
 

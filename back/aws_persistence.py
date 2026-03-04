@@ -1,4 +1,4 @@
-"""AWS database persistence for Sprint 1 inventory runs."""
+"""Database persistence helpers for the unified inventory run-history table."""
 
 from __future__ import annotations
 
@@ -36,7 +36,12 @@ def build_run_record(
     classification_artifact: dict,
     comparison_artifact: dict,
 ) -> dict:
-    """Assemble the persistence payload for one processing run."""
+    """Assemble a lean `inventory_runs` payload.
+
+    This helper keeps the schema small:
+    - `inventory` stores the main counts
+    - `comparison` stores derived context such as ratios/levels/source details
+    """
     return {
         "pk": str(uuid4()),
         "pantryId": comparison_artifact.get("pantryId"),
@@ -66,7 +71,11 @@ def fetch_latest_inventory_snapshot() -> dict | None:
 
 
 def persist_inventory_run(run_record: dict) -> str:
-    """Persist one inventory run to the existing AWS RDS Postgres database."""
+    """Persist one inventory run to the existing AWS RDS/Postgres database.
+
+    Both warehouse imports and volunteer submits use the same table. The caller must set
+    `source` so later reads can distinguish those event types.
+    """
     from database import Base, SessionLocal, engine  # noqa: E402
     from models import InventoryRun  # noqa: E402
 
