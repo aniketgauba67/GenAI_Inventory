@@ -1,11 +1,14 @@
 """Database connection and session management using SQLAlchemy"""
 
 import os
+from pathlib import Path
+
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session, declarative_base
 
-load_dotenv()
+ROOT_DIR = Path(__file__).resolve().parents[1]
+load_dotenv(ROOT_DIR / "back" / ".env")
 
 # Create database URL from environment variables
 DATABASE_URL = (
@@ -39,6 +42,6 @@ def get_db():
 
 def init_db():
     "Delete existing tables and create new ones based on models"""
-    Base.metadata.drop_all(bind=engine)  # Drop all tables (for testing)
+    #Base.metadata.drop_all(bind=engine)  # Drop all tables (for testing)
     """Initialize database by creating all tables"""
     Base.metadata.create_all(bind=engine)

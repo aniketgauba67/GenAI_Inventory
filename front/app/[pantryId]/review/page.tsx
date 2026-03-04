@@ -12,6 +12,13 @@ type DraftData = {
   files?: { filename?: string; size_bytes?: number }[];
 };
 
+type SubmitResponse = {
+  ok: boolean;
+  ratios?: Record<string, number>;
+  levels?: Record<string, string>;
+  error?: string;
+};
+
 const orderedCategories = [
   "Beverages",
   "Juices",
@@ -40,7 +47,9 @@ export default function ReviewPage() {
   const [inventory, setInventory] = useState<InventoryRecord | null>(null);
   const [draftMeta, setDraftMeta] = useState<DraftData | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [handoffReady, setHandoffReady] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitResult, setSubmitResult] = useState<SubmitResponse | null>(null);
 
   const apiBase =
     typeof window !== "undefined"
@@ -82,23 +91,42 @@ export default function ReviewPage() {
     const quantity = Number(value);
     if (Number.isNaN(quantity)) return;
     setInventory((prev) => ({ ...(prev ?? {}), [category]: Math.max(0, quantity) }));
-    setHandoffReady(false);
+    setSubmitError(null);
+    setSubmitResult(null);
   }
 
-  function prepareHandoff() {
+  async function submitInventory() {
     if (!inventory) return;
-    const payload = {
-      pantryId,
-      reviewedAt: new Date().toISOString(),
-      source: "volunteer-review",
-      ok: true,
-      count: draftMeta?.files?.length ?? 0,
-      files: draftMeta?.files ?? [],
-      rawInventory: inventory,
-      reviewedInventory: inventory,
-    };
-    window.sessionStorage.setItem("inventoryReviewHandoff", JSON.stringify(payload));
-    setHandoffReady(true);
+
+    setSubmitting(true);
+    setSubmitError(null);
+    setSubmitResult(null);
+
+    try {
+      const res = await fetch(`${apiBase}/volunteer/inventory/submit`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        // Submit the reviewed values exactly as shown in the form.
+        body: JSON.stringify({
+          pantryId,
+          inventory,
+        }),
+      });
+
+      const data = (await res.json()) as SubmitResponse;
+      if (!res.ok || !data.ok) {
+        setSubmitError(data.error || "Could not submit inventory.");
+        return;
+      }
+
+      setSubmitResult(data);
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "Network error while submitting inventory.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -123,14 +151,22 @@ export default function ReviewPage() {
         {inventory && (
           <>
             <div className="rounded-xl bg-white dark:bg-zinc-800 p-4 text-sm text-zinc-600 dark:text-zinc-300">
-              <p className="font-medium text-zinc-900 dark:text-zinc-100">Detected categories (editable)</p>
-              <p className="mt-1">Data loaded from backend draft. Edit and prepare teammate handoff.</p>
+              <p className="font-medium text-zinc-900 dark:text-zinc-100">Detected counts</p>
+              <p className="mt-1">
+                These counts were detected from the uploaded shelf photo. Review them, edit if needed, then submit.
+              </p>
               {draftMeta?.files && draftMeta.files.length > 0 && (
                 <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">Photos processed: {draftMeta.files.length}</p>
               )}
             </div>
 
             <section className="rounded-xl bg-white dark:bg-zinc-800 p-4">
+              <div className="mb-4">
+                <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Editable review form</h2>
+                <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
+                  Update any category before submitting the current stock snapshot.
+                </p>
+              </div>
               <ul className="space-y-3">
                 {rows.map(({ category, quantity }) => (
                   <li key={category} className="flex items-center justify-between gap-3">
@@ -149,18 +185,43 @@ export default function ReviewPage() {
             </section>
 
             <section className="rounded-xl bg-white dark:bg-zinc-800 p-4 space-y-3">
+              <div>
+                <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Submit current inventory</h2>
+                <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
+                  Submit the reviewed counts to compute the current level for each category.
+                </p>
+              </div>
               <button
                 type="button"
-                onClick={prepareHandoff}
-                className="w-full rounded-xl bg-zinc-900 py-3 text-sm font-medium text-white transition hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
+                onClick={submitInventory}
+                disabled={submitting}
+                className="w-full rounded-xl bg-emerald-600 py-3 text-sm font-medium text-white transition hover:bg-emerald-500 disabled:opacity-50 dark:bg-emerald-500 dark:hover:bg-emerald-400"
               >
-                Prepare handoff data for teammate
+                {submitting ? "Submitting…" : "Submit inventory"}
               </button>
 
-              {handoffReady && (
-                <div className="rounded-lg bg-emerald-100 dark:bg-emerald-900/40 p-3 text-sm text-emerald-800 dark:text-emerald-200 space-y-2">
-                  <p className="font-medium">Handoff payload saved.</p>
-                  <p>Teammate can read <code>sessionStorage["inventoryReviewHandoff"]</code>.</p>
+              {submitError && (
+                <div className="rounded-lg bg-red-100 dark:bg-red-900/40 p-3 text-sm text-red-700 dark:text-red-200">
+                  {submitError}
+                </div>
+              )}
+
+              {submitResult?.ok && submitResult.ratios && submitResult.levels && (
+                <div className="rounded-lg bg-blue-100 dark:bg-blue-900/40 p-3 text-sm text-blue-900 dark:text-blue-100">
+                  <p className="font-medium">Current inventory levels</p>
+                  <p className="mt-1 text-sm text-blue-800 dark:text-blue-200">
+                    Submission saved. The levels below show the current inventory status for each category.
+                  </p>
+                  <div className="mt-3 space-y-2">
+                    {orderedCategories.map((category) => (
+                      <div key={category} className="flex items-center justify-between gap-4 border-b border-blue-200/60 pb-1 last:border-b-0 dark:border-blue-700/40">
+                        <span>{category}</span>
+                        <span className="text-right">
+                          Ratio: {Number(submitResult.ratios?.[category] ?? 0).toFixed(2)} | Level: {submitResult.levels?.[category] ?? "-"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </section>

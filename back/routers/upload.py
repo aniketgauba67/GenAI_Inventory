@@ -1,11 +1,15 @@
 import logging
-from typing import Any
 
 from fastapi import APIRouter, File, Form, UploadFile
 
-from routers.review import save_inventory_draft
-from schemas import INVENTORY_CATEGORIES
-from services.gemini import call_gemini_inventory
+try:
+    from .review import save_inventory_draft
+    from ..schemas import INVENTORY_CATEGORIES
+    from ..services.gemini import call_gemini_inventory
+except ImportError:
+    from routers.review import save_inventory_draft
+    from schemas import INVENTORY_CATEGORIES
+    from services.gemini import call_gemini_inventory
 
 log = logging.getLogger(__name__)
 
@@ -50,10 +54,10 @@ async def upload_images(
             "ok": True,
         })
     log.info("Upload done: %s file(s) received", len(results))
-    out: dict[str, Any] = {"ok": True, "count": len(results), "files": results}
+    out = {"ok": True, "count": len(results), "files": results}
     if inventory is not None:
         out["inventory"] = inventory
-    
-        if pantry_id is not None and inventory is not None:
-            save_inventory_draft(pantry_id, inventory)
+
+        if pantry_id is not None:
+            save_inventory_draft(pantry_id, inventory, results)
     return out

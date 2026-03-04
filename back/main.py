@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from config import CORS_ORIGINS
 from routers.upload import router as upload_router
 from routers.review import router as review_router
+from routers.volunteer_inventory import router as volunteer_inventory_router
 
 logging.basicConfig(level=logging.INFO)
 
@@ -21,3 +22,4 @@ app.add_middleware(
 
 app.include_router(upload_router)
 app.include_router(review_router)
+app.include_router(volunteer_inventory_router)

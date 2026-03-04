@@ -1,4 +1,9 @@
-"""Read back the latest persisted inventory run from AWS RDS/Postgres."""
+"""Read back the latest persisted inventory run from AWS RDS/Postgres.
+
+The output mirrors the lean `inventory_runs` schema:
+- `inventory` = stored counts
+- `comparison` = derived context such as warehouseRunId, ratios, and levels
+"""
 
 from __future__ import annotations
 
@@ -14,12 +19,12 @@ if str(DB_DIR) not in sys.path:
     sys.path.insert(0, str(DB_DIR))
 
 from database import SessionLocal  # noqa: E402
-from inventory_run_model import InventoryRun  # noqa: E402
+from models import InventoryRun  # noqa: E402
 
 
 def main() -> None:
     """Fetch and print the most recent inventory run."""
-    load_dotenv()
+    load_dotenv(Path(__file__).resolve().parent / ".env")
 
     session = SessionLocal()
     try:
@@ -49,15 +54,12 @@ def main() -> None:
                     "found": True,
                     "run": {
                         "run_id": latest_run.run_id,
+                        "pantry_id": latest_run.pantry_id,
                         "created_at": latest_run.created_at.isoformat(),
-                        "ok": latest_run.ok,
-                        "count": latest_run.count,
                         "files": latest_run.files,
                         "inventory": latest_run.inventory,
-                        "classification": latest_run.classification,
-                        "summary_counts": latest_run.summary_counts,
                         "comparison": latest_run.comparison,
-                        "stage": latest_run.stage,
+                        "source": latest_run.source,
                     },
                 },
                 indent=2,
