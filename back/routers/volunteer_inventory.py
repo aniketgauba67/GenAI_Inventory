@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from datetime import datetime
-from os import getenv
 from uuid import uuid4
 
 from fastapi import APIRouter
@@ -38,9 +37,8 @@ DB_DIR = ROOT_DIR / "db"
 if str(DB_DIR) not in sys.path:
     sys.path.insert(0, str(DB_DIR))
 
-from database import SessionLocal  # noqa: E402
-from inventory_run_model import InventoryRun  # noqa: E402
-from models import Pantry  # noqa: E402
+from database import Base, SessionLocal, engine  # noqa: E402
+from models import InventoryRun, Pantry  # noqa: E402
 
 router = APIRouter(tags=["volunteer-inventory"])
 
@@ -52,17 +50,22 @@ class VolunteerInventorySubmitRequest(BaseModel):
     inventory: dict[str, int]
 def _load_previous_inventory_snapshot(db, pantry_identifier: str) -> dict[str, int] | None:
     """Fetch the most recent prior volunteer-submitted inventory for a pantry."""
-    recent_runs = (
+    pantry = resolve_pantry(db, Pantry, pantry_identifier)
+    if pantry is None:
+        return None
+
+    latest_run = (
         db.query(InventoryRun)
+        .filter(InventoryRun.pantry_id == pantry.id)
+        .filter(InventoryRun.source == "volunteer-submit")
         .order_by(InventoryRun.created_at.desc())
-        .limit(100)
-        .all()
+        .first()
     )
-    for run in recent_runs:
-        comparison = run.comparison or {}
-        if comparison.get("pantryId") == pantry_identifier and comparison.get("source") == "volunteer-submit":
-            return normalize_inventory(run.inventory)
-    return None
+
+    if latest_run is None:
+        return None
+
+    return normalize_inventory(latest_run.inventory)
 
 
 @router.post("/volunteer/inventory/submit")
@@ -73,6 +76,8 @@ def submit_inventory(payload: VolunteerInventorySubmitRequest):
         return {"ok": False, "error": error}
 
     normalized_inventory = normalize_inventory(payload.inventory)
+
+    Base.metadata.create_all(bind=engine, tables=[InventoryRun.__table__])
 
     db = SessionLocal()
     try:
@@ -87,20 +92,17 @@ def submit_inventory(payload: VolunteerInventorySubmitRequest):
 
         run_record = {
             "pk": str(uuid4()),
+            "pantryId": pantry.id,
             "createdAt": datetime.utcnow().replace(microsecond=0).isoformat() + "Z",
-            "ok": True,
-            "count": 0,
             "files": [],
             "inventory": normalized_inventory,
-            "classification": levels,
-            "summaryCounts": summary_counts,
             "comparison": {
                 "pantryId": payload.pantryId,
                 "previousInventory": previous_inventory,
                 "ratios": ratios,
                 "source": "volunteer-submit",
             },
-            "stage": getenv("STAGE") or getenv("ENV"),
+            "source": "volunteer-submit",
         }
 
         persisted_run_id = persist_inventory_run(run_record)

@@ -1,9 +1,12 @@
 """SQLAlchemy ORM models for Pantry and Inventory Items"""
 
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+
+from sqlalchemy import CheckConstraint, Column, DateTime, ForeignKey, Index, Integer, String
 from sqlalchemy.orm import relationship
 from database import Base
+from sqlalchemy.dialects.postgresql import JSONB
+
 
 
 class Pantry(Base):
@@ -14,6 +17,10 @@ class Pantry(Base):
     name = Column(String(100), nullable=False)
     location = Column(String(255), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        Index("ix_pantries_name", "name"),
+    )
 
     # Relationship to inventory items
     items = relationship("InventoryItem", back_populates="pantry", cascade="all, delete-orphan")
@@ -27,12 +34,18 @@ class InventoryItem(Base):
     __tablename__ = "inventory_items"
 
     id = Column(Integer, primary_key=True, index=True)
-    pantry_id = Column(Integer, ForeignKey("pantries.id", ondelete="CASCADE"), nullable=False)
+    pantry_id = Column(Integer, ForeignKey("pantries.id", ondelete="CASCADE"), nullable=False, index=True)
     category_name = Column(String(255), nullable=False)
     original_quantity = Column(Integer, nullable=False)
     status = Column(String(50), default="normal")
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        CheckConstraint("original_quantity >= 0", name="ck_inventory_items_original_quantity_nonnegative"),
+        Index("ix_inventory_items_pantry_category", "pantry_id", "category_name"),
+        Index("ix_inventory_items_status", "status"),
+    )
 
     # Relationship back to pantry
     pantry = relationship("Pantry", back_populates="items")
@@ -53,3 +66,20 @@ class InventoryItem(Base):
             self.status = "low"
         else:
             self.status = "normal"
+
+class InventoryRun(Base):
+    """Store one processed inventory run and its derived artifacts."""
+
+    __tablename__ = "inventory_runs"
+
+    run_id = Column(String(36), primary_key=True, index=True)
+    pantry_id = Column(Integer, ForeignKey("pantries.id", ondelete="CASCADE"), nullable=False, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    files = Column(JSONB, nullable=True)
+    inventory = Column(JSONB, nullable=False)
+    comparison = Column(JSONB, nullable=True)
+    source = Column(String(50), nullable=True)
+
+    __table_args__ = (
+        Index("ix_inventory_runs_pantry_created_at", "pantry_id", "created_at"),
+    )

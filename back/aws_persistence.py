@@ -39,22 +39,19 @@ def build_run_record(
     """Assemble the persistence payload for one processing run."""
     return {
         "pk": str(uuid4()),
+        "pantryId": comparison_artifact.get("pantryId"),
         "createdAt": datetime.utcnow().replace(microsecond=0).isoformat() + "Z",
-        "ok": required_output["ok"],
-        "count": required_output["count"],
-        "files": required_output["files"],
+        "files": required_output.get("files", []),
         "inventory": required_output["inventory"],
-        "classification": classification_artifact["classification"],
-        "summaryCounts": classification_artifact["summaryCounts"],
         "comparison": comparison_artifact,
-        "stage": os.getenv("STAGE") or os.getenv("ENV"),
+        "source": comparison_artifact.get("source"),
     }
 
 
 def fetch_latest_inventory_snapshot() -> dict | None:
     """Return the most recent stored inventory snapshot, if available."""
     from database import SessionLocal  # noqa: E402
-    from inventory_run_model import InventoryRun  # noqa: E402
+    from models import InventoryRun  # noqa: E402
 
     session = SessionLocal()
     try:
@@ -71,7 +68,7 @@ def fetch_latest_inventory_snapshot() -> dict | None:
 def persist_inventory_run(run_record: dict) -> str:
     """Persist one inventory run to the existing AWS RDS Postgres database."""
     from database import Base, SessionLocal, engine  # noqa: E402
-    from inventory_run_model import InventoryRun  # noqa: E402
+    from models import InventoryRun  # noqa: E402
 
     Base.metadata.create_all(bind=engine, tables=[InventoryRun.__table__])
 
@@ -80,15 +77,12 @@ def persist_inventory_run(run_record: dict) -> str:
         session.add(
             InventoryRun(
                 run_id=run_record["pk"],
+                pantry_id=run_record["pantryId"],
                 created_at=datetime.fromisoformat(run_record["createdAt"].replace("Z", "+00:00")),
-                ok=run_record["ok"],
-                count=run_record["count"],
                 files=run_record["files"],
                 inventory=run_record["inventory"],
-                classification=run_record["classification"],
-                summary_counts=run_record["summaryCounts"],
                 comparison=run_record["comparison"],
-                stage=run_record["stage"],
+                source=run_record["source"],
             )
         )
         session.commit()

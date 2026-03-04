@@ -14,7 +14,7 @@ if str(DB_DIR) not in sys.path:
     sys.path.insert(0, str(DB_DIR))
 
 from database import SessionLocal  # noqa: E402
-from inventory_run_model import InventoryRun  # noqa: E402
+from models import InventoryRun  # noqa: E402
 
 
 def main(limit: int = 5) -> None:
@@ -53,13 +53,12 @@ def main(limit: int = 5) -> None:
                     "runs": [
                         {
                             "run_id": run.run_id,
+                            "pantry_id": run.pantry_id,
                             "created_at": run.created_at.isoformat(),
-                            "ok": run.ok,
-                            "count": run.count,
+                            "files": run.files,
                             "inventory": run.inventory,
-                            "classification": run.classification,
-                            "summary_counts": run.summary_counts,
-                            "stage": run.stage,
+                            "comparison": run.comparison,
+                            "source": run.source,
                         }
                         for run in runs
                     ],
