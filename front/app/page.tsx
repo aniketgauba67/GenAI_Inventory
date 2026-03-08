@@ -14,20 +14,39 @@ export default function Home() {
           <p className="text-sm text-zinc-500">Loading…</p>
         )}
         {status === "unauthenticated" && (
-          <Link
-            href="/login"
-            className="rounded-xl bg-zinc-900 px-8 py-4 text-base font-medium text-white transition hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
-          >
-            I am a volunteer
-          </Link>
+          <div className="flex flex-col gap-4">
+            <Link
+              href="/login"
+              className="rounded-xl bg-zinc-900 px-8 py-4 text-base font-medium text-white transition hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200 text-center"
+            >
+              I am a volunteer
+            </Link>
+            <Link
+              href="/manager-login"
+              className="rounded-xl border border-zinc-300 px-8 py-4 text-base font-medium text-zinc-900 transition hover:bg-zinc-100 dark:border-zinc-600 dark:text-zinc-100 dark:hover:bg-zinc-800 text-center"
+            >
+              I am a manager
+            </Link>
+          </div>
         )}
         {status === "authenticated" && pantryId && (
-          <Link
-            href={`/${pantryId}/upload`}
-            className="rounded-xl bg-zinc-900 px-8 py-4 text-base font-medium text-white transition hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
-          >
+          <div className="flex flex-col gap-4">
+            {(session?.user as { role?: string })?.role === "manager" ? (
+              <Link
+                href="/manager"
+                className="rounded-xl bg-zinc-900 px-8 py-4 text-base font-medium text-white transition hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200 text-center"
+              >
+            I am a manager
+              </Link>
+            ) : (
+              <Link
+                href={`/${pantryId}/upload`}
+                className="rounded-xl bg-zinc-900 px-8 py-4 text-base font-medium text-white transition hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200 text-center"
+              >
             I am a volunteer
-          </Link>
+              </Link>
+            )}
+          </div>
         )}
         {status === "authenticated" && !pantryId && (
           <p className="text-sm text-zinc-500">No pantry ID in session.</p>

@@ -7,6 +7,7 @@ from config import CORS_ORIGINS
 from routers.upload import router as upload_router
 from routers.review import router as review_router
 from routers.volunteer_inventory import router as volunteer_inventory_router
+from routers.manager import router as manager_router
 
 logging.basicConfig(level=logging.INFO)
 
@@ -23,3 +24,4 @@ app.add_middleware(
 app.include_router(upload_router)
 app.include_router(review_router)
 app.include_router(volunteer_inventory_router)
+app.include_router(manager_router)
