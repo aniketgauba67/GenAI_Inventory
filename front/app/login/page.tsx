@@ -31,15 +31,20 @@ export default function LoginPage() {
       const raw = searchParams.get("callbackUrl");
       let target = `/${username}/upload`;
       if (raw && raw !== "/") {
-        if (raw.startsWith("/")) {
-          target = raw;
-        } else {
+        let resolved = raw;
+        if (!raw.startsWith("/")) {
           try {
             const u = new URL(raw, window.location.origin);
-            if (u.origin === window.location.origin) target = u.pathname + u.search;
+            if (u.origin === window.location.origin) resolved = u.pathname + u.search;
           } catch {
-            // keep /${username}/upload
+            resolved = `/${username}/upload`;
           }
+        }
+        // /volunteer is a virtual marker → go to the pantry upload page
+        if (resolved === "/volunteer") {
+          target = `/${username}/upload`;
+        } else {
+          target = resolved;
         }
       }
       window.location.href = target;

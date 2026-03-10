@@ -1,16 +1,27 @@
 import logging
+import sys
+from datetime import datetime
+from pathlib import Path
+from uuid import uuid4
 
 from fastapi import APIRouter, File, UploadFile, Depends
 from sqlalchemy.orm import Session
 from database import get_db
 from models import Pantry, InventoryItem
-from inventory_domain import resolve_pantry
+from inventory_domain import resolve_pantry, normalize_inventory
 from schemas import INVENTORY_CATEGORIES
+
+ROOT_DIR = Path(__file__).resolve().parents[2]
+DB_DIR = ROOT_DIR / "db"
+if str(DB_DIR) not in sys.path:
+    sys.path.insert(0, str(DB_DIR))
 
 try:
     from ..services.gemini import call_gemini_order_form
+    from ..aws_persistence import persist_inventory_run
 except ImportError:
     from services.gemini import call_gemini_order_form
+    from aws_persistence import persist_inventory_run
 
 log = logging.getLogger(__name__)
 
@@ -110,8 +121,30 @@ async def update_baseline_inventory(
     try:
         db.commit()
         log.info("Updated baseline for pantry %s (ID: %s)", pantry.name, pantry.id)
-        return {"ok": True, "pantry_id": pantry.id, "message": "Baseline inventory updated"}
     except Exception as e:
         db.rollback()
-        log.error("Error updating baseline: %s", e)
+        log.error("Error updating inventory_items: %s", e)
         return {"ok": False, "error": str(e)}
+
+    # Also save as warehouse-snapshot in inventory_runs so volunteer submit can find it
+    try:
+        normalized = normalize_inventory(inventory_data)
+        run_record = {
+            "pk": str(uuid4()),
+            "pantryId": pantry.id,
+            "createdAt": datetime.utcnow().replace(microsecond=0).isoformat() + "Z",
+            "files": [],
+            "inventory": normalized,
+            "comparison": {
+                "pantryId": str(pantry.id),
+                "note": "Baseline set from manager order form.",
+            },
+            "source": "warehouse-snapshot",
+        }
+        run_id = persist_inventory_run(run_record)
+        log.info("Saved warehouse-snapshot run %s for pantry %s", run_id, pantry.id)
+    except Exception as e:
+        log.error("Error saving warehouse-snapshot run: %s", e)
+        return {"ok": False, "error": f"Baseline saved to items table but failed to write run: {e}"}
+
+    return {"ok": True, "pantry_id": pantry.id, "message": "Baseline inventory updated"}

@@ -21,31 +21,6 @@ export const authOptions: NextAuthOptions = {
             name: "Admin",
             email: "admin@example.com",
             pantryId: credentials.username,
-            role: "volunteer",
-          };
-        }
-        return null;
-      },
-    }),
-    CredentialsProvider({
-      id: "manager-credentials",
-      name: "Manager Credentials",
-      credentials: {
-        username: { label: "Pantry ID", type: "text", placeholder: "pantry1234" },
-        password: { label: "Manager password", type: "password" },
-      },
-      async authorize(credentials) {
-        if (!credentials?.username || !credentials?.password) return null;
-        if (
-          credentials.username === "admin" &&
-          credentials.password === "manager"
-        ) {
-          return {
-            id: "mgr-1",
-            name: "Manager",
-            email: "manager@example.com",
-            pantryId: credentials.username,
-            role: "manager",
           };
         }
         return null;
@@ -53,12 +28,10 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
 
-  // Use JSON Web Tokens for session management (required for Credentials)
   session: {
     strategy: "jwt",
   },
 
-  // Custom pages so NextAuth uses YOUR login page instead of its default
   pages: {
     signIn: "/login",
   },
@@ -68,7 +41,6 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.pantryId = (user as { pantryId?: string }).pantryId;
-        token.role = (user as { role?: string }).role;
       }
       return token;
     },
@@ -76,7 +48,6 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         (session.user as { id?: string }).id = token.id as string;
         (session.user as { pantryId?: string }).pantryId = token.pantryId as string;
-        (session.user as { role?: string }).role = token.role as string;
       }
       return session;
     },

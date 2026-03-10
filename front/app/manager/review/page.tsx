@@ -40,7 +40,6 @@ const orderedCategories = [
 export default function ManagerReviewPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const role = (session?.user as { role?: string } | undefined)?.role;
 
   const [inventory, setInventory] = useState<InventoryRecord | null>(null);
   const [draftMeta, setDraftMeta] = useState<DraftData | null>(null);
@@ -54,14 +53,7 @@ export default function ManagerReviewPage() {
       : "";
 
   useEffect(() => {
-    if (status === "unauthenticated") return;
-    if (status === "authenticated" && role !== "manager") {
-      router.replace("/manager");
-    }
-  }, [status, role, router]);
-
-  useEffect(() => {
-    if (status !== "authenticated" || role !== "manager") return;
+    if (status !== "authenticated") return;
 
     try {
       const raw = typeof window !== "undefined" ? window.sessionStorage.getItem(STORAGE_KEY) : null;
@@ -79,7 +71,7 @@ export default function ManagerReviewPage() {
     } catch {
       setLoadError("Could not load draft.");
     }
-  }, [status, role]);
+  }, [status]);
 
   const rows = useMemo(() => {
     if (!inventory) return [];
@@ -129,7 +121,7 @@ export default function ManagerReviewPage() {
     }
   }
 
-  if (status === "loading" || (status === "authenticated" && role !== "manager")) {
+  if (status === "loading") {
     return null;
   }
 
@@ -228,6 +220,12 @@ export default function ManagerReviewPage() {
                   className="block w-full rounded-xl bg-zinc-200 dark:bg-zinc-700 py-3 text-center text-sm font-medium text-zinc-800 dark:text-zinc-200 transition hover:bg-zinc-300 dark:hover:bg-zinc-600"
                 >
                   Cancel
+                </Link>
+                <Link
+                  href="/"
+                  className="block w-full rounded-xl py-3 text-center text-sm font-medium text-zinc-500 dark:text-zinc-400 transition hover:text-zinc-800 dark:hover:text-zinc-200"
+                >
+                  Go back to main
                 </Link>
               </div>
             </section>

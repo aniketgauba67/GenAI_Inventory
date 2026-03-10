@@ -206,6 +206,13 @@ export default function ReviewPage() {
                 </div>
               )}
 
+              <Link
+                href="/"
+                className="block w-full rounded-xl py-3 text-center text-sm font-medium text-zinc-500 dark:text-zinc-400 transition hover:text-zinc-800 dark:hover:text-zinc-200"
+              >
+                Go back to main
+              </Link>
+
               {submitResult?.ok && submitResult.ratios && submitResult.levels && (
                 <div className="rounded-lg bg-blue-100 dark:bg-blue-900/40 p-3 text-sm text-blue-900 dark:text-blue-100">
                   <p className="font-medium">Current inventory levels</p>

@@ -1,26 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useSession } from "next-auth/react";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 const STORAGE_KEY = "managerOrderFormDraft";
 
 export default function ManagerViewPage() {
-  const { data: session, status } = useSession();
   const router = useRouter();
-  const role = (session?.user as { role?: string } | undefined)?.role;
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (status === "unauthenticated") return;
-    if (status === "authenticated" && role !== "manager") {
-      router.replace("/");
-    }
-  }, [status, role, router]);
 
   const apiBase =
     typeof window !== "undefined"
@@ -61,10 +51,6 @@ export default function ManagerViewPage() {
       setUploading(false);
       e.target.value = "";
     }
-  }
-
-  if (status === "loading" || (status === "authenticated" && role !== "manager")) {
-    return null;
   }
 
   return (
