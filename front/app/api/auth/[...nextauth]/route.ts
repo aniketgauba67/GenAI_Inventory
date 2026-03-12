@@ -22,6 +22,16 @@ export const authOptions: NextAuthOptions = {
             email: "admin@example.com",
             pantryId: credentials.username,
           };
+        }else if (
+          credentials.username === "director" &&
+          credentials.password === "passkey"
+        ) {
+          return {
+            id: "2",
+            name: "Director",
+            email: "director@example.com",
+            pantryId: "director",
+          };
         }
         return null;
       },
