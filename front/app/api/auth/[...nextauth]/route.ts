@@ -1,6 +1,11 @@
 import NextAuth, { type NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 
+const apiBase =
+  process.env.NEXT_PUBLIC_API_URL ||
+  process.env.API_URL ||
+  "http://localhost:8000";
+
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -12,28 +17,47 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.username || !credentials?.password) return null;
-        if (
-          credentials.username === "admin" &&
-          credentials.password === "password"
-        ) {
-          return {
-            id: "1",
-            name: "Admin",
-            email: "admin@example.com",
-            pantryId: credentials.username,
+
+        try {
+          const response = await fetch(`${apiBase}/auth/login`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              username: credentials.username,
+              password: credentials.password,
+            }),
+            cache: "no-store",
+          });
+
+          if (!response.ok) {
+            return null;
+          }
+
+          const data = (await response.json()) as {
+            ok?: boolean;
+            user?: {
+              id: string;
+              name: string;
+              email?: string | null;
+              pantryId: string;
+            };
           };
-        }else if (
-          credentials.username === "director" &&
-          credentials.password === "passkey"
-        ) {
+
+          if (!data.ok || !data.user) {
+            return null;
+          }
+
           return {
-            id: "2",
-            name: "Director",
-            email: "director@example.com",
-            pantryId: "director",
+            id: data.user.id,
+            name: data.user.name,
+            email: data.user.email ?? undefined,
+            pantryId: data.user.pantryId,
           };
+        } catch {
+          return null;
         }
-        return null;
       },
     }),
   ],

@@ -121,6 +121,35 @@ def get_all_pantries() -> list:
     finally:
         db.close()
 
+
+def get_pantry_credential_registry() -> list[dict]:
+    """List pantries with whether a login credential has been configured."""
+    db = SessionLocal()
+    try:
+        rows = (
+            db.query(Pantry, LoginCredentials)
+            .outerjoin(LoginCredentials, LoginCredentials.pantry_id == Pantry.id)
+            .order_by(Pantry.id.asc())
+            .all()
+        )
+        registry = []
+        for pantry, credentials in rows:
+            registry.append(
+                {
+                    "pantryId": str(pantry.id),
+                    "name": pantry.name,
+                    "location": pantry.location,
+                    "hasCredentials": credentials is not None,
+                }
+            )
+        print(f"✓ Loaded pantry credential registry for {len(registry)} pantries")
+        return registry
+    except Exception as e:
+        print(f"✗ Error loading pantry credential registry: {e}")
+        raise
+    finally:
+        db.close()
+
 def delete_all_data():
     """Delete all pantries and items (for testing purposes)"""
     db = SessionLocal()
@@ -272,6 +301,8 @@ def check_director_credentials(email: str, password_raw: str) -> bool:
     except Exception as e:
         print(f"✗ Error fetching login credentials: {e}")
         raise
+    finally:
+        db.close()
 def delete_director_credentials(email: str) -> bool:
     """Delete director credentials for a specific email"""
     # Similar implementation to delete_login_credentials but for DirectorCredentials model
