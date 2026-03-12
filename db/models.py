@@ -1,9 +1,10 @@
 """SQLAlchemy ORM models for pantry, inventory item, and run history tables."""
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
-from sqlalchemy import CheckConstraint, Column, DateTime, ForeignKey, Index, Integer, String
+from sqlalchemy import CheckConstraint, Column, DateTime, ForeignKey, Index, Integer, String, Boolean
 from sqlalchemy.orm import relationship
+from sqlalchemy.ext.hybrid import hybrid_property
 from database import Base
 from sqlalchemy.dialects.postgresql import JSONB
 
@@ -30,6 +31,23 @@ class Pantry(Base):
 
     def __repr__(self):
         return f"<Pantry(id={self.id}, name='{self.name}')>"
+
+
+class LoginCredentials(Base):
+    """Store authentication credentials for pantries."""
+    __tablename__ = "login_credentials"
+
+    id = Column(Integer, primary_key=True, index=True)
+    pantry_id = Column(Integer, ForeignKey("pantries.id", ondelete="CASCADE"), nullable=False, unique=True, index=True)
+    # Store hashed password
+    password_hash = Column(String(255), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<LoginCredentials(pantry_id={self.pantry_id})>"
+    
+
 
 
 class InventoryItem(Base):

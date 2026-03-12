@@ -1,7 +1,10 @@
 """Example usage of SQLAlchemy ORM for pantry inventory"""
+from datetime import datetime, timedelta
 from sqlalchemy import text
 from database import SessionLocal
-from models import Pantry, InventoryItem
+from models import Pantry, InventoryItem, LoginCredentials
+from password_utils import hash_password, verify_password
+
 
 
 def add_pantry(name: str, location: str = None) -> Pantry:
@@ -138,31 +141,93 @@ def delete_all_data():
         db.close()
 
 
+# === Credentials Functions ===
+
+def set_login_credentials(pantry_id: int, password_raw: str) -> LoginCredentials:
+    """Create or update login credentials for a pantry. 
+    Note: password_hash should be already hashed using bcrypt or similar before passing to this function.
+    """
+    db = SessionLocal()
+    try:
+        password_hash = hash_password(password_raw) 
+        # Check if credentials already exist for this pantry
+        credentials = db.query(LoginCredentials).filter(LoginCredentials.pantry_id == pantry_id).first()
+        
+        if credentials:
+            # Update existing credentials
+            credentials.password_hash = password_hash
+            print(f"✓ Updated login credentials for pantry ID: {pantry_id}")
+        else:
+            # Create new credentials
+            credentials = LoginCredentials(
+                pantry_id=pantry_id,
+                password_hash=password_hash
+            )
+            db.add(credentials)
+            print(f"✓ Created login credentials for pantry ID: {pantry_id}")
+        
+        db.commit()
+        db.refresh(credentials)
+        return credentials
+    except Exception as e:
+        db.rollback()
+        print(f"✗ Error setting login credentials: {e}")
+        raise
+    finally:
+        db.close()
+
+
+def check_credentials(pantry_id: int, password_raw: str) -> bool:
+    """Check if the provided password is correct for the given pantry ID"""
+    db = SessionLocal()
+    try:
+        credentials = db.query(LoginCredentials).filter(LoginCredentials.pantry_id == pantry_id).first()
+        if credentials:
+            print(f"✓ Found login credentials for pantry ID: {pantry_id}")
+            if verify_password(password_raw, credentials.password_hash):
+                print(f"✓ Password hash matches for pantry ID: {pantry_id}")
+                return True
+            else: 
+                print(f"✗ Password hash does NOT match for pantry ID: {pantry_id}")
+                return False
+        else:
+            print(f"✗ No login credentials found for pantry ID: {pantry_id}")
+            return False
+    except Exception as e:
+        print(f"✗ Error fetching login credentials: {e}")
+        raise
+    finally:
+        db.close()
+
+
+def delete_login_credentials(pantry_id: int) -> bool:
+    """Delete login credentials for a specific pantry"""
+    db = SessionLocal()
+    try:
+        credentials = db.query(LoginCredentials).filter(LoginCredentials.pantry_id == pantry_id).first()
+        if credentials:
+            db.delete(credentials)
+            db.commit()
+            print(f"✓ Deleted login credentials for pantry ID: {pantry_id}")
+            return True
+        else:
+            print(f"✗ No login credentials found for pantry ID: {pantry_id}")
+            return False
+    except Exception as e:
+        db.rollback()
+        print(f"✗ Error deleting login credentials: {e}")
+        raise
+    finally:
+        db.close()
+
+
+
+
 if __name__ == "__main__":
-    # Example usage
-    print("=== Pantry Inventory Management ===\n")
-    delete_all_data()  # Clear any existing data
-
-
-    # Add pantries
-    pantry1 = add_pantry("Kitchen Pantry", "Main Kitchen")
-    pantry2 = add_pantry("Storage Room", "Basement")
+    # Credentials demo
+    print("\n=== Manager Credentials Demo ===\n")
+    set_login_credentials(1, "hashed_password_example")
+    is_valid = check_credentials(1, "hashed_password_example")
+    print(f"✓ Credentials valid: {is_valid}")
+    delete_login_credentials(1)
     
-    # Add items
-    add_items(pantry1.id, "Rice", 10)
-    add_items(pantry1.id, "Flour", 5)
-    add_items(pantry2.id, "Canned Beans", 20)
-    
-    # Update statuses
-    update_status(1, 3)  # Rice down to 3 (low status)
-    update_status(2, 0)  # Flour out (out status)
-    
-    # Get all pantries
-    get_all_pantries()
-
-    # Get items in all pantries
-    for pantry in get_all_pantries():
-        get_pantry_items(pantry.id)
-    
-    # Get items in specific pantry
-    get_pantry_items(pantry1.id)
