@@ -47,7 +47,18 @@ class LoginCredentials(Base):
     def __repr__(self):
         return f"<LoginCredentials(pantry_id={self.pantry_id})>"
     
+class DirectorCredentials(Base):
+    """Store authentication credentials for directors."""
+    __tablename__ = "director_credentials"
 
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String(100), nullable=False, unique=True, index=True)
+    password_hash = Column(String(255), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<DirectorCredential(email='{self.email}')>"
 
 
 class InventoryItem(Base):

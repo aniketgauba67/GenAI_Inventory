@@ -2,7 +2,7 @@
 from datetime import datetime, timedelta
 from sqlalchemy import text
 from database import SessionLocal
-from models import Pantry, InventoryItem, LoginCredentials
+from models import Pantry, InventoryItem, LoginCredentials, DirectorCredentials
 from password_utils import hash_password, verify_password
 
 
@@ -145,7 +145,6 @@ def delete_all_data():
 
 def set_login_credentials(pantry_id: int, password_raw: str) -> LoginCredentials:
     """Create or update login credentials for a pantry. 
-    Note: password_hash should be already hashed using bcrypt or similar before passing to this function.
     """
     db = SessionLocal()
     try:
@@ -220,7 +219,79 @@ def delete_login_credentials(pantry_id: int) -> bool:
     finally:
         db.close()
 
-
+def set_director_credentials(email: str, password_raw: str):
+    """Create or update director credentials. Note: password_raw should be hashed before passing."""
+    # Similar implementation to set_login_credentials but for DirectorCredentials model
+    db = SessionLocal()
+    try:
+        password_hash = hash_password(password_raw) 
+        # Check if credentials already exist for this pantry
+        credentials = db.query(DirectorCredentials).filter(DirectorCredentials.email == email).first()
+        
+        if credentials:
+            # Update existing credentials
+            credentials.password_hash = password_hash
+            print(f"✓ Updated login credentials for director: {email}")
+        else:
+            # Create new credentials
+            credentials = DirectorCredentials(
+                email=email,
+                password_hash=password_hash
+            )
+            db.add(credentials)
+            print(f"✓ Created login credentials for director: {email}")
+        
+        db.commit()
+        db.refresh(credentials)
+        return credentials
+    
+    except Exception as e:
+        db.rollback()
+        print(f"✗ Error setting login credentials: {e}")
+        raise
+    finally:
+        db.close()
+        
+def check_director_credentials(email: str, password_raw: str) -> bool:
+    """Check if the provided password is correct for the given director email"""
+    # Similar implementation to check_credentials but for DirectorCredentials model
+    db = SessionLocal()
+    try:
+        credentials = db.query(DirectorCredentials).filter(DirectorCredentials.email == email).first()
+        if credentials:
+            print(f"✓ Found login credentials for director: {email}")
+            if verify_password(password_raw, credentials.password_hash):
+                print(f"✓ Password hash matches for director: {email}")
+                return True
+            else: 
+                print(f"✗ Password hash does NOT match for director: {email}")
+                return False
+        else:
+            print(f"✗ No login credentials found for director: {email}")
+            return False
+    except Exception as e:
+        print(f"✗ Error fetching login credentials: {e}")
+        raise
+def delete_director_credentials(email: str) -> bool:
+    """Delete director credentials for a specific email"""
+    # Similar implementation to delete_login_credentials but for DirectorCredentials model
+    db = SessionLocal()
+    try:
+        credentials = db.query(DirectorCredentials).filter(DirectorCredentials.email == email).first()
+        if credentials:
+            db.delete(credentials)
+            db.commit()
+            print(f"✓ Deleted login credentials for director: {email}")
+            return True
+        else:
+            print(f"✗ No login credentials found for director: {email}")
+            return False
+    except Exception as e:
+        db.rollback()
+        print(f"✗ Error deleting login credentials: {e}")
+        raise
+    finally:
+        db.close()
 
 
 if __name__ == "__main__":
@@ -230,4 +301,9 @@ if __name__ == "__main__":
     is_valid = check_credentials(1, "hashed_password_example")
     print(f"✓ Credentials valid: {is_valid}")
     delete_login_credentials(1)
-    
+
+    print("\n=== Director Credentials Demo ===\n")
+    set_director_credentials("director@example.com", "hashed_password_example")
+    is_valid = check_director_credentials("director@example.com", "hashed_password_example")
+    print(f"✓ Director credentials valid: {is_valid}")
+    delete_director_credentials("director@example.com")
