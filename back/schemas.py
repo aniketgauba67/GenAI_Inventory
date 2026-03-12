@@ -99,3 +99,54 @@ class PantryPasswordUpdateResponse(BaseModel):
     ok: bool
     message: str | None = None
     error: str | None = None
+
+
+class PantryCreateRequest(BaseModel):
+    """Payload used by the director dashboard to create a new pantry login."""
+
+    name: str = Field(min_length=1, description="Pantry name")
+    location: str | None = Field(default=None, description="Pantry location")
+    newPassword: str = Field(min_length=1, description="Initial pantry login password")
+
+
+class PantryCreateResponse(BaseModel):
+    """Result of creating a pantry and setting its first login credentials."""
+
+    ok: bool
+    pantry: PantryCredentialSummary | None = None
+    message: str | None = None
+    error: str | None = None
+
+
+class PantryManageUpdateRequest(BaseModel):
+    """Patch-like payload for editing pantry profile and/or rotating password.
+
+    Any blank/None field should be interpreted as "no change".
+    """
+
+    pantryId: str = Field(min_length=1, description="Numeric pantry identifier")
+    name: str | None = None
+    location: str | None = None
+    newPassword: str | None = None
+
+
+class PantryManageUpdateResponse(BaseModel):
+    """Result of an update to pantry profile/credentials."""
+
+    ok: bool
+    message: str | None = None
+    error: str | None = None
+
+
+class PantryCredentialDeleteRequest(BaseModel):
+    """Request payload for removing a pantry login credential record."""
+
+    pantryId: str = Field(min_length=1, description="Numeric pantry identifier")
+
+
+class PantryCredentialDeleteResponse(BaseModel):
+    """Result of removing pantry login credentials."""
+
+    ok: bool
+    message: str | None = None
+    error: str | None = None

@@ -11,9 +11,15 @@ try:
         AuthenticatedUser,
         DirectorPasswordUpdateRequest,
         DirectorPasswordUpdateResponse,
+        PantryCredentialDeleteRequest,
+        PantryCredentialDeleteResponse,
         LoginRequest,
         LoginResponse,
+        PantryCreateRequest,
+        PantryCreateResponse,
         PantryCredentialRegistryResponse,
+        PantryManageUpdateRequest,
+        PantryManageUpdateResponse,
         PantryPasswordUpdateRequest,
         PantryPasswordUpdateResponse,
     )
@@ -22,9 +28,15 @@ except ImportError:
         AuthenticatedUser,
         DirectorPasswordUpdateRequest,
         DirectorPasswordUpdateResponse,
+        PantryCredentialDeleteRequest,
+        PantryCredentialDeleteResponse,
         LoginRequest,
         LoginResponse,
+        PantryCreateRequest,
+        PantryCreateResponse,
         PantryCredentialRegistryResponse,
+        PantryManageUpdateRequest,
+        PantryManageUpdateResponse,
         PantryPasswordUpdateRequest,
         PantryPasswordUpdateResponse,
     )
@@ -128,6 +140,93 @@ def update_director_password(
 def list_pantry_credentials() -> PantryCredentialRegistryResponse:
     pantries = _get_crud_module().get_pantry_credential_registry()
     return PantryCredentialRegistryResponse(ok=True, pantries=pantries)
+
+
+@router.post("/pantry/create", response_model=PantryCreateResponse)
+def create_pantry_with_login(payload: PantryCreateRequest) -> PantryCreateResponse:
+    name = payload.name.strip()
+    location_raw = (payload.location or "").strip()
+    new_password = payload.newPassword.strip()
+
+    if not name or not new_password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Pantry name and password are required.",
+        )
+
+    location = location_raw or None
+    crud = _get_crud_module()
+    pantry = crud.add_pantry(name=name, location=location)
+    crud.set_login_credentials(pantry.id, new_password)
+
+    return PantryCreateResponse(
+        ok=True,
+        pantry={
+            "pantryId": str(pantry.id),
+            "name": pantry.name,
+            "location": pantry.location,
+            "hasCredentials": True,
+        },
+        message=f"Created pantry {pantry.id} and initial login.",
+    )
+
+
+@router.post("/pantry/manage", response_model=PantryManageUpdateResponse)
+def manage_pantry(payload: PantryManageUpdateRequest) -> PantryManageUpdateResponse:
+    pantry_id_raw = payload.pantryId.strip()
+    if not pantry_id_raw.isdigit():
+        return PantryManageUpdateResponse(ok=False, error="Pantry id must be numeric.")
+
+    pantry_id = int(pantry_id_raw)
+    name = (payload.name or "").strip()
+    location = (payload.location or "").strip()
+    new_password = (payload.newPassword or "").strip()
+
+    has_name_update = bool(name)
+    has_location_update = bool(location)
+    has_password_update = bool(new_password)
+    if not (has_name_update or has_location_update or has_password_update):
+        return PantryManageUpdateResponse(
+            ok=False,
+            error="No fields were provided. Fill at least one field to update.",
+        )
+
+    crud = _get_crud_module()
+    if has_name_update or has_location_update:
+        pantry = crud.update_pantry_metadata(
+            pantry_id=pantry_id,
+            name=name if has_name_update else None,
+            location=location if has_location_update else None,
+        )
+        if pantry is None:
+            return PantryManageUpdateResponse(ok=False, error="Pantry not found.")
+
+    if has_password_update:
+        crud.set_login_credentials(pantry_id, new_password)
+
+    return PantryManageUpdateResponse(ok=True, message=f"Updated pantry {pantry_id_raw}.")
+
+
+@router.post("/pantry/credentials/delete", response_model=PantryCredentialDeleteResponse)
+def delete_pantry_credentials(
+    payload: PantryCredentialDeleteRequest,
+) -> PantryCredentialDeleteResponse:
+    pantry_id_raw = payload.pantryId.strip()
+    if not pantry_id_raw.isdigit():
+        return PantryCredentialDeleteResponse(ok=False, error="Pantry id must be numeric.")
+
+    pantry_id = int(pantry_id_raw)
+    deleted = _get_crud_module().delete_login_credentials(pantry_id)
+    if deleted:
+        return PantryCredentialDeleteResponse(
+            ok=True,
+            message=f"Removed login credentials for pantry {pantry_id_raw}.",
+        )
+
+    return PantryCredentialDeleteResponse(
+        ok=True,
+        message=f"No login credentials existed for pantry {pantry_id_raw}.",
+    )
 
 
 @router.post("/pantry/password", response_model=PantryPasswordUpdateResponse)

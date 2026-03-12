@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 type DashboardLink = {
   label: string;
@@ -14,6 +14,12 @@ type PantryCredential = {
   name: string;
   location: string | null;
   hasCredentials: boolean;
+};
+
+type PantryManageDraft = {
+  name: string;
+  location: string;
+  newPassword: string;
 };
 
 type DashboardClientProps = {
@@ -30,12 +36,21 @@ export default function DashboardClient({
       ? (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000")
       : "";
   const [credentials, setCredentials] = useState<PantryCredential[]>([]);
-  const [rowDrafts, setRowDrafts] = useState<Record<string, string>>({});
+  const [rowDrafts, setRowDrafts] = useState<Record<string, PantryManageDraft>>({});
   const [rowNotice, setRowNotice] = useState<Record<string, string>>({});
   const [rowError, setRowError] = useState<Record<string, string>>({});
   const [savingRows, setSavingRows] = useState<Record<string, boolean>>({});
+  const [openRowMenu, setOpenRowMenu] = useState<string | null>(null);
   const [loadingCredentials, setLoadingCredentials] = useState(true);
   const [credentialsError, setCredentialsError] = useState<string | null>(null);
+
+  const [showCreatePantryForm, setShowCreatePantryForm] = useState(false);
+  const [newPantryName, setNewPantryName] = useState("");
+  const [newPantryLocation, setNewPantryLocation] = useState("");
+  const [newPantryPassword, setNewPantryPassword] = useState("");
+  const [createPantryNotice, setCreatePantryNotice] = useState<string | null>(null);
+  const [createPantryError, setCreatePantryError] = useState<string | null>(null);
+  const [creatingPantry, setCreatingPantry] = useState(false);
 
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [showOwnPasswordForm, setShowOwnPasswordForm] = useState(false);
@@ -44,75 +59,127 @@ export default function DashboardClient({
   const [ownPasswordError, setOwnPasswordError] = useState<string | null>(null);
   const [savingOwnPassword, setSavingOwnPassword] = useState(false);
 
-  const draftById = useMemo(() => {
-    const next: Record<string, string> = {};
-    credentials.forEach((cred) => {
-      next[cred.pantryId] = rowDrafts[cred.pantryId] ?? "";
-    });
-    return next;
-  }, [credentials, rowDrafts]);
+  async function loadCredentials() {
+    setLoadingCredentials(true);
+    setCredentialsError(null);
+
+    try {
+      const response = await fetch(`${apiBase}/auth/pantry-credentials`, {
+        cache: "no-store",
+      });
+      const data = (await response.json()) as {
+        ok?: boolean;
+        pantries?: PantryCredential[];
+        error?: string;
+      };
+
+      if (!response.ok || !data.ok || !data.pantries) {
+        setCredentialsError(data.error || "Failed to load pantry credentials.");
+        return;
+      }
+
+      setCredentials(data.pantries);
+    } catch (error) {
+      setCredentialsError(
+        error instanceof Error ? error.message : "Failed to load pantry credentials."
+      );
+    } finally {
+      setLoadingCredentials(false);
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
 
-    async function loadCredentials() {
-      setLoadingCredentials(true);
-      setCredentialsError(null);
-
-      try {
-        const response = await fetch(`${apiBase}/auth/pantry-credentials`, {
-          cache: "no-store",
-        });
-        const data = (await response.json()) as {
-          ok?: boolean;
-          pantries?: PantryCredential[];
-          error?: string;
-        };
-
-        if (!response.ok || !data.ok || !data.pantries) {
-          if (!cancelled) {
-            setCredentialsError(data.error || "Failed to load pantry credentials.");
-          }
-          return;
-        }
-
-        if (!cancelled) {
-          setCredentials(data.pantries);
-        }
-      } catch (error) {
-        if (!cancelled) {
-          setCredentialsError(
-            error instanceof Error ? error.message : "Failed to load pantry credentials."
-          );
-        }
-      } finally {
-        if (!cancelled) {
-          setLoadingCredentials(false);
-        }
-      }
-    }
-
-    void loadCredentials();
+    void (async () => {
+      await loadCredentials();
+    })();
 
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apiBase]);
 
-  function updateDraft(pantryIdValue: string, value: string) {
-    setRowDrafts((prev) => ({ ...prev, [pantryIdValue]: value }));
+  useEffect(() => {
+    if (!ownPasswordNotice) return;
+    const timeoutId = window.setTimeout(() => setOwnPasswordNotice(null), 2500);
+    return () => window.clearTimeout(timeoutId);
+  }, [ownPasswordNotice]);
+
+  useEffect(() => {
+    if (!createPantryNotice) return;
+    const timeoutId = window.setTimeout(() => setCreatePantryNotice(null), 2500);
+    return () => window.clearTimeout(timeoutId);
+  }, [createPantryNotice]);
+
+  useEffect(() => {
+    const timers: number[] = [];
+    Object.entries(rowNotice).forEach(([pantryIdValue, notice]) => {
+      if (!notice) return;
+      const id = window.setTimeout(() => {
+        setRowNotice((prev) => ({ ...prev, [pantryIdValue]: "" }));
+      }, 2500);
+      timers.push(id);
+    });
+
+    return () => {
+      timers.forEach((id) => window.clearTimeout(id));
+    };
+  }, [rowNotice]);
+
+  function ensureRowDraft(pantryIdValue: string) {
+    setRowDrafts((prev) => {
+      if (prev[pantryIdValue]) return prev;
+      return {
+        ...prev,
+        [pantryIdValue]: {
+          name: "",
+          location: "",
+          newPassword: "",
+        },
+      };
+    });
   }
 
-  async function saveRowPassword(pantryIdValue: string) {
-    const nextPassword = (draftById[pantryIdValue] ?? "").trim();
-    if (!nextPassword) {
+  function updateRowDraftField(
+    pantryIdValue: string,
+    field: keyof PantryManageDraft,
+    value: string
+  ) {
+    setRowDrafts((prev) => ({
+      ...prev,
+      [pantryIdValue]: {
+        name: prev[pantryIdValue]?.name ?? "",
+        location: prev[pantryIdValue]?.location ?? "",
+        newPassword: prev[pantryIdValue]?.newPassword ?? "",
+        [field]: value,
+      },
+    }));
+  }
+
+  function toggleRowMenu(pantryIdValue: string) {
+    ensureRowDraft(pantryIdValue);
+    setOpenRowMenu((prev) => (prev === pantryIdValue ? null : pantryIdValue));
+  }
+
+  async function saveRowUpdate(pantryIdValue: string) {
+    const draft = rowDrafts[pantryIdValue] ?? { name: "", location: "", newPassword: "" };
+    const payload = {
+      pantryId: pantryIdValue,
+      name: draft.name,
+      location: draft.location,
+      newPassword: draft.newPassword,
+    };
+
+    const hasAnyChange =
+      payload.name.trim().length > 0 ||
+      payload.location.trim().length > 0 ||
+      payload.newPassword.trim().length > 0;
+    if (!hasAnyChange) {
       setRowError((prev) => ({
         ...prev,
-        [pantryIdValue]: "Password cannot be empty.",
-      }));
-      setRowNotice((prev) => ({
-        ...prev,
-        [pantryIdValue]: "",
+        [pantryIdValue]: "Fill at least one field to update.",
       }));
       return;
     }
@@ -122,15 +189,12 @@ export default function DashboardClient({
     setRowNotice((prev) => ({ ...prev, [pantryIdValue]: "" }));
 
     try {
-      const response = await fetch(`${apiBase}/auth/pantry/password`, {
+      const response = await fetch(`${apiBase}/auth/pantry/manage`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          pantryId: pantryIdValue,
-          newPassword: nextPassword,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = (await response.json()) as {
@@ -142,28 +206,129 @@ export default function DashboardClient({
       if (!response.ok || !data.ok) {
         setRowError((prev) => ({
           ...prev,
-          [pantryIdValue]: data.error || "Failed to update pantry password.",
+          [pantryIdValue]: data.error || "Failed to update pantry information.",
         }));
         return;
       }
 
-      setCredentials((prev) =>
-        prev.map((cred) =>
-          cred.pantryId === pantryIdValue ? { ...cred, hasCredentials: true } : cred
-        )
-      );
-      setRowDrafts((prev) => ({ ...prev, [pantryIdValue]: "" }));
+      setRowDrafts((prev) => ({
+        ...prev,
+        [pantryIdValue]: { name: "", location: "", newPassword: "" },
+      }));
       setRowNotice((prev) => ({
         ...prev,
-        [pantryIdValue]: data.message || "Pantry password updated.",
+        [pantryIdValue]: data.message || "Pantry updated.",
       }));
+      setOpenRowMenu(null);
+      await loadCredentials();
     } catch (error) {
       setRowError((prev) => ({
         ...prev,
-        [pantryIdValue]: error instanceof Error ? error.message : "Failed to update pantry password.",
+        [pantryIdValue]:
+          error instanceof Error ? error.message : "Failed to update pantry information.",
       }));
     } finally {
       setSavingRows((prev) => ({ ...prev, [pantryIdValue]: false }));
+    }
+  }
+
+  async function deleteRowCredentials(pantryIdValue: string) {
+    setSavingRows((prev) => ({ ...prev, [pantryIdValue]: true }));
+    setRowError((prev) => ({ ...prev, [pantryIdValue]: "" }));
+    setRowNotice((prev) => ({ ...prev, [pantryIdValue]: "" }));
+
+    try {
+      const response = await fetch(`${apiBase}/auth/pantry/credentials/delete`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ pantryId: pantryIdValue }),
+      });
+
+      const data = (await response.json()) as {
+        ok?: boolean;
+        message?: string;
+        error?: string;
+      };
+
+      if (!response.ok || !data.ok) {
+        setRowError((prev) => ({
+          ...prev,
+          [pantryIdValue]: data.error || "Failed to remove pantry credentials.",
+        }));
+        return;
+      }
+
+      setRowNotice((prev) => ({
+        ...prev,
+        [pantryIdValue]: data.message || "Pantry credentials removed.",
+      }));
+      setOpenRowMenu(null);
+      await loadCredentials();
+    } catch (error) {
+      setRowError((prev) => ({
+        ...prev,
+        [pantryIdValue]:
+          error instanceof Error ? error.message : "Failed to remove pantry credentials.",
+      }));
+    } finally {
+      setSavingRows((prev) => ({ ...prev, [pantryIdValue]: false }));
+    }
+  }
+
+  async function createPantryLogin() {
+    const name = newPantryName.trim();
+    const password = newPantryPassword.trim();
+    const location = newPantryLocation.trim();
+
+    if (!name || !password) {
+      setCreatePantryError("Pantry name and password are required.");
+      setCreatePantryNotice(null);
+      return;
+    }
+
+    setCreatingPantry(true);
+    setCreatePantryError(null);
+    setCreatePantryNotice(null);
+
+    try {
+      const response = await fetch(`${apiBase}/auth/pantry/create`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name,
+          location,
+          newPassword: password,
+        }),
+      });
+
+      const data = (await response.json()) as {
+        ok?: boolean;
+        message?: string;
+        error?: string;
+        pantry?: { pantryId: string };
+      };
+
+      if (!response.ok || !data.ok) {
+        setCreatePantryError(data.error || "Failed to create pantry login.");
+        return;
+      }
+
+      setCreatePantryNotice(data.message || "Created pantry login.");
+      setNewPantryName("");
+      setNewPantryLocation("");
+      setNewPantryPassword("");
+      setShowCreatePantryForm(false);
+      await loadCredentials();
+    } catch (error) {
+      setCreatePantryError(
+        error instanceof Error ? error.message : "Failed to create pantry login."
+      );
+    } finally {
+      setCreatingPantry(false);
     }
   }
 
@@ -218,8 +383,8 @@ export default function DashboardClient({
   return (
     <main className="relative min-h-screen overflow-hidden bg-zinc-100 px-4 py-6 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100 sm:px-6 sm:py-10">
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-24 -left-24 h-72 w-72 rounded-full bg-cyan-200/30 blur-3xl dark:bg-cyan-500/10" />
-        <div className="absolute -right-24 bottom-0 h-72 w-72 rounded-full bg-emerald-200/40 blur-3xl dark:bg-emerald-500/10" />
+        <div className="absolute -top-24 -left-24 h-72 w-72 rounded-full bg-orange-200/30 blur-3xl dark:bg-orange-500/10" />
+        <div className="absolute -right-24 bottom-0 h-72 w-72 rounded-full bg-orange-200/40 blur-3xl dark:bg-orange-500/10" />
       </div>
 
       <div className="relative mx-auto grid w-full max-w-7xl gap-6 lg:grid-cols-[280px_1fr]">
@@ -324,6 +489,63 @@ export default function DashboardClient({
             </div>
           </div>
 
+          <div className="mb-4 rounded-2xl border border-zinc-200 bg-zinc-50/70 p-4 dark:border-zinc-800 dark:bg-zinc-900/60">
+            <button
+              type="button"
+              onClick={() => {
+                setShowCreatePantryForm((prev) => !prev);
+                setCreatePantryNotice(null);
+                setCreatePantryError(null);
+              }}
+              className="rounded-lg bg-zinc-900 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+            >
+              {showCreatePantryForm ? "Close" : "Create Pantry Login"}
+            </button>
+
+            {showCreatePantryForm && (
+              <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                <input
+                  value={newPantryName}
+                  onChange={(e) => setNewPantryName(e.target.value)}
+                  type="text"
+                  placeholder="Pantry name"
+                  className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-zinc-500 dark:focus:ring-zinc-800"
+                />
+                <input
+                  value={newPantryLocation}
+                  onChange={(e) => setNewPantryLocation(e.target.value)}
+                  type="text"
+                  placeholder="Location"
+                  className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-zinc-500 dark:focus:ring-zinc-800"
+                />
+                <input
+                  value={newPantryPassword}
+                  onChange={(e) => setNewPantryPassword(e.target.value)}
+                  type="password"
+                  placeholder="Initial password"
+                  className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-zinc-500 dark:focus:ring-zinc-800"
+                />
+                <button
+                  type="button"
+                  onClick={createPantryLogin}
+                  disabled={creatingPantry}
+                  className="sm:col-span-3 rounded-lg bg-zinc-900 px-3 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+                >
+                  {creatingPantry ? "Creating..." : "Create"}
+                </button>
+              </div>
+            )}
+
+            {createPantryError && (
+              <p className="mt-2 text-xs text-red-600 dark:text-red-400">{createPantryError}</p>
+            )}
+            {createPantryNotice && (
+              <p className="mt-2 text-xs text-emerald-700 dark:text-emerald-400">
+                {createPantryNotice}
+              </p>
+            )}
+          </div>
+
           {credentialsError && (
             <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300">
               {credentialsError}
@@ -344,7 +566,7 @@ export default function DashboardClient({
                     Credential Status
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-zinc-600 dark:text-zinc-300">
-                    Set New Password
+                    Manage
                   </th>
                 </tr>
               </thead>
@@ -378,21 +600,67 @@ export default function DashboardClient({
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex min-w-[240px] flex-col gap-2">
-                        <input
-                          value={draftById[cred.pantryId]}
-                          onChange={(e) => updateDraft(cred.pantryId, e.target.value)}
-                          type="password"
-                          placeholder="New password"
-                          className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-zinc-500 dark:focus:ring-zinc-800"
-                        />
                         <button
                           type="button"
-                          onClick={() => saveRowPassword(cred.pantryId)}
-                          disabled={savingRows[cred.pantryId]}
+                          onClick={() => toggleRowMenu(cred.pantryId)}
                           className="self-start rounded-lg bg-zinc-900 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
                         >
-                          {savingRows[cred.pantryId] ? "Saving..." : "Update"}
+                          {openRowMenu === cred.pantryId ? "Close" : "Manage"}
                         </button>
+
+                        {openRowMenu === cred.pantryId && (
+                          <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-800/60">
+                            <p className="mb-2 text-xs text-zinc-500 dark:text-zinc-400">
+                              Leave any field blank to keep its current value.
+                            </p>
+                            <div className="flex flex-col gap-2">
+                              <input
+                                value={rowDrafts[cred.pantryId]?.name ?? ""}
+                                onChange={(e) =>
+                                  updateRowDraftField(cred.pantryId, "name", e.target.value)
+                                }
+                                type="text"
+                                placeholder="New name"
+                                className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-zinc-500 dark:focus:ring-zinc-800"
+                              />
+                              <input
+                                value={rowDrafts[cred.pantryId]?.location ?? ""}
+                                onChange={(e) =>
+                                  updateRowDraftField(cred.pantryId, "location", e.target.value)
+                                }
+                                type="text"
+                                placeholder="New location"
+                                className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-zinc-500 dark:focus:ring-zinc-800"
+                              />
+                              <input
+                                value={rowDrafts[cred.pantryId]?.newPassword ?? ""}
+                                onChange={(e) =>
+                                  updateRowDraftField(cred.pantryId, "newPassword", e.target.value)
+                                }
+                                type="password"
+                                placeholder="New password"
+                                className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-zinc-500 dark:focus:ring-zinc-800"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => saveRowUpdate(cred.pantryId)}
+                                disabled={savingRows[cred.pantryId]}
+                                className="self-start rounded-lg bg-zinc-900 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-zinc-800 disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+                              >
+                                {savingRows[cred.pantryId] ? "Saving..." : "Update"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => deleteRowCredentials(cred.pantryId)}
+                                disabled={savingRows[cred.pantryId]}
+                                className="self-start rounded-lg border border-red-300 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-wide text-red-700 transition hover:bg-red-50 disabled:opacity-60 dark:border-red-800 dark:bg-zinc-900 dark:text-red-300 dark:hover:bg-red-950/30"
+                              >
+                                {savingRows[cred.pantryId] ? "Working..." : "Remove Login Credentials"}
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
                         {rowError[cred.pantryId] && (
                           <p className="text-xs text-red-600 dark:text-red-400">
                             {rowError[cred.pantryId]}

@@ -150,6 +150,39 @@ def get_pantry_credential_registry() -> list[dict]:
     finally:
         db.close()
 
+
+def update_pantry_metadata(
+    pantry_id: int,
+    name: str | None = None,
+    location: str | None = None,
+) -> Pantry | None:
+    """Update pantry name/location fields when provided.
+
+    Passing None for a field means "leave unchanged".
+    """
+    db = SessionLocal()
+    try:
+        pantry = db.query(Pantry).filter(Pantry.id == pantry_id).first()
+        if pantry is None:
+            print(f"✗ Pantry {pantry_id} not found")
+            return None
+
+        if name is not None:
+            pantry.name = name
+        if location is not None:
+            pantry.location = location
+
+        db.commit()
+        db.refresh(pantry)
+        print(f"✓ Updated pantry metadata for pantry ID: {pantry_id}")
+        return pantry
+    except Exception as e:
+        db.rollback()
+        print(f"✗ Error updating pantry metadata: {e}")
+        raise
+    finally:
+        db.close()
+
 def delete_all_data():
     """Delete all pantries and items (for testing purposes)"""
     db = SessionLocal()
