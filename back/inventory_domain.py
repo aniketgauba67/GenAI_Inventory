@@ -57,7 +57,7 @@ def compute_ratios_and_levels(
     detected_inventory: dict[str, Any] | None,
     previous_inventory: dict[str, Any] | None,
 ) -> tuple[dict[str, float], dict[str, str]]:
-    """Compute current-vs-previous ratios and High/Mid/Low levels."""
+    """Compute current-vs-previous ratios and High/Mid/Low/Out levels."""
     detected = normalize_inventory(detected_inventory)
     previous = normalize_inventory(previous_inventory)
     ratios: dict[str, float] = {}
@@ -73,7 +73,9 @@ def compute_ratios_and_levels(
             ratio = round(detected_value / previous_value, 4)
         ratios[category] = ratio
 
-        if ratio > 0.70:
+        if ratio == 0:
+            levels[category] = "Out"
+        elif ratio > 0.70:
             levels[category] = "High"
         elif ratio > 0.30:
             levels[category] = "Mid"
@@ -85,7 +87,7 @@ def compute_ratios_and_levels(
 
 def summarize_levels(levels: dict[str, str]) -> dict[str, int]:
     """Count how many categories fall into each level bucket."""
-    summary = {"High": 0, "Mid": 0, "Low": 0}
+    summary = {"High": 0, "Mid": 0, "Low": 0, "Out": 0}
     for level in levels.values():
         if level in summary:
             summary[level] += 1

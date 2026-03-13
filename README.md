@@ -158,11 +158,13 @@ curl -X POST http://localhost:8000/warehouse/inventory/snapshot \
   }'
 ```
 
-For local testing before the manager form parser is ready:
+Notes for order-form extraction:
+- Upload all pages of the same form in one request.
+- Backend parses each page and sums category totals across pages.
+- Extraction uses handwritten `Amount Shipped` values as-is (no unit-size/case multiplication).
 
-```bash
-python back/seed_warehouse_snapshot.py
-```
+Use your manager form extraction platform to send real warehouse totals to:
+`POST /warehouse/inventory/snapshot`.
 
 ## Volunteer Submit Endpoint
 
@@ -175,7 +177,8 @@ current pantry stock / latest warehouse import
 Thresholds:
 - `High` if ratio `> 0.70`
 - `Mid` if ratio `> 0.30` and `<= 0.70`
-- `Low` if ratio `<= 0.30`
+- `Out` if ratio `== 0`
+- `Low` if ratio `> 0` and `<= 0.30`
 
 Volunteer submit is stored in `inventory_runs` with:
 - `source = "volunteer-submit"`

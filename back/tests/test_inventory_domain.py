@@ -103,7 +103,7 @@ class TestInventoryDomain(unittest.TestCase):
         self.assertEqual(ratios["Cereal"], 1.0)
         self.assertEqual(levels["Cereal"], "High")
         self.assertEqual(ratios["Juices"], 0.0)
-        self.assertEqual(levels["Juices"], "Low")
+        self.assertEqual(levels["Juices"], "Out")
 
     def test_summarize_levels_counts_expected_values(self) -> None:
         summary = summarize_levels(
@@ -111,11 +111,11 @@ class TestInventoryDomain(unittest.TestCase):
                 "Cereal": "High",
                 "Juices": "Mid",
                 "Beverages": "Low",
-                "Breakfast": "Low",
+                "Breakfast": "Out",
             }
         )
 
-        self.assertEqual(summary, {"High": 1, "Mid": 1, "Low": 2})
+        self.assertEqual(summary, {"High": 1, "Mid": 1, "Low": 1, "Out": 1})
 
 
 if __name__ == "__main__":

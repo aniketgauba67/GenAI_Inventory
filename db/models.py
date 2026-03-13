@@ -88,6 +88,19 @@ class InventoryItem(Base):
     def __repr__(self):
         return f"<InventoryItem(id={self.id}, category_name='{self.category_name}', original_qty={self.original_quantity}, status='{self.status}')>"
 
+    def update_status(self, new_quantity: int):
+        """Set status from the latest current quantity without changing schema."""
+        self.updated_at = datetime.utcnow()
+
+        if new_quantity <= 0:
+            self.status = "out"
+        elif new_quantity < self.original_quantity * 0.25:
+            self.status = "critical"
+        elif new_quantity < self.original_quantity * 0.5:
+            self.status = "low"
+        else:
+            self.status = "normal"
+
  
 
 class InventoryRun(Base):

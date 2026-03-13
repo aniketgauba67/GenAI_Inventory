@@ -42,7 +42,7 @@ if str(DB_DIR) not in sys.path:
     sys.path.insert(0, str(DB_DIR))
 
 from database import Base, SessionLocal, engine  # noqa: E402
-from models import InventoryRun, Pantry  # noqa: E402
+from models import InventoryItem, InventoryRun, Pantry  # noqa: E402
 
 router = APIRouter(tags=["volunteer-inventory"])
 
@@ -84,6 +84,35 @@ def _load_latest_run_by_source(db, pantry_identifier: str, source: str) -> Inven
     )
 
 
+def _upsert_pantry_inventory_items(db, pantry_id: int, baseline_inventory: dict[str, int], current_inventory: dict[str, int] | None = None) -> None:
+    """Keep `inventory_items` in sync with warehouse baseline and latest pantry status.
+
+    - `baseline_inventory` is written to `original_quantity`.
+    - If `current_inventory` is provided, `status` is updated from that current stock.
+    """
+    for category in INVENTORY_CATEGORIES:
+        baseline_qty = int(baseline_inventory.get(category, 0))
+        current_qty = baseline_qty if current_inventory is None else int(current_inventory.get(category, 0))
+
+        item = (
+            db.query(InventoryItem)
+            .filter(InventoryItem.pantry_id == pantry_id, InventoryItem.category_name == category)
+            .first()
+        )
+        if item is None:
+            item = InventoryItem(
+                pantry_id=pantry_id,
+                category_name=category,
+                original_quantity=baseline_qty,
+                status="normal",
+            )
+            db.add(item)
+        else:
+            item.original_quantity = baseline_qty
+
+        item.update_status(current_qty)
+
+
 @router.post("/warehouse/inventory/snapshot")
 def store_warehouse_inventory_snapshot(payload: WarehouseInventorySnapshotRequest):
     """Store the latest parsed warehouse form totals as a unified inventory run."""
@@ -101,6 +130,9 @@ def store_warehouse_inventory_snapshot(payload: WarehouseInventorySnapshotReques
         pantry = resolve_pantry(db, Pantry, payload.pantryId)
         if pantry is None:
             return {"ok": False, "error": "Pantry not found"}
+
+        _upsert_pantry_inventory_items(db, pantry.id, normalized_inventory)
+        db.commit()
 
         run_record = {
             "pk": str(uuid4()),
@@ -159,6 +191,9 @@ def submit_inventory(payload: VolunteerInventorySubmitRequest):
 
         # Warehouse inventory is the comparison baseline: current pantry stock / latest warehouse import.
         warehouse_inventory = normalize_inventory(warehouse_run.inventory)
+        _upsert_pantry_inventory_items(db, pantry.id, warehouse_inventory, normalized_inventory)
+        db.commit()
+
         ratios, levels = compute_ratios_and_levels(normalized_inventory, warehouse_inventory)
         summary_counts = summarize_levels(levels)
 

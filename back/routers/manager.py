@@ -28,6 +28,14 @@ log = logging.getLogger(__name__)
 router = APIRouter(prefix="/manager", tags=["manager"])
 
 
+def _sum_inventory_maps(acc: dict[str, int], incoming: dict[str, int] | None) -> dict[str, int]:
+    """Add one page-level inventory map into the running total."""
+    page_values = normalize_inventory(incoming)
+    for category in INVENTORY_CATEGORIES:
+        acc[category] += int(page_values.get(category, 0))
+    return acc
+
+
 @router.post("/order-form")
 async def upload_order_form(
     files: list[UploadFile] = File(..., description="Order form image(s)"),
@@ -36,7 +44,9 @@ async def upload_order_form(
         log.warning("Order form upload called with no files")
         return {"ok": False, "error": "No files provided"}
     results = []
-    inventory = None
+    # Aggregate totals across all uploaded pages.
+    inventory_totals = {category: 0 for category in INVENTORY_CATEGORIES}
+    page_inventories: list[dict[str, int]] = []
     for f in files:
         content_type = f.content_type or ""
         if not content_type.startswith("image/"):
@@ -44,8 +54,11 @@ async def upload_order_form(
             continue
         body = await f.read()
         log.info("Order form received: %s (%s bytes)", f.filename, len(body))
-        if inventory is None:
-            inventory = call_gemini_order_form(body, content_type)
+        page_inventory = call_gemini_order_form(body, content_type)
+        if page_inventory is not None:
+            normalized_page = normalize_inventory(page_inventory)
+            page_inventories.append(normalized_page)
+            _sum_inventory_maps(inventory_totals, normalized_page)
         results.append({
             "filename": f.filename,
             "content_type": content_type,
@@ -53,8 +66,10 @@ async def upload_order_form(
             "ok": True,
         })
     out = {"ok": True, "count": len(results), "files": results}
-    if inventory is not None:
-        out["inventory"] = inventory
+    # Return aggregated totals so manager review starts from the combined baseline.
+    out["inventory"] = inventory_totals
+    if page_inventories:
+        out["pageInventories"] = page_inventories
     return out
 
 

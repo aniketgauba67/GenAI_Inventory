@@ -15,13 +15,17 @@ Rules:
 - Include every category in your response; use 0 if nothing in the image belongs to that category.
 - Do not add or use any category other than the 19 listed above."""
 
-ORDER_FORM_PROMPT = """This image is a photo of an order form with a table.
-The goal is to extract the 'Amount Shipped' quantity for each item and map it to a category.
+ORDER_FORM_PROMPT = """This image is one PAGE of a warehouse order form with a table.
+Your task is OCR + mapping for THIS PAGE ONLY.
+Return category totals from the handwritten 'Amount Shipped' column on this page.
 
 IMPORTANT:
 - The 'Amount Shipped' column contains HANDWRITTEN numbers. Look specifically for handwritten digits in the column labeled "Amount Shipped" (usually the 2nd to last column).
 - Do not confuse 'Amount Ordered' (printed or handwritten) with 'Amount Shipped'. Use the 'Amount Shipped' column.
 - If 'Amount Shipped' is empty, assume 0.
+- Use the handwritten shipped number as-is.
+- DO NOT multiply by case size, unit size, pack count, or any conversion factor.
+- If unsure between two digits, prefer the most conservative plausible integer from the handwriting.
 
 Mapping Rules:
 - Map each row's "Product Description" to exactly one of these categories: Beverages, Juices, Cereal, Breakfast, Meat, Fish, Poultry, Frozen, Vegetables, Fruits, Nuts, Soup, Grains, Pasta, Snacks, Spices, Sauces, Condiments, Misc Products.
@@ -39,8 +43,7 @@ Mapping Rules:
 
 Quantity Rules:
 - Extract the HANDWRITTEN 'Amount Shipped' value.
-- If the Unit Size is "Case", "Boxes", or similar bulk unit, try to convert to individual items if the count implies cases (e.g. 2 cases of 24 = 48). If uncertain, just output the raw handwritten number.
-- Output exactly one integer per category (sum of all items in that category).
+- Output exactly one integer per category (sum of this page only).
 - Use 0 for any category not found on the form. No decimals."""
 
 
