@@ -31,7 +31,14 @@ export default function Home() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-zinc-900">
-      <main className="flex flex-col items-center gap-8 px-6 w-full max-w-xs">
+      <main className="flex flex-col items-center gap-8 px-6 py-10 w-full max-w-sm">
+        <div className="text-center">
+          <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100">Pantry Inventory</h1>
+          <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+            Choose your role to continue.
+          </p>
+        </div>
+
         {status === "loading" && (
           <p className="text-sm text-zinc-500">Loading…</p>
         )}

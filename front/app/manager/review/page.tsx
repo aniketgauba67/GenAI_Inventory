@@ -81,6 +81,11 @@ export default function ManagerReviewPage() {
     }));
   }, [inventory]);
 
+  const totalBaseline = useMemo(
+    () => rows.reduce((sum, row) => sum + Number(row.quantity || 0), 0),
+    [rows]
+  );
+
   function updateQuantity(category: string, value: string) {
     const quantity = Number(value);
     if (Number.isNaN(quantity)) return;
@@ -160,6 +165,9 @@ export default function ManagerReviewPage() {
                   Image(s) processed: {draftMeta.files.length}
                 </p>
               )}
+              <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+                Total baseline items: {totalBaseline}
+              </p>
             </div>
 
             <section className="rounded-xl bg-white dark:bg-zinc-800 p-4">
@@ -213,7 +221,7 @@ export default function ManagerReviewPage() {
                   disabled={submitting}
                   className="w-full rounded-xl bg-emerald-600 py-3 text-sm font-medium text-white transition hover:bg-emerald-500 disabled:opacity-50 dark:bg-emerald-500 dark:hover:bg-emerald-400"
                 >
-                  {submitting ? "Saving..." : "Confirm & Save Baseline"}
+                  {submitting ? "Saving baseline..." : "Confirm and save baseline"}
                 </button>
                 <Link
                   href="/manager"

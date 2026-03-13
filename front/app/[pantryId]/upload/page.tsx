@@ -152,6 +152,10 @@ export default function UploadPage() {
       </header>
 
       <main className="px-4 pt-6 max-w-lg mx-auto">
+        <section className="mb-4 rounded-xl bg-white p-4 text-sm text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+          <p className="font-medium text-zinc-900 dark:text-zinc-100">Volunteer flow</p>
+          <p className="mt-1">1. Upload shelf photo(s) 2. Review detected counts 3. Submit inventory levels</p>
+        </section>
         <label
           onDrop={onDrop}
           onDragOver={onDragOver}
@@ -218,10 +222,10 @@ export default function UploadPage() {
             <button
               type="button"
               onClick={handleSendToBackend}
-              disabled={uploading}
+              disabled={uploading || files.length === 0}
               className="mt-4 w-full rounded-xl bg-zinc-900 py-3 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:opacity-50 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
             >
-              {uploading ? "Sending…" : "Send to server"}
+              {uploading ? "Detecting inventory…" : "Detect inventory"}
             </button>
             {uploadResult && (
               <div className="mt-3 space-y-1">

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type DashboardLink = {
   label: string;
@@ -43,6 +43,8 @@ export default function DashboardClient({
   const [openRowMenu, setOpenRowMenu] = useState<string | null>(null);
   const [loadingCredentials, setLoadingCredentials] = useState(true);
   const [credentialsError, setCredentialsError] = useState<string | null>(null);
+  const [credentialQuery, setCredentialQuery] = useState("");
+  const [credentialFilter, setCredentialFilter] = useState<"all" | "configured" | "missing">("all");
 
   const [showCreatePantryForm, setShowCreatePantryForm] = useState(false);
   const [newPantryName, setNewPantryName] = useState("");
@@ -89,17 +91,36 @@ export default function DashboardClient({
   }
 
   useEffect(() => {
-    let cancelled = false;
-
     void (async () => {
       await loadCredentials();
     })();
 
-    return () => {
-      cancelled = true;
-    };
+    return undefined;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apiBase]);
+
+  const configuredCount = useMemo(
+    () => credentials.filter((cred) => cred.hasCredentials).length,
+    [credentials]
+  );
+
+  const missingCount = Math.max(credentials.length - configuredCount, 0);
+
+  const filteredCredentials = useMemo(() => {
+    return credentials
+      .filter((cred) => {
+        if (credentialFilter === "configured" && !cred.hasCredentials) return false;
+        if (credentialFilter === "missing" && cred.hasCredentials) return false;
+        if (!credentialQuery.trim()) return true;
+        const q = credentialQuery.toLowerCase();
+        return (
+          cred.pantryId.toLowerCase().includes(q) ||
+          cred.name.toLowerCase().includes(q) ||
+          (cred.location ?? "").toLowerCase().includes(q)
+        );
+      })
+      .sort((a, b) => a.pantryId.localeCompare(b.pantryId));
+  }, [credentials, credentialFilter, credentialQuery]);
 
   useEffect(() => {
     if (!ownPasswordNotice) return;
@@ -485,7 +506,22 @@ export default function DashboardClient({
               </p>
             </div>
             <div className="rounded-xl bg-zinc-900 px-3 py-2 text-xs font-medium text-white dark:bg-zinc-100 dark:text-zinc-900">
-              {loadingCredentials ? "Loading..." : `${credentials.length} pantry accounts`}
+              {loadingCredentials ? "Loading..." : `${filteredCredentials.length} shown / ${credentials.length} total`}
+            </div>
+          </div>
+
+          <div className="mb-4 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+              <p className="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Total Pantries</p>
+              <p className="mt-1 text-2xl font-semibold text-zinc-900 dark:text-zinc-100">{credentials.length}</p>
+            </div>
+            <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+              <p className="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Configured</p>
+              <p className="mt-1 text-2xl font-semibold text-emerald-600 dark:text-emerald-400">{configuredCount}</p>
+            </div>
+            <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+              <p className="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Missing Login</p>
+              <p className="mt-1 text-2xl font-semibold text-amber-600 dark:text-amber-400">{missingCount}</p>
             </div>
           </div>
 
@@ -546,6 +582,40 @@ export default function DashboardClient({
             )}
           </div>
 
+          <div className="mb-4 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <input
+                value={credentialQuery}
+                onChange={(e) => setCredentialQuery(e.target.value)}
+                placeholder="Search pantry ID, name, location..."
+                className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-zinc-500 dark:focus:ring-zinc-800 sm:max-w-md"
+              />
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setCredentialFilter("all")}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${credentialFilter === "all" ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900" : "bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200"}`}
+                >
+                  All
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCredentialFilter("configured")}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${credentialFilter === "configured" ? "bg-emerald-600 text-white dark:bg-emerald-500" : "bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200"}`}
+                >
+                  Configured
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCredentialFilter("missing")}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${credentialFilter === "missing" ? "bg-amber-500 text-white dark:bg-amber-500" : "bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200"}`}
+                >
+                  Missing
+                </button>
+              </div>
+            </div>
+          </div>
+
           {credentialsError && (
             <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300">
               {credentialsError}
@@ -571,17 +641,17 @@ export default function DashboardClient({
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-200 bg-white dark:divide-zinc-800 dark:bg-zinc-900">
-                {!loadingCredentials && credentials.length === 0 && (
+                {!loadingCredentials && filteredCredentials.length === 0 && (
                   <tr>
                     <td
                       colSpan={4}
                       className="px-4 py-6 text-center text-sm text-zinc-500 dark:text-zinc-400"
                     >
-                      No pantries found in the database.
+                      No pantry rows match your current search/filter.
                     </td>
                   </tr>
                 )}
-                {credentials.map((cred) => (
+                {filteredCredentials.map((cred) => (
                   <tr
                     key={cred.pantryId}
                     className="align-top transition hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
@@ -596,7 +666,15 @@ export default function DashboardClient({
                       </div>
                     </td>
                     <td className="px-4 py-3 text-sm text-zinc-700 dark:text-zinc-300">
-                      {cred.hasCredentials ? "Configured" : "Not configured"}
+                      <span
+                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
+                          cred.hasCredentials
+                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200"
+                            : "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-200"
+                        }`}
+                      >
+                        {cred.hasCredentials ? "Configured" : "Missing"}
+                      </span>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex min-w-[240px] flex-col gap-2">

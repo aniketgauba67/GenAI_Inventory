@@ -67,6 +67,12 @@ export default function ManagerViewPage() {
       </header>
 
       <main className="mx-auto max-w-lg px-4 py-8">
+        <section className="mb-4 rounded-xl bg-white p-4 text-sm text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+          <p className="font-medium text-zinc-900 dark:text-zinc-100">Manager flow</p>
+          <p className="mt-1">
+            Upload warehouse order form pages, review extracted category totals, then save as pantry baseline.
+          </p>
+        </section>
         <input
           ref={inputRef}
           type="file"
@@ -83,7 +89,7 @@ export default function ManagerViewPage() {
           disabled={uploading}
           className="w-full rounded-xl border-2 border-dashed border-zinc-300 bg-white py-8 text-base font-medium text-zinc-700 transition hover:border-zinc-400 hover:bg-zinc-50 disabled:opacity-60 dark:border-zinc-600 dark:bg-zinc-800/50 dark:text-zinc-200 dark:hover:border-zinc-500 dark:hover:bg-zinc-800"
         >
-          {uploading ? "Reading order form…" : "Upload an order form"}
+          {uploading ? "Extracting from form…" : "Upload order form pages"}
         </button>
         {error && (
           <p className="mt-4 text-sm text-red-600 dark:text-red-400">{error}</p>

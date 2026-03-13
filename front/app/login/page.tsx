@@ -2,10 +2,9 @@
 
 import { signIn } from "next-auth/react";
 import { FormEvent, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 export default function LoginPage() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -59,6 +58,9 @@ export default function LoginPage() {
         </h1>
         <p className="mb-8 text-center text-sm text-zinc-500 dark:text-zinc-400">
           Enter your credentials to access your inventory management.
+        </p>
+        <p className="mb-6 text-center text-xs text-zinc-500 dark:text-zinc-400">
+          Use your pantry ID and password provided by your team.
         </p>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">

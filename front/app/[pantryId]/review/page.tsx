@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import InventoryTable from "../../../components/inventory/InventoryTable";
+import SummaryCards from "../../../components/inventory/SummaryCards";
 
 type InventoryRecord = Record<string, number>;
 
@@ -87,6 +89,11 @@ export default function ReviewPage() {
     }));
   }, [inventory]);
 
+  const totalDetected = useMemo(
+    () => rows.reduce((sum, row) => sum + Number(row.quantity || 0), 0),
+    [rows]
+  );
+
   function updateQuantity(category: string, value: string) {
     const quantity = Number(value);
     if (Number.isNaN(quantity)) return;
@@ -158,6 +165,7 @@ export default function ReviewPage() {
               {draftMeta?.files && draftMeta.files.length > 0 && (
                 <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">Photos processed: {draftMeta.files.length}</p>
               )}
+              <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">Total detected items: {totalDetected}</p>
             </div>
 
             <section className="rounded-xl bg-white dark:bg-zinc-800 p-4">
@@ -215,19 +223,17 @@ export default function ReviewPage() {
 
               {submitResult?.ok && submitResult.ratios && submitResult.levels && (
                 <div className="rounded-lg bg-blue-100 dark:bg-blue-900/40 p-3 text-sm text-blue-900 dark:text-blue-100">
-                  <p className="font-medium">Current inventory levels</p>
+                  <p className="font-medium">Current inventory dashboard</p>
                   <p className="mt-1 text-sm text-blue-800 dark:text-blue-200">
-                    Submission saved. The levels below show the current inventory status for each category.
+                    Submission saved. Use this dashboard to quickly scan category status.
                   </p>
-                  <div className="mt-3 space-y-2">
-                    {orderedCategories.map((category) => (
-                      <div key={category} className="flex items-center justify-between gap-4 border-b border-blue-200/60 pb-1 last:border-b-0 dark:border-blue-700/40">
-                        <span>{category}</span>
-                        <span className="text-right">
-                          Ratio: {Number(submitResult.ratios?.[category] ?? 0).toFixed(2)} | Level: {submitResult.levels?.[category] ?? "-"}
-                        </span>
-                      </div>
-                    ))}
+                  <div className="mt-3 space-y-3">
+                    <SummaryCards levels={submitResult.levels} ratios={submitResult.ratios} />
+                    <InventoryTable
+                      categories={orderedCategories}
+                      levels={submitResult.levels}
+                      ratios={submitResult.ratios}
+                    />
                   </div>
                 </div>
               )}
