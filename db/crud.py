@@ -360,14 +360,7 @@ def delete_director_credentials(email: str) -> bool:
 
 if __name__ == "__main__":
     # Credentials demo
-    print("\n=== Manager Credentials Demo ===\n")
-    set_login_credentials(1, "hashed_password_example")
-    is_valid = check_credentials(1, "hashed_password_example")
-    print(f"✓ Credentials valid: {is_valid}")
-    delete_login_credentials(1)
+    get_all_pantries()
 
-    print("\n=== Director Credentials Demo ===\n")
-    set_director_credentials("director@example.com", "hashed_password_example")
-    is_valid = check_director_credentials("director@example.com", "hashed_password_example")
-    print(f"✓ Director credentials valid: {is_valid}")
-    delete_director_credentials("director@example.com")
+    check_director_credentials("director@example.com", "password123")  # Should be False
+    get_pantry_items(1)  # Should show items for pantry 1
