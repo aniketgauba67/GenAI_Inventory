@@ -2,12 +2,24 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import AppShell from "../../../components/layout/AppShell";
+import Card from "../../../components/ui/Card";
+import Button from "../../../components/ui/Button";
+import Alert from "../../../components/ui/Alert";
+import SectionHeader from "../../../components/ui/SectionHeader";
+import FlowStepper from "../../../components/workflow/FlowStepper";
+import CategoryGroupEditor from "../../../components/workflow/CategoryGroupEditor";
+import StickyActionBar from "../../../components/workflow/StickyActionBar";
+import EmptyState from "../../../components/ui/EmptyState";
+import Skeleton from "../../../components/ui/Skeleton";
+import { useToast } from "../../../components/ui/Toast";
 
 type InventoryRecord = Record<string, number>;
 
 type DraftData = {
+  pantryId?: string;
   inventory: InventoryRecord;
   files?: { filename?: string; size_bytes?: number }[];
   createdAt?: string;
@@ -38,10 +50,13 @@ const orderedCategories = [
 ];
 
 export default function ManagerReviewPage() {
+  const { showToast } = useToast();
   const { data: session, status } = useSession();
   const router = useRouter();
+  const sessionPantryId = (session?.user as { pantryId?: string } | undefined)?.pantryId;
 
   const [inventory, setInventory] = useState<InventoryRecord | null>(null);
+  const [targetPantryId, setTargetPantryId] = useState<string>("");
   const [draftMeta, setDraftMeta] = useState<DraftData | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -59,19 +74,29 @@ export default function ManagerReviewPage() {
       const raw = typeof window !== "undefined" ? window.sessionStorage.getItem(STORAGE_KEY) : null;
       if (!raw) {
         setLoadError("No order form draft found. Upload an order form first.");
+        showToast("No order form draft found.", "error");
         return;
       }
       const draft: DraftData = JSON.parse(raw);
       if (!draft.inventory) {
         setLoadError("Invalid draft data.");
+        showToast("Invalid order form draft data.", "error");
         return;
       }
+      const resolvedPantryId = draft.pantryId || sessionPantryId || "";
+      if (!resolvedPantryId) {
+        setLoadError("No target pantry selected.");
+        showToast("No target pantry selected.", "error");
+        return;
+      }
+      setTargetPantryId(resolvedPantryId);
       setInventory(draft.inventory);
       setDraftMeta(draft);
     } catch {
       setLoadError("Could not load draft.");
+      showToast("Could not load order form draft.", "error");
     }
-  }, [status]);
+  }, [sessionPantryId, showToast, status]);
 
   const rows = useMemo(() => {
     if (!inventory) return [];
@@ -94,8 +119,7 @@ export default function ManagerReviewPage() {
 
   async function submitBaseline() {
     if (!inventory) return;
-    const pantryId = (session?.user as { pantryId?: string } | undefined)?.pantryId;
-    if (!pantryId) {
+    if (!targetPantryId) {
       setSubmitError("Pantry ID missing from session.");
       return;
     }
@@ -104,7 +128,7 @@ export default function ManagerReviewPage() {
     setSubmitError(null);
 
     try {
-      const res = await fetch(`${apiBase}/manager/inventory/${pantryId}`, {
+      const res = await fetch(`${apiBase}/manager/inventory/${targetPantryId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ inventory }),
@@ -115,12 +139,15 @@ export default function ManagerReviewPage() {
         if (typeof window !== "undefined") {
           window.sessionStorage.removeItem(STORAGE_KEY);
         }
+        showToast("Baseline inventory saved.", "success");
         router.push("/manager");
       } else {
         setSubmitError(data.error || "Failed to update baseline inventory.");
+        showToast(data.error || "Failed to update baseline inventory.", "error");
       }
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : "Network error");
+      showToast("Network error while saving baseline inventory.", "error");
     } finally {
       setSubmitting(false);
     }
@@ -131,31 +158,40 @@ export default function ManagerReviewPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-100 dark:bg-zinc-900 pb-8">
-      <header className="sticky top-0 z-10 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-sm border-b border-zinc-200 dark:border-zinc-700 px-4 pt-6 pb-4">
-        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">
-          Review order form
-        </h1>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          Edit extracted quantities, then confirm to set baseline (total available stock).
-        </p>
-      </header>
-
-      <main className="px-4 pt-6 max-w-2xl mx-auto space-y-4">
+    <AppShell
+      title="Manager Review"
+      subtitle={`Review extracted order-form counts and save baseline inventory for pantry ${targetPantryId || "-"}`}
+      rightAction={<Button variant="ghost" size="sm" onClick={() => signOut({ callbackUrl: "/" })}>Switch account</Button>}
+      links={[
+        { label: "Home", href: "/" },
+        { label: "Upload", href: "/manager" },
+      ]}
+    >
+      <div className="mx-auto max-w-3xl space-y-4 pb-24">
+        <Card>
+          <FlowStepper steps={["Upload", "Review", "Save Baseline"]} currentStep={1} />
+        </Card>
         {loadError && (
-          <div className="rounded-xl bg-white dark:bg-zinc-800 p-4 text-sm text-red-600 dark:text-red-300">
+          <Alert tone="error">
             {loadError}
             <div className="mt-3">
               <Link href="/manager" className="text-blue-600 dark:text-blue-400 underline">
                 Back to Manager
               </Link>
             </div>
-          </div>
+          </Alert>
+        )}
+        {!loadError && !inventory && (
+          <Card>
+            <Skeleton className="h-5 w-40" />
+            <Skeleton className="mt-3 h-4 w-full" />
+            <Skeleton className="mt-2 h-4 w-5/6" />
+          </Card>
         )}
 
         {inventory && (
           <>
-            <div className="rounded-xl bg-white dark:bg-zinc-800 p-4 text-sm text-zinc-600 dark:text-zinc-300">
+            <Card className="text-sm text-zinc-600 dark:text-zinc-300">
               <p className="font-medium text-zinc-900 dark:text-zinc-100">Extracted counts</p>
               <p className="mt-1">
                 These counts were extracted from the order form image. Review and edit if needed.
@@ -168,61 +204,27 @@ export default function ManagerReviewPage() {
               <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
                 Total baseline items: {totalBaseline}
               </p>
-            </div>
+            </Card>
 
-            <section className="rounded-xl bg-white dark:bg-zinc-800 p-4">
-              <div className="mb-4">
-                <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                  Editable baseline quantities
-                </h2>
-                <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
-                  Update any category before saving as baseline.
-                </p>
-              </div>
-              <ul className="space-y-3">
-                {rows.map(({ category, quantity }) => (
-                  <li key={category} className="flex items-center justify-between gap-3">
-                    <label htmlFor={`mgr-${category}`} className="text-sm text-zinc-700 dark:text-zinc-200">
-                      {category}
-                    </label>
-                    <input
-                      id={`mgr-${category}`}
-                      type="number"
-                      min={0}
-                      value={quantity}
-                      onChange={(e) => updateQuantity(category, e.target.value)}
-                      className="w-28 rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-100"
-                    />
-                  </li>
-                ))}
-              </ul>
-            </section>
+            <Card>
+              <SectionHeader
+                title="Editable baseline quantities"
+                subtitle="Update any category before saving as baseline."
+              />
+              <CategoryGroupEditor values={inventory} onChange={updateQuantity} inputPrefix="mgr" />
+            </Card>
 
-            <section className="rounded-xl bg-white dark:bg-zinc-800 p-4 space-y-4">
-              <div>
-                <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                  Save Baseline Inventory
-                </h2>
-                <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
-                  This will update the total available stock for your pantry.
-                </p>
-              </div>
+            <Card className="space-y-4">
+              <SectionHeader
+                title="Save Baseline Inventory"
+                subtitle="This will update the total available stock for your pantry."
+              />
 
               {submitError && (
-                <div className="rounded-lg bg-red-100 dark:bg-red-900/40 p-3 text-sm text-red-700 dark:text-red-200">
-                  {submitError}
-                </div>
+                <Alert tone="error">{submitError}</Alert>
               )}
 
               <div className="flex flex-col gap-3">
-                <button
-                  type="button"
-                  onClick={submitBaseline}
-                  disabled={submitting}
-                  className="w-full rounded-xl bg-emerald-600 py-3 text-sm font-medium text-white transition hover:bg-emerald-500 disabled:opacity-50 dark:bg-emerald-500 dark:hover:bg-emerald-400"
-                >
-                  {submitting ? "Saving baseline..." : "Confirm and save baseline"}
-                </button>
                 <Link
                   href="/manager"
                   className="block w-full rounded-xl bg-zinc-200 dark:bg-zinc-700 py-3 text-center text-sm font-medium text-zinc-800 dark:text-zinc-200 transition hover:bg-zinc-300 dark:hover:bg-zinc-600"
@@ -235,11 +237,44 @@ export default function ManagerReviewPage() {
                 >
                   Go back to main
                 </Link>
+                <Button
+                  type="button"
+                  onClick={() => signOut({ callbackUrl: "/" })}
+                  block
+                  variant="ghost"
+                  size="lg"
+                >
+                  Switch account
+                </Button>
               </div>
-            </section>
+            </Card>
+            <StickyActionBar>
+              <div className="mx-auto flex w-full max-w-3xl items-center gap-3">
+                <Button
+                  type="button"
+                  onClick={submitBaseline}
+                  disabled={submitting}
+                  block
+                  size="lg"
+                >
+                  {submitting ? "Saving baseline..." : "Confirm and save baseline"}
+                </Button>
+              </div>
+            </StickyActionBar>
           </>
         )}
-      </main>
-    </div>
+        {!loadError && inventory && Object.keys(inventory).length === 0 && (
+          <EmptyState
+            title="No baseline values found"
+            description="Return to manager upload and extract order form data again."
+            action={
+              <Link href="/manager" className="text-sky-600 underline dark:text-sky-400">
+                Go to manager upload
+              </Link>
+            }
+          />
+        )}
+      </div>
+    </AppShell>
   );
 }
