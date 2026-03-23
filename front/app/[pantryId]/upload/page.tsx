@@ -1,28 +1,49 @@
 "use client";
 
-import { useCallback, useEffect, useState, type ChangeEvent, type DragEvent } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
+import AppShell from "../../../components/layout/AppShell";
+import Card from "../../../components/ui/Card";
+import Button from "../../../components/ui/Button";
+import Alert from "../../../components/ui/Alert";
+import SectionHeader from "../../../components/ui/SectionHeader";
+import FlowStepper from "../../../components/workflow/FlowStepper";
+import UploadDropzone from "../../../components/workflow/UploadDropzone";
+import FileList from "../../../components/workflow/FileList";
+import { useToast } from "../../../components/ui/Toast";
+import EmptyState from "../../../components/ui/EmptyState";
 
 export default function UploadPage() {
+  const { showToast } = useToast();
   const params = useParams();
   const router = useRouter();
   const { data: session, status } = useSession();
   const pantryId = params.pantryId as string;
+  const sessionRole = (session?.user as { role?: string } | undefined)?.role;
   const sessionPantryId = (session?.user as { pantryId?: string } | undefined)?.pantryId;
+  const isDirector = sessionRole === "director" || sessionPantryId === "director";
 
   useEffect(() => {
     if (status === "unauthenticated") return;
-    if (status === "authenticated" && sessionPantryId && sessionPantryId !== pantryId) {
+    if (
+      status === "authenticated" &&
+      sessionPantryId &&
+      sessionPantryId !== pantryId &&
+      sessionPantryId !== "director"
+    ) {
       router.replace(`/${sessionPantryId}/upload`);
     }
   }, [status, sessionPantryId, pantryId, router]);
+
   const [files, setFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [targetPantryId, setTargetPantryId] = useState("");
+  const [pantries, setPantries] = useState<Array<{ pantryId: string; name: string }>>([]);
+  const [pantryLoadError, setPantryLoadError] = useState<string | null>(null);
   const [uploadResult, setUploadResult] = useState<{
     ok: boolean;
     message?: string;
@@ -46,32 +67,6 @@ export default function UploadPage() {
     [clearPreviews]
   );
 
-  const onDrop = useCallback(
-    (e: DragEvent<HTMLLabelElement>) => {
-      e.preventDefault();
-      setIsDragging(false);
-      handleFiles(e.dataTransfer.files);
-    },
-    [handleFiles]
-  );
-
-  const onDragOver = useCallback((e: DragEvent<HTMLLabelElement>) => {
-    e.preventDefault();
-    setIsDragging(true);
-  }, []);
-
-  const onDragLeave = useCallback((e: DragEvent<HTMLLabelElement>) => {
-    e.preventDefault();
-    setIsDragging(false);
-  }, []);
-
-  const onInputChange = useCallback(
-    (e: ChangeEvent<HTMLInputElement>) => {
-      handleFiles(e.target.files);
-    },
-    [handleFiles]
-  );
-
   const removeImage = useCallback(
     (index: number) => {
       const url = previews[index];
@@ -84,24 +79,64 @@ export default function UploadPage() {
 
   const apiBase =
     typeof window !== "undefined"
-      ? (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000")
+      ? process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
       : "";
+
+  useEffect(() => {
+    if (!isDirector) {
+      setTargetPantryId(pantryId);
+      return;
+    }
+    if (!apiBase) return;
+
+    async function loadPantries() {
+      setPantryLoadError(null);
+      try {
+        const res = await fetch(`${apiBase}/auth/pantry-credentials`, { cache: "no-store" });
+        const data = await res.json();
+        if (!res.ok || !data.ok || !Array.isArray(data.pantries)) {
+          setPantryLoadError(data.error || "Could not load pantry list.");
+          return;
+        }
+        const mapped = data.pantries.map((p: { pantryId: string; name: string }) => ({
+          pantryId: String(p.pantryId),
+          name: p.name,
+        }));
+        setPantries(mapped);
+        setTargetPantryId((prev) => prev || mapped[0]?.pantryId || "");
+      } catch {
+        setPantryLoadError("Could not load pantry list.");
+      }
+    }
+
+    void loadPantries();
+  }, [apiBase, isDirector, pantryId]);
 
   async function handleSendToBackend() {
     if (files.length === 0) return;
+    const effectivePantryId = isDirector ? targetPantryId : pantryId;
+    if (!effectivePantryId) {
+      showToast("Select a pantry before uploading.", "error");
+      return;
+    }
     setUploading(true);
     setUploadResult(null);
     try {
       const form = new FormData();
       files.forEach((f) => form.append("files", f));
-      form.append("pantry_id", pantryId);
+      form.append("pantry_id", effectivePantryId);
       const res = await fetch(`${apiBase}/upload`, {
         method: "POST",
         body: form,
       });
       const data = await res.json();
       if (res.ok && data.ok) {
-        const successfulFiles = data.files?.filter((x: { ok?: boolean }) => x.ok).map((x: { filename?: string; size_bytes?: number }) => ({ filename: x.filename, size_bytes: x.size_bytes ?? 0 }));
+        const successfulFiles = data.files
+          ?.filter((x: { ok?: boolean }) => x.ok)
+          .map((x: { filename?: string; size_bytes?: number }) => ({
+            filename: x.filename,
+            size_bytes: x.size_bytes ?? 0,
+          }));
 
         setUploadResult({
           ok: true,
@@ -109,94 +144,118 @@ export default function UploadPage() {
           files: successfulFiles,
           inventory: data.inventory,
         });
+        showToast(`Detected inventory from ${data.count} file(s).`, "success");
 
         if (typeof window !== "undefined" && data.inventory) {
           window.sessionStorage.setItem(
             "latestInventoryReview",
             JSON.stringify({
-              pantryId,
+              pantryId: effectivePantryId,
               inventory: data.inventory,
               files: successfulFiles,
               createdAt: new Date().toISOString(),
             })
           );
-          router.push(`/${pantryId}/review`);
+          router.push(`/${pantryId}/review${isDirector ? `?targetPantryId=${effectivePantryId}` : ""}`);
         }
       } else {
         setUploadResult({ ok: false, message: data.error || "Upload failed" });
+        showToast(data.error || "Upload failed", "error");
       }
     } catch (e) {
       setUploadResult({
         ok: false,
         message: e instanceof Error ? e.message : "Network error",
       });
+      showToast("Network error while uploading files.", "error");
     } finally {
       setUploading(false);
     }
   }
 
   return (
-    <div className="min-h-screen bg-zinc-100 dark:bg-zinc-900 pb-[env(safe-area-inset-bottom)] pb-8">
-      <header className="sticky top-0 z-10 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-sm border-b border-zinc-200 dark:border-zinc-700 px-4 pt-[env(safe-area-inset-top)] pt-6 pb-4">
-        <div className="flex items-center gap-2 mb-2 pt-2">
-          <Link href="/" className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300">
-            ←
-          </Link>
-          <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">
-            Upload photo
-          </h1>
-        </div>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          Pantry: {pantryId} · Tap to select or drag and drop
-        </p>
-      </header>
-
-      <main className="px-4 pt-6 max-w-lg mx-auto">
-        <section className="mb-4 rounded-xl bg-white p-4 text-sm text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+    <AppShell
+      title="Volunteer Upload"
+      subtitle={`Pantry ${pantryId} · Upload shelf photos for detection`}
+      rightAction={
+        <Button variant="ghost" size="sm" onClick={() => signOut({ callbackUrl: "/" })}>
+          Switch account
+        </Button>
+      }
+      links={[
+        { label: "Home", href: "/" },
+        { label: "Review", href: `/${pantryId}/review` },
+      ]}
+    >
+      <div className="mx-auto max-w-3xl space-y-4">
+        {isDirector && (
+          <Card>
+            <SectionHeader
+              title="Choose target pantry"
+              subtitle="Director uploads need an explicit pantry selection before detection starts."
+            />
+            <select
+              value={targetPantryId}
+              onChange={(e) => setTargetPantryId(e.target.value)}
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+            >
+              {pantries.map((p) => (
+                <option key={p.pantryId} value={p.pantryId}>
+                  {p.pantryId} - {p.name}
+                </option>
+              ))}
+            </select>
+            <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">
+              Current upload target: {targetPantryId || "Select a pantry"}
+            </p>
+            {pantryLoadError && <Alert tone="error" className="mt-3">{pantryLoadError}</Alert>}
+          </Card>
+        )}
+        <Card>
+          <FlowStepper steps={["Upload", "Review", "Submit"]} currentStep={0} />
+        </Card>
+        {uploading && (
+          <Alert tone="info">Processing images and detecting inventory. This can take a few seconds.</Alert>
+        )}
+        <Card className="text-sm text-zinc-600 dark:text-zinc-300">
           <p className="font-medium text-zinc-900 dark:text-zinc-100">Volunteer flow</p>
           <p className="mt-1">1. Upload shelf photo(s) 2. Review detected counts 3. Submit inventory levels</p>
-        </section>
-        <label
-          onDrop={onDrop}
-          onDragOver={onDragOver}
-          onDragLeave={onDragLeave}
-          className={`
-            flex flex-col items-center justify-center w-full min-h-[200px] sm:min-h-[240px]
-            rounded-2xl border-2 border-dashed cursor-pointer
-            transition-colors duration-200
-            touch-manipulation
-            ${isDragging ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40" : "border-zinc-300 dark:border-zinc-600 hover:border-zinc-400 dark:hover:border-zinc-500 bg-white dark:bg-zinc-800/50"}
-          `}
-        >
-          <input
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={onInputChange}
-            className="sr-only"
-            aria-label="Select image"
+          {isDirector && (
+            <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+              Director target pantry: {targetPantryId || "Not selected"}
+            </p>
+          )}
+        </Card>
+        <Card>
+          <SectionHeader title="Upload images" subtitle="Tap to select files or drag and drop" />
+          <UploadDropzone
+            onFiles={handleFiles}
+            isDragging={isDragging}
+            setIsDragging={setIsDragging}
+            disabled={uploading}
+            title="Upload pantry shelf photos"
+            subtitle="Add one or more photos in PNG, JPG, or WEBP format"
           />
-          <span className="text-4xl mb-2" aria-hidden>
-            📷
-          </span>
-          <span className="text-base font-medium text-zinc-700 dark:text-zinc-300 text-center px-4">
-            Tap to select or
-            <br />
-            drag and drop here
-          </span>
-          <span className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-            PNG, JPG, WEBP
-          </span>
-        </label>
+          {files.length === 0 && (
+            <EmptyState
+              className="mt-4"
+              title="No photos selected yet"
+              description="Select shelf photos first, then run detection."
+            />
+          )}
+        </Card>
 
         {previews.length > 0 && (
-          <section className="mt-6" aria-label="Upload preview">
-            <h2 className="text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-3">
+          <Card className="mt-6" aria-label="Upload preview">
+            <h2 className="mb-3 text-sm font-medium text-zinc-600 dark:text-zinc-400">
               Selected ({previews.length})
             </h2>
-            <ul className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               {previews.map((src: string, i: number) => (
-                <li key={src} className="relative aspect-square rounded-xl overflow-hidden bg-zinc-200 dark:bg-zinc-700 group">
+                <li
+                  key={src}
+                  className="group relative aspect-square overflow-hidden rounded-xl bg-zinc-200 dark:bg-zinc-700"
+                >
                   <Image
                     src={src}
                     alt={`Preview ${i + 1}`}
@@ -208,34 +267,36 @@ export default function UploadPage() {
                   <button
                     type="button"
                     onClick={() => removeImage(i)}
-                    className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center text-lg leading-none hover:bg-black/70 active:scale-95 touch-manipulation"
+                    className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-lg leading-none text-white transition hover:bg-black/70 active:scale-95"
                     aria-label={`Remove image ${i + 1}`}
                   >
-                    ×
+                    x
                   </button>
-                  <span className="absolute bottom-2 left-2 text-xs text-white/90 truncate max-w-[80%] drop-shadow">
+                  <span className="absolute bottom-2 left-2 max-w-[80%] truncate text-xs text-white/90 drop-shadow">
                     {files[i]?.name}
                   </span>
                 </li>
               ))}
             </ul>
-            <button
+            <div className="mt-4">
+              <FileList files={files} onRemove={removeImage} />
+            </div>
+            <Button
               type="button"
               onClick={handleSendToBackend}
               disabled={uploading || files.length === 0}
-              className="mt-4 w-full rounded-xl bg-zinc-900 py-3 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:opacity-50 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
+              block
+              variant="secondary"
+              size="lg"
+              className="mt-4"
             >
-              {uploading ? "Detecting inventory…" : "Detect inventory"}
-            </button>
+              {uploading ? "Detecting inventory..." : "Detect inventory"}
+            </Button>
             {uploadResult && (
               <div className="mt-3 space-y-1">
-                <p
-                  className={`text-sm ${uploadResult.ok ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}
-                >
-                  {uploadResult.message}
-                </p>
+                <Alert tone={uploadResult.ok ? "success" : "error"}>{uploadResult.message}</Alert>
                 {uploadResult.ok && uploadResult.files && uploadResult.files.length > 0 && (
-                  <ul className="text-xs text-zinc-500 dark:text-zinc-400 list-disc list-inside">
+                  <ul className="list-inside list-disc text-xs text-zinc-500 dark:text-zinc-400">
                     {uploadResult.files.map((f, i) => (
                       <li key={i}>
                         {f.filename} ({f.size_bytes.toLocaleString()} bytes)
@@ -243,32 +304,27 @@ export default function UploadPage() {
                     ))}
                   </ul>
                 )}
-                {uploadResult.ok && uploadResult.inventory && Object.keys(uploadResult.inventory).length > 0 && (
-                  <div className="mt-2 p-3 rounded-lg bg-zinc-200 dark:bg-zinc-700 text-sm">
-                    <p className="font-medium text-zinc-800 dark:text-zinc-200 mb-2">Inventory by category</p>
-                    <p className="mb-2 text-xs text-zinc-500 dark:text-zinc-400">
-                      After upload, you will be taken to the review page to edit quantities and submit final stock levels.
-                    </p>
-                    <ul className="space-y-1 text-zinc-700 dark:text-zinc-300">
-                      {Object.entries(uploadResult.inventory)
-                        .filter(([, q]) => q !== 0 && q !== undefined)
-                        .map(([cat, q]) => (
-                          <li key={cat} className="flex justify-between gap-2">
-                            <span>{cat}</span>
-                            <span>{Number(q)}</span>
-                          </li>
-                        ))}
-                    </ul>
-                    {Object.values(uploadResult.inventory).every((q) => q === 0 || q === undefined) && (
-                      <p className="text-zinc-500 dark:text-zinc-400">No quantities detected.</p>
-                    )}
-                  </div>
-                )}
               </div>
             )}
-          </section>
+          </Card>
         )}
-      </main>
-    </div>
+
+        <Card className="mt-6">
+          <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Account</p>
+          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+            Need to use a different volunteer, manager, or director login?
+          </p>
+          <Button
+            type="button"
+            onClick={() => signOut({ callbackUrl: "/" })}
+            block
+            variant="ghost"
+            className="mt-3"
+          >
+            Switch account
+          </Button>
+        </Card>
+      </div>
+    </AppShell>
   );
 }
