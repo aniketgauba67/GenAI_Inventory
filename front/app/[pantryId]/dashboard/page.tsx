@@ -6,16 +6,16 @@ type DashboardPageProps = {
 };
 
 const dashboardLinks = [
-	{ label: "Home", href: "/", description: "Back to role selector" },
-	{
-		label: "Inventory Upload",
-		href: "/director/upload",
-		description: "Open pantry image upload",
-	},
+  { label: "Home", href: "/", description: "Back to role selector" },
+  {
+    label: "Volunteer Upload",
+    href: "/director/upload",
+    description: "Run shelf photo detection for a selected pantry",
+  },
 	{
 		label: "Form Upload",
 		href: "/manager",
-		description: "Upload order forms to database",
+		description: "Upload warehouse form and update baseline",
 	},
 ];
 

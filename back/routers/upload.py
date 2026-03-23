@@ -34,6 +34,8 @@ async def upload_images(
     if not files:
         log.warning("Upload called with no files")
         return {"ok": False, "error": "No files provided"}
+    if pantry_id is not None and str(pantry_id).strip().lower() == "director":
+        return {"ok": False, "error": "Director must choose a real pantry ID before upload."}
     
     results = []
     

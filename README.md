@@ -259,6 +259,35 @@ Run the active workflow/domain tests:
 python -m unittest back/tests/test_inventory_domain.py
 ```
 
+## Frontend Quality Checks (Day 7)
+
+Run lint:
+
+```bash
+cd front
+npm run lint
+```
+
+Manual verification checklist:
+
+1. Volunteer flow:
+   - Upload page shows stepper + empty state before files.
+   - Detection succeeds and redirects to review.
+   - Review page allows edit + sticky submit button works on mobile.
+2. Manager flow:
+   - Upload order-form pages, click extract, redirect to review.
+   - Review page grouped categories are editable.
+   - Sticky save baseline button works on mobile.
+3. Director flow:
+   - Dashboard filters/search work.
+   - Removing pantry credentials requires confirmation modal.
+4. Account switching:
+   - `Switch account` always returns to `/` for role selection.
+5. Accessibility quick pass:
+   - Keyboard navigation reaches all key controls.
+   - Focus rings are visible on buttons/inputs.
+   - Alerts are announced for status/error messages.
+
 ## Important Note
 
 `db/init_db()` is currently destructive because it drops tables before recreating them. Do not use it against shared or production-like data unless you explicitly intend to wipe tables.

@@ -2,6 +2,16 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { signOut } from "next-auth/react";
+import Button from "../../../components/ui/Button";
+import Input from "../../../components/ui/Input";
+import Card from "../../../components/ui/Card";
+import Badge from "../../../components/ui/Badge";
+import SectionHeader from "../../../components/ui/SectionHeader";
+import EmptyState from "../../../components/ui/EmptyState";
+import Skeleton from "../../../components/ui/Skeleton";
+import ConfirmModal from "../../../components/ui/ConfirmModal";
+import { useToast } from "../../../components/ui/Toast";
 
 type DashboardLink = {
   label: string;
@@ -31,6 +41,7 @@ export default function DashboardClient({
   pantryId,
   links,
 }: DashboardClientProps) {
+  const { showToast } = useToast();
   const apiBase =
     typeof window !== "undefined"
       ? (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000")
@@ -60,6 +71,7 @@ export default function DashboardClient({
   const [ownPasswordNotice, setOwnPasswordNotice] = useState<string | null>(null);
   const [ownPasswordError, setOwnPasswordError] = useState<string | null>(null);
   const [savingOwnPassword, setSavingOwnPassword] = useState(false);
+  const [deleteTargetPantryId, setDeleteTargetPantryId] = useState<string | null>(null);
 
   async function loadCredentials() {
     setLoadingCredentials(true);
@@ -77,6 +89,7 @@ export default function DashboardClient({
 
       if (!response.ok || !data.ok || !data.pantries) {
         setCredentialsError(data.error || "Failed to load pantry credentials.");
+        showToast(data.error || "Failed to load pantry credentials.", "error");
         return;
       }
 
@@ -85,6 +98,7 @@ export default function DashboardClient({
       setCredentialsError(
         error instanceof Error ? error.message : "Failed to load pantry credentials."
       );
+      showToast("Failed to load pantry credentials.", "error");
     } finally {
       setLoadingCredentials(false);
     }
@@ -97,7 +111,7 @@ export default function DashboardClient({
 
     return undefined;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apiBase]);
+  }, [apiBase, showToast]);
 
   const configuredCount = useMemo(
     () => credentials.filter((cred) => cred.hasCredentials).length,
@@ -229,6 +243,7 @@ export default function DashboardClient({
           ...prev,
           [pantryIdValue]: data.error || "Failed to update pantry information.",
         }));
+        showToast(data.error || "Failed to update pantry information.", "error");
         return;
       }
 
@@ -240,6 +255,7 @@ export default function DashboardClient({
         ...prev,
         [pantryIdValue]: data.message || "Pantry updated.",
       }));
+      showToast(data.message || "Pantry updated.", "success");
       setOpenRowMenu(null);
       await loadCredentials();
     } catch (error) {
@@ -248,6 +264,7 @@ export default function DashboardClient({
         [pantryIdValue]:
           error instanceof Error ? error.message : "Failed to update pantry information.",
       }));
+      showToast("Failed to update pantry information.", "error");
     } finally {
       setSavingRows((prev) => ({ ...prev, [pantryIdValue]: false }));
     }
@@ -278,6 +295,7 @@ export default function DashboardClient({
           ...prev,
           [pantryIdValue]: data.error || "Failed to remove pantry credentials.",
         }));
+        showToast(data.error || "Failed to remove pantry credentials.", "error");
         return;
       }
 
@@ -285,6 +303,7 @@ export default function DashboardClient({
         ...prev,
         [pantryIdValue]: data.message || "Pantry credentials removed.",
       }));
+      showToast(data.message || "Pantry credentials removed.", "success");
       setOpenRowMenu(null);
       await loadCredentials();
     } catch (error) {
@@ -293,6 +312,7 @@ export default function DashboardClient({
         [pantryIdValue]:
           error instanceof Error ? error.message : "Failed to remove pantry credentials.",
       }));
+      showToast("Failed to remove pantry credentials.", "error");
     } finally {
       setSavingRows((prev) => ({ ...prev, [pantryIdValue]: false }));
     }
@@ -335,10 +355,12 @@ export default function DashboardClient({
 
       if (!response.ok || !data.ok) {
         setCreatePantryError(data.error || "Failed to create pantry login.");
+        showToast(data.error || "Failed to create pantry login.", "error");
         return;
       }
 
       setCreatePantryNotice(data.message || "Created pantry login.");
+      showToast(data.message || "Created pantry login.", "success");
       setNewPantryName("");
       setNewPantryLocation("");
       setNewPantryPassword("");
@@ -348,6 +370,7 @@ export default function DashboardClient({
       setCreatePantryError(
         error instanceof Error ? error.message : "Failed to create pantry login."
       );
+      showToast("Failed to create pantry login.", "error");
     } finally {
       setCreatingPantry(false);
     }
@@ -385,17 +408,20 @@ export default function DashboardClient({
 
       if (!response.ok || !data.ok) {
         setOwnPasswordError(data.error || "Failed to update director password.");
+        showToast(data.error || "Failed to update director password.", "error");
         return;
       }
 
       setOwnPasswordDraft("");
       setOwnPasswordNotice(data.message || "Director password updated.");
+      showToast(data.message || "Director password updated.", "success");
       setShowOwnPasswordForm(false);
       setSettingsOpen(false);
     } catch (error) {
       setOwnPasswordError(
         error instanceof Error ? error.message : "Failed to update director password."
       );
+      showToast("Failed to update director password.", "error");
     } finally {
       setSavingOwnPassword(false);
     }
@@ -422,7 +448,7 @@ export default function DashboardClient({
               <Link
                 key={link.label}
                 href={link.href}
-                className="group rounded-2xl border border-zinc-200 bg-zinc-50 px-3 py-3 transition hover:border-zinc-300 hover:bg-white dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700 dark:hover:bg-zinc-800"
+                className="group rounded-2xl border border-zinc-200 bg-zinc-50 px-3 py-3 transition hover:-translate-y-0.5 hover:border-zinc-300 hover:bg-white dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700 dark:hover:bg-zinc-800"
               >
                 <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{link.label}</p>
                 <p className="text-xs text-zinc-500 transition group-hover:text-zinc-700 dark:text-zinc-400 dark:group-hover:text-zinc-300">
@@ -431,6 +457,18 @@ export default function DashboardClient({
               </Link>
             ))}
           </nav>
+
+          <div className="mt-4 rounded-2xl border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-900">
+            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+              Account
+            </p>
+            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+              Switch to another role or pantry login.
+            </p>
+            <Button type="button" onClick={() => signOut({ callbackUrl: "/" })} block variant="ghost" className="mt-3">
+              Switch account
+            </Button>
+          </div>
         </aside>
 
         <section className="relative rounded-3xl border border-white/70 bg-white/90 p-5 shadow-lg shadow-zinc-300/30 backdrop-blur dark:border-zinc-800/80 dark:bg-zinc-900/80 dark:shadow-black/20 sm:p-7">
@@ -495,34 +533,29 @@ export default function DashboardClient({
           </div>
 
           <div className="mb-5 flex flex-col gap-3 pr-20 sm:flex-row sm:items-end sm:justify-between sm:pr-24">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500 dark:text-zinc-400">
-                Credential Registry
-              </p>
-              <h2 className="mt-1 text-2xl font-semibold tracking-tight">Pantry IDs and Passwords</h2>
-              <p className="mt-2 max-w-2xl text-sm text-zinc-600 dark:text-zinc-400">
-                Passwords are stored as hashes in the database, so this table shows whether each pantry
-                has credentials configured and lets you rotate them.
-              </p>
-            </div>
-            <div className="rounded-xl bg-zinc-900 px-3 py-2 text-xs font-medium text-white dark:bg-zinc-100 dark:text-zinc-900">
+            <SectionHeader
+              title="Pantry Access Management"
+              subtitle="Create and maintain pantry credentials. Passwords remain hashed and are never shown in plain text."
+              className="mb-0"
+            />
+            <div className="rounded-full bg-zinc-900 px-3 py-2 text-xs font-medium text-white dark:bg-zinc-100 dark:text-zinc-900">
               {loadingCredentials ? "Loading..." : `${filteredCredentials.length} shown / ${credentials.length} total`}
             </div>
           </div>
 
           <div className="mb-4 grid gap-3 sm:grid-cols-3">
-            <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+            <Card className="rounded-2xl p-4">
               <p className="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Total Pantries</p>
               <p className="mt-1 text-2xl font-semibold text-zinc-900 dark:text-zinc-100">{credentials.length}</p>
-            </div>
-            <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+            </Card>
+            <Card className="rounded-2xl p-4">
               <p className="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Configured</p>
               <p className="mt-1 text-2xl font-semibold text-emerald-600 dark:text-emerald-400">{configuredCount}</p>
-            </div>
-            <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+            </Card>
+            <Card className="rounded-2xl p-4">
               <p className="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Missing Login</p>
               <p className="mt-1 text-2xl font-semibold text-amber-600 dark:text-amber-400">{missingCount}</p>
-            </div>
+            </Card>
           </div>
 
           <div className="mb-4 rounded-2xl border border-zinc-200 bg-zinc-50/70 p-4 dark:border-zinc-800 dark:bg-zinc-900/60">
@@ -533,12 +566,15 @@ export default function DashboardClient({
                 setCreatePantryNotice(null);
                 setCreatePantryError(null);
               }}
-              className="rounded-lg bg-zinc-900 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
-            >
-              {showCreatePantryForm ? "Close" : "Create Pantry Login"}
-            </button>
+            className="rounded-lg bg-zinc-900 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+          >
+            {showCreatePantryForm ? "Close" : "Create Pantry Login"}
+          </button>
+          <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+            Use this only when a pantry needs first-time credentials or a reset.
+          </p>
 
-            {showCreatePantryForm && (
+          {showCreatePantryForm && (
               <div className="mt-3 grid gap-2 sm:grid-cols-3">
                 <input
                   value={newPantryName}
@@ -584,11 +620,11 @@ export default function DashboardClient({
 
           <div className="mb-4 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <input
+              <Input
                 value={credentialQuery}
                 onChange={(e) => setCredentialQuery(e.target.value)}
                 placeholder="Search pantry ID, name, location..."
-                className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-zinc-500 dark:focus:ring-zinc-800 sm:max-w-md"
+                className="sm:max-w-md"
               />
               <div className="flex flex-wrap gap-2">
                 <button
@@ -641,13 +677,28 @@ export default function DashboardClient({
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-200 bg-white dark:divide-zinc-800 dark:bg-zinc-900">
+                {loadingCredentials && (
+                  <>
+                    {Array.from({ length: 4 }).map((_, idx) => (
+                      <tr key={`skeleton-${idx}`}>
+                        <td className="px-4 py-3"><Skeleton className="h-4 w-12" /></td>
+                        <td className="px-4 py-3"><Skeleton className="h-4 w-48" /></td>
+                        <td className="px-4 py-3"><Skeleton className="h-4 w-24" /></td>
+                        <td className="px-4 py-3"><Skeleton className="h-8 w-28" /></td>
+                      </tr>
+                    ))}
+                  </>
+                )}
                 {!loadingCredentials && filteredCredentials.length === 0 && (
                   <tr>
                     <td
                       colSpan={4}
-                      className="px-4 py-6 text-center text-sm text-zinc-500 dark:text-zinc-400"
+                      className="px-4 py-6"
                     >
-                      No pantry rows match your current search/filter.
+                      <EmptyState
+                        title="No matching pantries"
+                        description="Adjust search or filter to view pantry credentials."
+                      />
                     </td>
                   </tr>
                 )}
@@ -666,15 +717,9 @@ export default function DashboardClient({
                       </div>
                     </td>
                     <td className="px-4 py-3 text-sm text-zinc-700 dark:text-zinc-300">
-                      <span
-                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
-                          cred.hasCredentials
-                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200"
-                            : "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-200"
-                        }`}
-                      >
+                      <Badge tone={cred.hasCredentials ? "success" : "warning"}>
                         {cred.hasCredentials ? "Configured" : "Missing"}
-                      </span>
+                      </Badge>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex min-w-[240px] flex-col gap-2">
@@ -729,7 +774,7 @@ export default function DashboardClient({
                               </button>
                               <button
                                 type="button"
-                                onClick={() => deleteRowCredentials(cred.pantryId)}
+                                onClick={() => setDeleteTargetPantryId(cred.pantryId)}
                                 disabled={savingRows[cred.pantryId]}
                                 className="self-start rounded-lg border border-red-300 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-wide text-red-700 transition hover:bg-red-50 disabled:opacity-60 dark:border-red-800 dark:bg-zinc-900 dark:text-red-300 dark:hover:bg-red-950/30"
                               >
@@ -758,6 +803,20 @@ export default function DashboardClient({
           </div>
         </section>
       </div>
+      <ConfirmModal
+        open={Boolean(deleteTargetPantryId)}
+        title="Remove pantry credentials?"
+        description={`This will remove login credentials for pantry ID ${deleteTargetPantryId ?? ""}. The pantry row remains, but login will be disabled.`}
+        confirmLabel="Remove credentials"
+        danger
+        onCancel={() => setDeleteTargetPantryId(null)}
+        onConfirm={async () => {
+          if (!deleteTargetPantryId) return;
+          await deleteRowCredentials(deleteTargetPantryId);
+          setDeleteTargetPantryId(null);
+        }}
+        loading={deleteTargetPantryId ? Boolean(savingRows[deleteTargetPantryId]) : false}
+      />
     </main>
   );
 }
