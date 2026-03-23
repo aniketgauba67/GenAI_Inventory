@@ -42,6 +42,7 @@ export const authOptions: NextAuthOptions = {
               name: string;
               email?: string | null;
               pantryId: string;
+              role?: string;
             };
           };
 
@@ -54,6 +55,7 @@ export const authOptions: NextAuthOptions = {
             name: data.user.name,
             email: data.user.email ?? undefined,
             pantryId: data.user.pantryId,
+            role: data.user.role ?? "pantry",
           };
         } catch {
           return null;
@@ -75,6 +77,9 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.pantryId = (user as { pantryId?: string }).pantryId;
+        token.role = (user as { role?: string }).role;
+      } else if (!token.role && token.pantryId) {
+        token.role = token.pantryId === "director" ? "director" : "pantry";
       }
       return token;
     },
@@ -82,6 +87,9 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         (session.user as { id?: string }).id = token.id as string;
         (session.user as { pantryId?: string }).pantryId = token.pantryId as string;
+        const pantryId = token.pantryId as string;
+        const inferredRole = pantryId === "director" ? "director" : "pantry";
+        (session.user as { role?: string }).role = (token.role as string) || inferredRole;
       }
       return session;
     },

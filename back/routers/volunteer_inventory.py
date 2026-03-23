@@ -116,6 +116,8 @@ def _upsert_pantry_inventory_items(db, pantry_id: int, baseline_inventory: dict[
 @router.post("/warehouse/inventory/snapshot")
 def store_warehouse_inventory_snapshot(payload: WarehouseInventorySnapshotRequest):
     """Store the latest parsed warehouse form totals as a unified inventory run."""
+    if payload.pantryId.strip().lower() == "director":
+        return {"ok": False, "error": "Director must choose a real pantry ID first."}
     ok, error = validate_inventory(payload.inventory)
     if not ok:
         return {"ok": False, "error": error}
@@ -170,6 +172,8 @@ def submit_inventory(payload: VolunteerInventorySubmitRequest):
     The current pantry stock is stored in `inventory`, while the derived ratios/levels are
     stored in `comparison`.
     """
+    if payload.pantryId.strip().lower() == "director":
+        return {"ok": False, "error": "Director must choose a real pantry ID first."}
     ok, error = validate_inventory(payload.inventory)
     if not ok:
         return {"ok": False, "error": error}

@@ -3,6 +3,10 @@
 import { signIn } from "next-auth/react";
 import { FormEvent, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import Card from "../../components/ui/Card";
+import Input from "../../components/ui/Input";
+import Button from "../../components/ui/Button";
+import Alert from "../../components/ui/Alert";
 
 export default function LoginPage() {
   const searchParams = useSearchParams();
@@ -51,8 +55,11 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-black">
-      <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg dark:bg-zinc-900">
+    <div className="flex min-h-screen items-center justify-center px-4 py-8">
+      <Card className="w-full max-w-md p-8 sm:p-10">
+        <p className="mb-4 inline-flex rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-sky-700 dark:border-sky-900 dark:bg-sky-950/50 dark:text-sky-300">
+          Secure Access
+        </p>
         <h1 className="mb-2 text-center text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
           Pantry Login
         </h1>
@@ -65,9 +72,7 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           {error && (
-            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300">
-              {error}
-            </div>
+            <Alert tone="error">{error}</Alert>
           )}
 
           <div className="flex flex-col gap-1.5">
@@ -77,14 +82,13 @@ export default function LoginPage() {
             >
               Pantry ID
             </label>
-            <input
+            <Input
               id="username"
               type="text"
               placeholder="pantry1234"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
-              className="rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:border-zinc-500 dark:focus:ring-zinc-800"
             />
           </div>
 
@@ -95,26 +99,21 @@ export default function LoginPage() {
             >
               Password
             </label>
-            <input
+            <Input
               id="password"
               type="password"
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:border-zinc-500 dark:focus:ring-zinc-800"
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="mt-2 flex h-11 items-center justify-center rounded-lg bg-zinc-900 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
-          >
+          <Button type="submit" disabled={loading} block variant="secondary" size="lg" className="mt-2">
             {loading ? "Signing in…" : "Sign In"}
-          </button>
+          </Button>
         </form>
-      </div>
+      </Card>
     </div>
   );
 }

@@ -24,6 +24,8 @@ def save_inventory_draft(
 
 @router.get("/inventory/draft/{pantry_id}")
 def get_latest_inventory_draft(pantry_id: str):
+    if str(pantry_id).strip().lower() == "director":
+        return {"ok": False, "error": "Director must choose a real pantry ID first."}
     draft = LATEST_DRAFTS.get(pantry_id)
     if draft is None:
         return {

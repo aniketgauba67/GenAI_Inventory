@@ -83,6 +83,9 @@ async def update_baseline_inventory(
     Update the 'original_quantity' (baseline) for all categories in a pantry.
     Payload expected: { "inventory": { "Category": quantity, ... } }
     """
+    if pantry_id.strip().lower() == "director":
+        return {"ok": False, "error": "Director must choose a real pantry ID before baseline update."}
+
     # 1. Resolve pantry
     pantry = resolve_pantry(db, Pantry, pantry_id)
     if not pantry:
