@@ -104,12 +104,12 @@ def _upsert_pantry_inventory_items(db, pantry_id: int, baseline_inventory: dict[
                 pantry_id=pantry_id,
                 category_name=category,
                 original_quantity=baseline_qty,
-                status="normal",
+                status="Normal", 
             )
             db.add(item)
         else:
             item.original_quantity = baseline_qty
-
+        # Uses inbuilt db model method to update status based on the latest current quantity
         item.update_status(current_qty)
 
 

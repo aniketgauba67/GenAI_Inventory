@@ -1,6 +1,7 @@
 """SQLAlchemy ORM models for pantry, inventory item, and run history tables."""
 
 from datetime import datetime, timedelta
+from unicodedata import category
 
 from sqlalchemy import CheckConstraint, Column, DateTime, ForeignKey, Index, Integer, String, Boolean
 from sqlalchemy.orm import relationship
@@ -92,14 +93,17 @@ class InventoryItem(Base):
         """Set status from the latest current quantity without changing schema."""
         self.updated_at = datetime.utcnow()
 
-        if new_quantity <= 0:
-            self.status = "out"
-        elif new_quantity < self.original_quantity * 0.25:
-            self.status = "critical"
-        elif new_quantity < self.original_quantity * 0.5:
-            self.status = "low"
+        if new_quantity <= self.original_quantity * 0.0:
+            self.status = "Out"
+        elif new_quantity < self.original_quantity * 0.30:
+            self.status = "Low"
+        elif new_quantity < self.original_quantity * 0.70:
+            self.status = "Mid"
         else:
-            self.status = "normal"
+            self.status = "High"
+
+
+
 
  
 
