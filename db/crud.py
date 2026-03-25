@@ -359,8 +359,5 @@ def delete_director_credentials(email: str) -> bool:
 
 
 if __name__ == "__main__":
-    # Credentials demo
-    get_all_pantries()
-
-    check_director_credentials("director@example.com", "password123")  # Should be False
-    get_pantry_items(1)  # Should show items for pantry 1
+    # check all pantries
+    get_pantry_items(6)
