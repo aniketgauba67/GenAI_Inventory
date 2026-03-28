@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "dev:jin": "/opt/homebrew/bin/node node_modules/.bin/next dev"
   },
   "dependencies": {
     "next": "16.1.6",

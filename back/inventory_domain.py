@@ -36,6 +36,17 @@ def normalize_inventory(inventory: dict[str, Any] | None) -> dict[str, int]:
     return normalized
 
 
+def accumulate_inventory_totals(
+    totals: dict[str, int],
+    inventory: dict[str, Any] | None,
+) -> dict[str, int]:
+    """Add one per-image inventory map into ``totals`` (e.g. multiple shelf photos)."""
+    page_values = normalize_inventory(inventory)
+    for category in INVENTORY_CATEGORIES:
+        totals[category] += page_values[category]
+    return totals
+
+
 def validate_inventory(inventory: dict[str, Any] | None) -> tuple[bool, str | None]:
     """Validate that known category values are safe non-negative integers."""
     raw = inventory or {}

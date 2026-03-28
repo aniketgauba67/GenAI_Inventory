@@ -8,7 +8,7 @@ from fastapi import APIRouter, File, UploadFile, Depends
 from sqlalchemy.orm import Session
 from database import get_db
 from models import Pantry, InventoryItem
-from inventory_domain import resolve_pantry, normalize_inventory
+from inventory_domain import accumulate_inventory_totals, resolve_pantry, normalize_inventory
 from schemas import INVENTORY_CATEGORIES
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
@@ -26,14 +26,6 @@ except ImportError:
 log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/manager", tags=["manager"])
-
-
-def _sum_inventory_maps(acc: dict[str, int], incoming: dict[str, int] | None) -> dict[str, int]:
-    """Add one page-level inventory map into the running total."""
-    page_values = normalize_inventory(incoming)
-    for category in INVENTORY_CATEGORIES:
-        acc[category] += int(page_values.get(category, 0))
-    return acc
 
 
 @router.post("/order-form")
@@ -58,7 +50,7 @@ async def upload_order_form(
         if page_inventory is not None:
             normalized_page = normalize_inventory(page_inventory)
             page_inventories.append(normalized_page)
-            _sum_inventory_maps(inventory_totals, normalized_page)
+            accumulate_inventory_totals(inventory_totals, normalized_page)
         results.append({
             "filename": f.filename,
             "content_type": content_type,
