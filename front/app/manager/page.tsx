@@ -68,7 +68,9 @@ export default function ManagerViewPage() {
 
   function handleFiles(fileList: FileList | null) {
     if (!fileList?.length) return;
-    setFiles(Array.from(fileList).filter((f) => f.type.startsWith("image/")));
+    const images = Array.from(fileList).filter((f) => f.type.startsWith("image/"));
+    if (!images.length) return;
+    setFiles((prev) => [...prev, ...images]);
   }
 
   async function handleExtract() {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
@@ -51,20 +51,28 @@ export default function UploadPage() {
     inventory?: Record<string, number>;
   } | null>(null);
 
-  const clearPreviews = useCallback(() => {
-    previews.forEach((url: string) => URL.revokeObjectURL(url));
-    setPreviews([]);
+  const previewsRef = useRef<string[]>([]);
+
+  useEffect(() => {
+    previewsRef.current = previews;
   }, [previews]);
+
+  useEffect(() => {
+    return () => {
+      previewsRef.current.forEach((url: string) => URL.revokeObjectURL(url));
+    };
+  }, []);
 
   const handleFiles = useCallback(
     (newFiles: FileList | null) => {
       if (!newFiles?.length) return;
-      clearPreviews();
       const arr = Array.from(newFiles).filter((f) => f.type.startsWith("image/"));
-      setFiles(arr);
-      setPreviews(arr.map((f) => URL.createObjectURL(f)));
+      if (!arr.length) return;
+
+      setFiles((prev: File[]) => [...prev, ...arr]);
+      setPreviews((prev: string[]) => [...prev, ...arr.map((f) => URL.createObjectURL(f))]);
     },
-    [clearPreviews]
+    []
   );
 
   const removeImage = useCallback(

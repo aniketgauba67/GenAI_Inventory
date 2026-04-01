@@ -360,4 +360,4 @@ def delete_director_credentials(email: str) -> bool:
 
 if __name__ == "__main__":
     # check all pantries
-    get_pantry_items(6)
+    get_pantry_items(7)
