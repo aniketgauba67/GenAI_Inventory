@@ -7,7 +7,7 @@ from uuid import uuid4
 from fastapi import APIRouter, File, UploadFile, Depends
 from sqlalchemy.orm import Session
 from database import get_db
-from models import Pantry, InventoryItem
+from models import Pantry, InventoryItem, InventoryRun
 from inventory_domain import resolve_pantry, normalize_inventory
 from schemas import INVENTORY_CATEGORIES
 
@@ -105,18 +105,50 @@ async def update_baseline_inventory(
     if not inventory_data:
         return {"ok": False, "error": "Missing inventory data"}
 
-    # 3. Upsert items
+    # 3. Resolve remaining (current) inventory from latest volunteer submit.
+    latest_submit = (
+        db.query(InventoryRun)
+        .filter(InventoryRun.pantry_id == pantry.id, InventoryRun.source == "volunteer-submit")
+        .order_by(InventoryRun.created_at.desc())
+        .first()
+    )
+    latest_current_inventory = (
+        normalize_inventory(latest_submit.inventory)
+        if latest_submit and isinstance(latest_submit.inventory, dict)
+        else {}
+    )
+
+    # 4. Upsert items using: remaining current stock + newly shipped quantity.
+    updated_baseline: dict[str, int] = {category: 0 for category in INVENTORY_CATEGORIES}
     for category in INVENTORY_CATEGORIES:
         # If category is not in payload, default to 0 or skip?
         # Let's update only if present, or assume complete update.
         # Given the UI sends all categories, we can update all.
         val = inventory_data.get(category)
         if val is None:
+            existing_item = (
+                db.query(InventoryItem)
+                .filter(InventoryItem.pantry_id == pantry.id, InventoryItem.category_name == category)
+                .first()
+            )
+            if latest_current_inventory:
+                updated_baseline[category] = int(latest_current_inventory.get(category, 0) or 0)
+            elif existing_item is not None:
+                updated_baseline[category] = int(existing_item.original_quantity or 0)
             continue
         
         try:
-            qty_val = int(val)
+            incoming_qty = int(val)
         except (ValueError, TypeError):
+            existing_item = (
+                db.query(InventoryItem)
+                .filter(InventoryItem.pantry_id == pantry.id, InventoryItem.category_name == category)
+                .first()
+            )
+            if latest_current_inventory:
+                updated_baseline[category] = int(latest_current_inventory.get(category, 0) or 0)
+            elif existing_item is not None:
+                updated_baseline[category] = int(existing_item.original_quantity or 0)
             continue
         
         # Find existing item
@@ -125,16 +157,24 @@ async def update_baseline_inventory(
             .filter(InventoryItem.pantry_id == pantry.id, InventoryItem.category_name == category)
             .first()
         )
+        if latest_current_inventory:
+            remaining_qty = int(latest_current_inventory.get(category, 0) or 0)
+        else:
+            remaining_qty = int(item.original_quantity or 0) if item else 0
+
+        new_baseline_qty = max(0, remaining_qty + incoming_qty)
         if item:
-            item.original_quantity = qty_val
+            item.original_quantity = new_baseline_qty
+            item.status = "Out" if new_baseline_qty <= 0 else "High"
         else:
             item = InventoryItem(
                 pantry_id=pantry.id,
                 category_name=category,
-                original_quantity=qty_val,
-                status="normal"
+                original_quantity=new_baseline_qty,
+                status="Out" if new_baseline_qty <= 0 else "High"
             )
             db.add(item)
+        updated_baseline[category] = new_baseline_qty
     
     try:
         db.commit()
@@ -146,7 +186,7 @@ async def update_baseline_inventory(
 
     # Also save as warehouse-snapshot in inventory_runs so volunteer submit can find it
     try:
-        normalized = normalize_inventory(inventory_data)
+        normalized = normalize_inventory(updated_baseline)
         run_record = {
             "pk": str(uuid4()),
             "pantryId": pantry.id,
@@ -155,7 +195,7 @@ async def update_baseline_inventory(
             "inventory": normalized,
             "comparison": {
                 "pantryId": str(pantry.id),
-                "note": "Baseline set from manager order form.",
+                "note": "Baseline reset from remaining current stock plus manager shipment.",
             },
             "source": "warehouse-snapshot",
         }
