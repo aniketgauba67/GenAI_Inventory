@@ -1,19 +1,78 @@
 "use client";
 
-import { signIn } from "next-auth/react";
-import { FormEvent, useState } from "react";
+import { signIn, useSession } from "next-auth/react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Card from "../../components/ui/Card";
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
 import Alert from "../../components/ui/Alert";
 
+function resolveAuthenticatedTarget(
+  rawCallbackUrl: string | null,
+  sessionPantryId?: string,
+  sessionRole?: string,
+) {
+  const pantryId = sessionPantryId || "";
+  const role = sessionRole || (pantryId === "director" ? "director" : pantryId ? "pantry" : "");
+
+  const defaultTarget =
+    role === "director"
+      ? "/director/dashboard"
+      : role === "manager"
+        ? "/manager"
+        : pantryId
+          ? `/${pantryId}/upload`
+          : "/";
+
+  if (!rawCallbackUrl || rawCallbackUrl === "/") {
+    return defaultTarget;
+  }
+
+  let resolved = rawCallbackUrl;
+  if (!rawCallbackUrl.startsWith("/")) {
+    try {
+      const url = new URL(rawCallbackUrl, window.location.origin);
+      if (url.origin === window.location.origin) resolved = url.pathname + url.search;
+    } catch {
+      return defaultTarget;
+    }
+  }
+
+  if (resolved === "/volunteer") {
+    return role === "pantry" && pantryId ? `/${pantryId}/upload` : defaultTarget;
+  }
+
+  if (resolved === "/manager") {
+    return role === "manager" ? "/manager" : defaultTarget;
+  }
+
+  if (resolved === "/director/dashboard") {
+    return role === "director" ? "/director/dashboard" : defaultTarget;
+  }
+
+  return resolved;
+}
+
 export default function LoginPage() {
   const searchParams = useSearchParams();
+  const { status, data: session } = useSession();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const callbackUrl = useMemo(() => searchParams.get("callbackUrl"), [searchParams]);
+
+  useEffect(() => {
+    if (status !== "authenticated") return;
+
+    const sessionPantryId = (session?.user as { pantryId?: string } | undefined)?.pantryId;
+    const sessionRole = (session?.user as { role?: string } | undefined)?.role;
+    const target = resolveAuthenticatedTarget(callbackUrl, sessionPantryId, sessionRole);
+
+    window.location.replace(target);
+  }, [callbackUrl, session, status]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -31,27 +90,21 @@ export default function LoginPage() {
     if (result?.error) {
       setError("Invalid pantry ID or password. Please try again.");
     } else {
-      const raw = searchParams.get("callbackUrl");
-      let target = `/${username}/upload`;
-      if (raw && raw !== "/") {
-        let resolved = raw;
-        if (!raw.startsWith("/")) {
-          try {
-            const u = new URL(raw, window.location.origin);
-            if (u.origin === window.location.origin) resolved = u.pathname + u.search;
-          } catch {
-            resolved = `/${username}/upload`;
-          }
-        }
-        // /volunteer is a virtual marker → go to the pantry upload page
-        if (resolved === "/volunteer") {
-          target = `/${username}/upload`;
-        } else {
-          target = resolved;
-        }
-      }
+      const raw = callbackUrl;
+      const inferredRole = username === "director" ? "director" : username === "manager" ? "manager" : "pantry";
+      const target = resolveAuthenticatedTarget(raw, username, inferredRole);
       window.location.href = target;
     }
+  }
+
+  if (status === "authenticated") {
+    return (
+      <div className="flex min-h-screen items-center justify-center px-4 py-8">
+        <Card className="w-full max-w-md p-8 sm:p-10">
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">Continuing your active session...</p>
+        </Card>
+      </div>
+    );
   }
 
   return (
