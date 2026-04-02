@@ -166,14 +166,13 @@ export default function HomePage() {
           <div className="flex flex-col gap-4 border-b border-slate-200/80 pb-5 dark:border-slate-800/80 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
               <p className="text-xs font-semibold uppercase tracking-[0.24em] text-teal-700 dark:text-teal-300">
-                Customer Pantry View
+                Food Naptry Network
               </p>
               <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 dark:text-slate-50 sm:text-4xl lg:text-5xl">
-                Pantry locations and availability, in one place.
+                Pantry Locations and Stock.
               </h1>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300 sm:text-base">
-                Browse pantry addresses, compare availability levels by category, and jump into the role
-                workflows from the same landing page.
+                Browse pantry addresses, compare availability levels by category, and observe other important pantry attribuets
               </p>
             </div>
 
