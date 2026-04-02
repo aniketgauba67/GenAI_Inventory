@@ -28,6 +28,17 @@ log = logging.getLogger(__name__)
 router = APIRouter(prefix="/manager", tags=["manager"])
 
 
+def _load_latest_volunteer_run(db: Session, pantry_id: int) -> InventoryRun | None:
+    """Return the latest volunteer-submitted current inventory for a pantry."""
+    return (
+        db.query(InventoryRun)
+        .filter(InventoryRun.pantry_id == pantry_id)
+        .filter(InventoryRun.source == "volunteer-submit")
+        .order_by(InventoryRun.created_at.desc())
+        .first()
+    )
+
+
 @router.post("/order-form")
 async def upload_order_form(
     files: list[UploadFile] = File(..., description="Order form image(s)"),
@@ -97,76 +108,43 @@ async def update_baseline_inventory(
     if not inventory_data:
         return {"ok": False, "error": "Missing inventory data"}
 
-    # 3. Resolve remaining (current) inventory from latest volunteer submit.
-    latest_submit = (
-        db.query(InventoryRun)
-        .filter(InventoryRun.pantry_id == pantry.id, InventoryRun.source == "volunteer-submit")
-        .order_by(InventoryRun.created_at.desc())
-        .first()
+    normalized_manager_inventory = normalize_inventory(inventory_data)
+    latest_volunteer_run = _load_latest_volunteer_run(db, pantry.id)
+    previous_current_inventory = (
+        normalize_inventory(latest_volunteer_run.inventory)
+        if latest_volunteer_run is not None and isinstance(latest_volunteer_run.inventory, dict)
+        else {category: 0 for category in INVENTORY_CATEGORIES}
     )
-    latest_current_inventory = (
-        normalize_inventory(latest_submit.inventory)
-        if latest_submit and isinstance(latest_submit.inventory, dict)
-        else {}
-    )
+    combined_baseline_inventory = {
+        category: previous_current_inventory[category] + normalized_manager_inventory[category]
+        for category in INVENTORY_CATEGORIES
+    }
 
-    # 4. Upsert items using: remaining current stock + newly shipped quantity.
-    updated_baseline: dict[str, int] = {category: 0 for category in INVENTORY_CATEGORIES}
+    # 3. Upsert items
     for category in INVENTORY_CATEGORIES:
         # If category is not in payload, default to 0 or skip?
         # Let's update only if present, or assume complete update.
         # Given the UI sends all categories, we can update all.
-        val = inventory_data.get(category)
-        if val is None:
-            existing_item = (
-                db.query(InventoryItem)
-                .filter(InventoryItem.pantry_id == pantry.id, InventoryItem.category_name == category)
-                .first()
-            )
-            if latest_current_inventory:
-                updated_baseline[category] = int(latest_current_inventory.get(category, 0) or 0)
-            elif existing_item is not None:
-                updated_baseline[category] = int(existing_item.original_quantity or 0)
-            continue
-        
-        try:
-            incoming_qty = int(val)
-        except (ValueError, TypeError):
-            existing_item = (
-                db.query(InventoryItem)
-                .filter(InventoryItem.pantry_id == pantry.id, InventoryItem.category_name == category)
-                .first()
-            )
-            if latest_current_inventory:
-                updated_baseline[category] = int(latest_current_inventory.get(category, 0) or 0)
-            elif existing_item is not None:
-                updated_baseline[category] = int(existing_item.original_quantity or 0)
-            continue
-        
+        qty_val = combined_baseline_inventory[category]
+
         # Find existing item
         item = (
             db.query(InventoryItem)
             .filter(InventoryItem.pantry_id == pantry.id, InventoryItem.category_name == category)
             .first()
         )
-        if latest_current_inventory:
-            remaining_qty = int(latest_current_inventory.get(category, 0) or 0)
-        else:
-            remaining_qty = int(item.original_quantity or 0) if item else 0
-
-        new_baseline_qty = max(0, remaining_qty + incoming_qty)
         if item:
-            item.original_quantity = new_baseline_qty
-            item.status = "Out" if new_baseline_qty <= 0 else "High"
+            item.original_quantity = qty_val
+            item.status = "Out" if qty_val <= 0 else "High"
         else:
             item = InventoryItem(
                 pantry_id=pantry.id,
                 category_name=category,
-                original_quantity=new_baseline_qty,
-                status="Out" if new_baseline_qty <= 0 else "High"
+                original_quantity=qty_val,
+                status="Out" if qty_val <= 0 else "High"
             )
             db.add(item)
-        updated_baseline[category] = new_baseline_qty
+    
     
     try:
         db.commit()
@@ -178,16 +156,17 @@ async def update_baseline_inventory(
 
     # Also save as warehouse-snapshot in inventory_runs so volunteer submit can find it
     try:
-        normalized = normalize_inventory(updated_baseline)
         run_record = {
             "pk": str(uuid4()),
             "pantryId": pantry.id,
             "createdAt": datetime.utcnow().replace(microsecond=0).isoformat() + "Z",
             "files": [],
-            "inventory": normalized,
+            "inventory": combined_baseline_inventory,
             "comparison": {
                 "pantryId": str(pantry.id),
-                "note": "Baseline reset from remaining current stock plus manager shipment.",
+                "note": "Baseline set from manager order form plus latest volunteer-submitted current inventory.",
+                "managerInventory": normalized_manager_inventory,
+                "previousCurrentInventory": previous_current_inventory,
             },
             "source": "warehouse-snapshot",
         }
@@ -197,4 +176,9 @@ async def update_baseline_inventory(
         log.error("Error saving warehouse-snapshot run: %s", e)
         return {"ok": False, "error": f"Baseline saved to items table but failed to write run: {e}"}
 
-    return {"ok": True, "pantry_id": pantry.id, "message": "Baseline inventory updated"}
+    return {
+        "ok": True,
+        "pantry_id": pantry.id,
+        "message": "Baseline inventory updated",
+        "inventory": combined_baseline_inventory,
+    }
