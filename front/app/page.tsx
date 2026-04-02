@@ -172,7 +172,7 @@ export default function HomePage() {
                 Pantry Locations and Stock
               </h1>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300 sm:text-base">
-                Browse pantry addresses, compare availability levels by category, and observe other important pantry attribuets
+                Browse pantry addresses, compare availability levels by category, and observe other important pantry attributes. Click on a pantry to inspect its inventory details and stock levels.
               </p>
             </div>
 
