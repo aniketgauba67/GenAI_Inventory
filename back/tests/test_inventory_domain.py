@@ -4,6 +4,7 @@ import unittest
 
 from back.inventory_domain import (
     INVENTORY_CATEGORIES,
+    compute_level_from_quantities,
     compute_ratios_and_levels,
     normalize_inventory,
     summarize_levels,
@@ -104,6 +105,13 @@ class TestInventoryDomain(unittest.TestCase):
         self.assertEqual(levels["Cereal"], "High")
         self.assertEqual(ratios["Juices"], 0.0)
         self.assertEqual(levels["Juices"], "Out")
+
+    def test_compute_level_from_quantities_matches_thresholds(self) -> None:
+        self.assertEqual(compute_level_from_quantities(0, 10), "Out")
+        self.assertEqual(compute_level_from_quantities(8, 10), "High")
+        self.assertEqual(compute_level_from_quantities(4, 10), "Mid")
+        self.assertEqual(compute_level_from_quantities(3, 10), "Low")
+        self.assertEqual(compute_level_from_quantities(5, 0), "High")
 
     def test_summarize_levels_counts_expected_values(self) -> None:
         summary = summarize_levels(

@@ -8,9 +8,13 @@ from typing import Any
 from fastapi import APIRouter
 
 try:
-    from ..inventory_domain import INVENTORY_CATEGORIES
+    from ..inventory_domain import (
+        INVENTORY_CATEGORIES,
+        compute_level_from_quantities,
+        load_latest_inventory_run,
+    )
 except ImportError:
-    from inventory_domain import INVENTORY_CATEGORIES
+    from inventory_domain import INVENTORY_CATEGORIES, compute_level_from_quantities, load_latest_inventory_run
 
 import sys
 from pathlib import Path
@@ -46,20 +50,6 @@ def _baseline_to_reset_levels(baseline_inventory: dict[str, Any] | None) -> dict
     return levels
 
 
-def _compute_level_from_quantities(current_quantity: int, baseline_quantity: int) -> str:
-    """Compute level from current/baseline quantities using workflow thresholds."""
-    if current_quantity <= 0:
-        return "Out"
-    if baseline_quantity <= 0:
-        return "High"
-    ratio = current_quantity / baseline_quantity
-    if ratio > 0.70:
-        return "High"
-    if ratio > 0.30:
-        return "Mid"
-    return "Low"
-
-
 @router.get("/pantries")
 def list_customer_pantries():
     """Return pantry list with latest customer-facing category levels."""
@@ -78,18 +68,8 @@ def list_customer_pantries():
 
         payload = []
         for pantry in pantries:
-            latest_submit = (
-                db.query(InventoryRun)
-                .filter(InventoryRun.pantry_id == pantry.id, InventoryRun.source == "volunteer-submit")
-                .order_by(InventoryRun.created_at.desc())
-                .first()
-            )
-            latest_warehouse = (
-                db.query(InventoryRun)
-                .filter(InventoryRun.pantry_id == pantry.id, InventoryRun.source == "warehouse-snapshot")
-                .order_by(InventoryRun.created_at.desc())
-                .first()
-            )
+            latest_submit = load_latest_inventory_run(db, InventoryRun, pantry.id, "volunteer-submit")
+            latest_warehouse = load_latest_inventory_run(db, InventoryRun, pantry.id, "warehouse-snapshot")
 
             comparison = latest_submit.comparison if latest_submit and isinstance(latest_submit.comparison, dict) else {}
             run_levels = comparison.get("levels") if isinstance(comparison, dict) else {}
@@ -127,7 +107,7 @@ def list_customer_pantries():
                         )
 
                     current_quantity = int(submit_inventory.get(category, 0) or 0)
-                    levels[category] = _compute_level_from_quantities(current_quantity, baseline_quantity)
+                    levels[category] = compute_level_from_quantities(current_quantity, baseline_quantity)
                     original_quantities[category] = baseline_quantity
 
                 last_updated = latest_submit.created_at.isoformat() if latest_submit else None

@@ -8,7 +8,13 @@ from fastapi import APIRouter, File, UploadFile, Depends
 from sqlalchemy.orm import Session
 from database import get_db
 from models import Pantry, InventoryItem, InventoryRun
-from inventory_domain import accumulate_inventory_totals, resolve_pantry, normalize_inventory
+from inventory_domain import (
+    accumulate_inventory_totals,
+    load_latest_inventory_run,
+    normalize_inventory,
+    resolve_pantry,
+    upsert_pantry_inventory_items,
+)
 from schemas import INVENTORY_CATEGORIES
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
@@ -26,17 +32,6 @@ except ImportError:
 log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/manager", tags=["manager"])
-
-
-def _load_latest_volunteer_run(db: Session, pantry_id: int) -> InventoryRun | None:
-    """Return the latest volunteer-submitted current inventory for a pantry."""
-    return (
-        db.query(InventoryRun)
-        .filter(InventoryRun.pantry_id == pantry_id)
-        .filter(InventoryRun.source == "volunteer-submit")
-        .order_by(InventoryRun.created_at.desc())
-        .first()
-    )
 
 
 @router.post("/order-form")
@@ -109,7 +104,7 @@ async def update_baseline_inventory(
         return {"ok": False, "error": "Missing inventory data"}
 
     normalized_manager_inventory = normalize_inventory(inventory_data)
-    latest_volunteer_run = _load_latest_volunteer_run(db, pantry.id)
+    latest_volunteer_run = load_latest_inventory_run(db, InventoryRun, pantry.id, "volunteer-submit")
     previous_current_inventory = (
         normalize_inventory(latest_volunteer_run.inventory)
         if latest_volunteer_run is not None and isinstance(latest_volunteer_run.inventory, dict)
@@ -120,31 +115,8 @@ async def update_baseline_inventory(
         for category in INVENTORY_CATEGORIES
     }
 
-    # 3. Upsert items
-    for category in INVENTORY_CATEGORIES:
-        # If category is not in payload, default to 0 or skip?
-        # Let's update only if present, or assume complete update.
-        # Given the UI sends all categories, we can update all.
-        qty_val = combined_baseline_inventory[category]
+    upsert_pantry_inventory_items(db, InventoryItem, pantry.id, combined_baseline_inventory)
 
-        # Find existing item
-        item = (
-            db.query(InventoryItem)
-            .filter(InventoryItem.pantry_id == pantry.id, InventoryItem.category_name == category)
-            .first()
-        )
-        if item:
-            item.original_quantity = qty_val
-            item.status = "Out" if qty_val <= 0 else "High"
-        else:
-            item = InventoryItem(
-                pantry_id=pantry.id,
-                category_name=category,
-                original_quantity=qty_val,
-                status="Out" if qty_val <= 0 else "High"
-            )
-            db.add(item)
-    
     
     try:
         db.commit()

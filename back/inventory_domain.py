@@ -64,6 +64,20 @@ def validate_inventory(inventory: dict[str, Any] | None) -> tuple[bool, str | No
     return True, None
 
 
+def compute_level_from_quantities(current_quantity: int, baseline_quantity: int) -> str:
+    """Compute a single customer-facing level from current and baseline stock."""
+    if current_quantity <= 0:
+        return "Out"
+    if baseline_quantity <= 0:
+        return "High"
+    ratio = current_quantity / baseline_quantity
+    if ratio > 0.70:
+        return "High"
+    if ratio > 0.30:
+        return "Mid"
+    return "Low"
+
+
 def compute_ratios_and_levels(
     detected_inventory: dict[str, Any] | None,
     previous_inventory: dict[str, Any] | None,
@@ -83,15 +97,7 @@ def compute_ratios_and_levels(
         else:
             ratio = round(detected_value / previous_value, 4)
         ratios[category] = ratio
-
-        if ratio == 0:
-            levels[category] = "Out"
-        elif ratio > 0.70:
-            levels[category] = "High"
-        elif ratio > 0.30:
-            levels[category] = "Mid"
-        else:
-            levels[category] = "Low"
+        levels[category] = compute_level_from_quantities(detected_value, previous_value)
 
     return ratios, levels
 
@@ -112,3 +118,44 @@ def resolve_pantry(db, pantry_model, pantry_identifier: str):
         if pantry is not None:
             return pantry
     return db.query(pantry_model).filter(pantry_model.name == pantry_identifier).first()
+
+
+def load_latest_inventory_run(db, run_model, pantry_id: int, source: str):
+    """Fetch the latest inventory run for a pantry and source."""
+    return (
+        db.query(run_model)
+        .filter(run_model.pantry_id == pantry_id)
+        .filter(run_model.source == source)
+        .order_by(run_model.created_at.desc())
+        .first()
+    )
+
+
+def upsert_pantry_inventory_items(
+    db,
+    item_model,
+    pantry_id: int,
+    baseline_inventory: dict[str, int],
+    current_inventory: dict[str, int] | None = None,
+) -> None:
+    """Keep inventory item rows aligned with baseline and latest current stock."""
+    for category in INVENTORY_CATEGORIES:
+        baseline_qty = int(baseline_inventory.get(category, 0))
+        current_qty = baseline_qty if current_inventory is None else int(current_inventory.get(category, 0))
+
+        item = (
+            db.query(item_model)
+            .filter(item_model.pantry_id == pantry_id, item_model.category_name == category)
+            .first()
+        )
+        if item is None:
+            item = item_model(
+                pantry_id=pantry_id,
+                category_name=category,
+                original_quantity=baseline_qty,
+                status="normal",
+            )
+            db.add(item)
+        else:
+            item.original_quantity = baseline_qty
+        item.update_status(current_qty)
