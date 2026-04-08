@@ -472,7 +472,7 @@ export default function DashboardClient({
         </aside>
 
         <section className="relative rounded-3xl border border-white/70 bg-white/90 p-5 shadow-lg shadow-zinc-300/30 backdrop-blur dark:border-zinc-800/80 dark:bg-zinc-900/80 dark:shadow-black/20 sm:p-7">
-          <div className="absolute right-5 top-5 z-20 sm:right-7 sm:top-7">
+          <div className="relative z-20 mb-4 flex justify-end sm:absolute sm:right-7 sm:top-7 sm:mb-0">
             <div className="relative">
               <button
                 type="button"
@@ -532,7 +532,7 @@ export default function DashboardClient({
             </div>
           </div>
 
-          <div className="mb-5 flex flex-col gap-3 pr-20 sm:flex-row sm:items-end sm:justify-between sm:pr-24">
+          <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:pr-24">
             <SectionHeader
               title="Pantry Access Management"
               subtitle="Create and maintain pantry credentials. Passwords remain hashed and are never shown in plain text."
@@ -658,7 +658,127 @@ export default function DashboardClient({
             </div>
           )}
 
-          <div className="overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
+          <div className="space-y-3 md:hidden">
+            {loadingCredentials &&
+              Array.from({ length: 3 }).map((_, idx) => (
+                <Card key={`mobile-skeleton-${idx}`} className="rounded-2xl p-4">
+                  <div className="space-y-3">
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-4 w-40" />
+                    <Skeleton className="h-8 w-28" />
+                  </div>
+                </Card>
+              ))}
+
+            {!loadingCredentials && filteredCredentials.length === 0 && (
+              <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+                <EmptyState
+                  title="No matching pantries"
+                  description="Adjust search or filter to view pantry credentials."
+                />
+              </div>
+            )}
+
+            {!loadingCredentials &&
+              filteredCredentials.map((cred) => (
+                <Card key={`mobile-${cred.pantryId}`} className="rounded-2xl p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500 dark:text-zinc-400">
+                        Pantry ID
+                      </p>
+                      <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                        {cred.pantryId}
+                      </p>
+                    </div>
+                    <Badge tone={cred.hasCredentials ? "success" : "warning"}>
+                      {cred.hasCredentials ? "Configured" : "Missing"}
+                    </Badge>
+                  </div>
+
+                  <div className="mt-3">
+                    <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{cred.name}</p>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                      {cred.location || "No location"}
+                    </p>
+                  </div>
+
+                  <div className="mt-3 flex flex-col gap-2">
+                    <button
+                      type="button"
+                      onClick={() => toggleRowMenu(cred.pantryId)}
+                      className="self-start rounded-lg bg-zinc-900 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+                    >
+                      {openRowMenu === cred.pantryId ? "Close" : "Manage"}
+                    </button>
+
+                    {openRowMenu === cred.pantryId && (
+                      <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-800/60">
+                        <p className="mb-2 text-xs text-zinc-500 dark:text-zinc-400">
+                          Leave any field blank to keep its current value.
+                        </p>
+                        <div className="flex flex-col gap-2">
+                          <input
+                            value={rowDrafts[cred.pantryId]?.name ?? ""}
+                            onChange={(e) =>
+                              updateRowDraftField(cred.pantryId, "name", e.target.value)
+                            }
+                            type="text"
+                            placeholder="New name"
+                            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-zinc-500 dark:focus:ring-zinc-800"
+                          />
+                          <input
+                            value={rowDrafts[cred.pantryId]?.location ?? ""}
+                            onChange={(e) =>
+                              updateRowDraftField(cred.pantryId, "location", e.target.value)
+                            }
+                            type="text"
+                            placeholder="New location"
+                            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-zinc-500 dark:focus:ring-zinc-800"
+                          />
+                          <input
+                            value={rowDrafts[cred.pantryId]?.newPassword ?? ""}
+                            onChange={(e) =>
+                              updateRowDraftField(cred.pantryId, "newPassword", e.target.value)
+                            }
+                            type="password"
+                            placeholder="New password"
+                            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-zinc-500 dark:focus:ring-zinc-800"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => saveRowUpdate(cred.pantryId)}
+                            disabled={savingRows[cred.pantryId]}
+                            className="self-start rounded-lg bg-zinc-900 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-zinc-800 disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+                          >
+                            {savingRows[cred.pantryId] ? "Saving..." : "Update"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDeleteTargetPantryId(cred.pantryId)}
+                            disabled={savingRows[cred.pantryId]}
+                            className="self-start rounded-lg border border-red-300 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-wide text-red-700 transition hover:bg-red-50 disabled:opacity-60 dark:border-red-800 dark:bg-zinc-900 dark:text-red-300 dark:hover:bg-red-950/30"
+                          >
+                            {savingRows[cred.pantryId] ? "Working..." : "Remove Login Credentials"}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {rowError[cred.pantryId] && (
+                      <p className="text-xs text-red-600 dark:text-red-400">{rowError[cred.pantryId]}</p>
+                    )}
+                    {rowNotice[cred.pantryId] && (
+                      <p className="text-xs text-emerald-700 dark:text-emerald-400">
+                        {rowNotice[cred.pantryId]}
+                      </p>
+                    )}
+                  </div>
+                </Card>
+              ))}
+          </div>
+
+          <div className="hidden overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800 md:block">
             <table className="min-w-full">
               <thead className="bg-zinc-100/80 dark:bg-zinc-800/70">
                 <tr>
