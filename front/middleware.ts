@@ -9,6 +9,17 @@ const secret =
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+
+  // Allow direct access to static files in /public (e.g. .svg, .png).
+  if (pathname.includes(".") && !pathname.startsWith("/api/")) {
+    return NextResponse.next();
+  }
+
+  // Keep the homepage chatbot API publicly reachable.
+  if (pathname === "/api/chat") {
+    return NextResponse.next();
+  }
+
   const token = await getToken({ req, secret });
   if (!token) {
     const loginUrl = new URL("/login", req.url);
@@ -32,5 +43,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!login|api/auth|_next/static|_next/image|favicon.ico)(?!$).*)"],
+  matcher: ["/((?!login|api/auth|api/chat|_next/static|_next/image|favicon.ico)(?!$).*)"],
 };

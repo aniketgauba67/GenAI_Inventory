@@ -8,6 +8,7 @@ import Card from "../components/ui/Card";
 import Input from "../components/ui/Input";
 import { useToast } from "../components/ui/Toast";
 import Button from "../components/ui/Button";
+import FloatingChat from "../components/chat/FloatingChat";
 
 type PantryRecord = {
   pantryId: string;
@@ -383,6 +384,7 @@ export default function HomePage() {
           </Card>
         </section>
       </div>
+      <FloatingChat pantryId={activePantry?.pantryId || ""} />
     </main>
   );
 }
