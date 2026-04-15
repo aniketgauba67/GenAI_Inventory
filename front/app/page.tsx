@@ -10,6 +10,8 @@ import { useToast } from "../components/ui/Toast";
 import Button from "../components/ui/Button";
 import FloatingChat from "../components/chat/FloatingChat";
 
+type OperatingSlot = { day: string; open: string; close: string };
+
 type PantryRecord = {
   pantryId: string;
   name: string;
@@ -18,7 +20,40 @@ type PantryRecord = {
   levels: Record<string, string>;
   originalQuantities: Record<string, number>;
   isOpen: boolean;
+  manualOverride: boolean;
+  operatingHours: OperatingSlot[];
 };
+
+const DAY_LABELS: Record<string, string> = {
+  mon: "Mon",
+  tue: "Tue",
+  wed: "Wed",
+  thu: "Thu",
+  fri: "Fri",
+  sat: "Sat",
+  sun: "Sun",
+};
+
+const DAY_ORDER = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+
+function formatTime(t: string) {
+  const [h, m] = t.split(":").map(Number);
+  const suffix = h >= 12 ? "pm" : "am";
+  const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+  return m === 0 ? `${h12}${suffix}` : `${h12}:${String(m).padStart(2, "0")}${suffix}`;
+}
+
+function groupHoursByDay(hours: OperatingSlot[]): { day: string; slots: { open: string; close: string }[] }[] {
+  const map = new Map<string, { open: string; close: string }[]>();
+  for (const slot of hours) {
+    const existing = map.get(slot.day) || [];
+    existing.push({ open: slot.open, close: slot.close });
+    map.set(slot.day, existing);
+  }
+  return DAY_ORDER
+    .filter((d) => map.has(d))
+    .map((d) => ({ day: d, slots: map.get(d)! }));
+}
 
 const CATEGORY_ORDER = [
   "Beverages",
@@ -368,9 +403,35 @@ export default function HomePage() {
                     </span>
                     <span className={`rounded-full border px-3 py-1 font-semibold ${activePantry.isOpen ? "border-teal-200 bg-teal-50 text-teal-700 dark:border-teal-900/60 dark:bg-teal-950/40 dark:text-teal-300" : "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300"}`}>
                       {activePantry.isOpen ? "Open" : "Closed"}
+                      {activePantry.manualOverride && " (Manual)"}
                     </span>
                   </div>
                 </div>
+
+                {activePantry.operatingHours && activePantry.operatingHours.length > 0 && (
+                  <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-900/50">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      Operating Hours
+                    </p>
+                    <div className="grid gap-1">
+                      {groupHoursByDay(activePantry.operatingHours).map(({ day, slots }) => (
+                        <div key={day} className="flex items-baseline gap-2 text-sm">
+                          <span className="w-8 shrink-0 font-semibold text-slate-700 dark:text-slate-200">
+                            {DAY_LABELS[day] || day}
+                          </span>
+                          <span className="text-slate-600 dark:text-slate-300">
+                            {slots.map((s, i) => (
+                              <span key={i}>
+                                {i > 0 && ", "}
+                                {formatTime(s.open)} – {formatTime(s.close)}
+                              </span>
+                            ))}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <div className="mt-4 grid gap-2 sm:grid-cols-2 2xl:grid-cols-3">
                   {CATEGORY_ORDER.map((category) => (

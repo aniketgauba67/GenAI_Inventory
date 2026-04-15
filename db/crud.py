@@ -141,6 +141,7 @@ def get_pantry_credential_registry() -> list[dict]:
                     "location": pantry.location,
                     "hasCredentials": credentials is not None,
                     "isOpen": pantry.is_open,
+                    "manualOverride": pantry.manual_override,
                 }
             )
         print(f"✓ Loaded pantry credential registry for {len(registry)} pantries")
@@ -153,7 +154,7 @@ def get_pantry_credential_registry() -> list[dict]:
 
 
 def toggle_pantry_status(pantry_id: int) -> dict | None:
-    """Toggle the is_open flag on a pantry and return the new state."""
+    """Toggle the is_open flag and enable manual_override so the scheduler won't overwrite it."""
     db = SessionLocal()
     try:
         pantry = db.query(Pantry).filter(Pantry.id == pantry_id).first()
@@ -161,13 +162,57 @@ def toggle_pantry_status(pantry_id: int) -> dict | None:
             print(f"✗ Pantry {pantry_id} not found")
             return None
         pantry.is_open = not pantry.is_open
+        pantry.manual_override = True
         db.commit()
         db.refresh(pantry)
-        print(f"✓ Toggled pantry {pantry_id} is_open → {pantry.is_open}")
-        return {"pantryId": str(pantry.id), "isOpen": pantry.is_open}
+        print(f"✓ Toggled pantry {pantry_id} is_open → {pantry.is_open} (manual_override=True)")
+        return {"pantryId": str(pantry.id), "isOpen": pantry.is_open, "manualOverride": True}
     except Exception as e:
         db.rollback()
         print(f"✗ Error toggling pantry status: {e}")
+        raise
+    finally:
+        db.close()
+
+
+def clear_manual_override(pantry_id: int) -> dict | None:
+    """Clear manual_override and immediately re-evaluate the schedule."""
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    TIMEZONE = ZoneInfo("America/New_York")
+    DAY_MAP = {0: "mon", 1: "tue", 2: "wed", 3: "thu", 4: "fri", 5: "sat", 6: "sun"}
+
+    db = SessionLocal()
+    try:
+        pantry = db.query(Pantry).filter(Pantry.id == pantry_id).first()
+        if pantry is None:
+            return None
+        pantry.manual_override = False
+
+        hours = pantry.operating_hours
+        if isinstance(hours, list) and hours:
+            now = datetime.now(TIMEZONE)
+            current_day = DAY_MAP[now.weekday()]
+            current_minutes = now.hour * 60 + now.minute
+            should_be_open = False
+            for slot in hours:
+                if slot.get("day") != current_day:
+                    continue
+                h_o, m_o = slot["open"].split(":")
+                h_c, m_c = slot["close"].split(":")
+                if int(h_o) * 60 + int(m_o) <= current_minutes < int(h_c) * 60 + int(m_c):
+                    should_be_open = True
+                    break
+            pantry.is_open = should_be_open
+
+        db.commit()
+        db.refresh(pantry)
+        print(f"✓ Cleared manual_override for pantry {pantry_id}, is_open → {pantry.is_open}")
+        return {"pantryId": str(pantry.id), "isOpen": pantry.is_open, "manualOverride": False}
+    except Exception as e:
+        db.rollback()
+        print(f"✗ Error clearing manual override: {e}")
         raise
     finally:
         db.close()

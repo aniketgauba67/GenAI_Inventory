@@ -23,8 +23,10 @@ class Pantry(Base):
     location = Column(String(255), nullable=True)
     # Whether the pantry is currently open for visitors.
     is_open = Column(Boolean, default=True, nullable=False, server_default="true")
-    # Weekly schedule as JSON array: [{"day":"mon","open":"09:00","close":"17:00"}, ...]
+    # Weekly operating hours as JSON array: [{"day":"mon","open":"11:00","close":"16:00"}, ...]
     operating_hours = Column(JSONB, nullable=True)
+    # When True the scheduler skips this pantry, preserving the manual is_open value.
+    manual_override = Column(Boolean, default=False, nullable=False, server_default="false")
     created_at = Column(DateTime, default=datetime.utcnow)
 
     __table_args__ = (

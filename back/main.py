@@ -1,4 +1,5 @@
 import logging
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,10 +12,19 @@ from routers.volunteer_inventory import router as volunteer_inventory_router
 from routers.manager import router as manager_router
 from routers.customer import router as customer_router
 from routers.chat import router as chat_router
+import scheduler
 
 logging.basicConfig(level=logging.INFO)
 
-app = FastAPI(title="GenAI Inventory API")
+
+@asynccontextmanager
+async def lifespan(application: FastAPI):
+    scheduler.start()
+    yield
+    scheduler.stop()
+
+
+app = FastAPI(title="GenAI Inventory API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,

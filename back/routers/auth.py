@@ -275,5 +275,52 @@ def toggle_pantry_status(payload: PantryToggleStatusRequest) -> PantryToggleStat
         ok=True,
         pantryId=result["pantryId"],
         isOpen=result["isOpen"],
-        message=f"Pantry is now {status_label}.",
+        manualOverride=result.get("manualOverride", True),
+        message=f"Pantry is now {status_label} (manual override on).",
     )
+
+
+@router.post("/pantry/clear-override", response_model=PantryToggleStatusResponse)
+def clear_pantry_override(payload: PantryToggleStatusRequest) -> PantryToggleStatusResponse:
+    """Remove manual override and immediately re-evaluate the schedule."""
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+    from scheduler import _is_within_schedule, TIMEZONE
+
+    pantry_id_raw = payload.pantryId.strip()
+    if not pantry_id_raw.isdigit():
+        return PantryToggleStatusResponse(ok=False, error="Pantry id must be numeric.")
+
+    pantry_id = int(pantry_id_raw)
+
+    from database import SessionLocal
+    from models import Pantry as PantryModel
+    db = SessionLocal()
+    try:
+        pantry = db.query(PantryModel).filter(PantryModel.id == pantry_id).first()
+        if pantry is None:
+            return PantryToggleStatusResponse(ok=False, error=f"Pantry {pantry_id_raw} not found.")
+
+        pantry.manual_override = False
+
+        hours = pantry.operating_hours
+        if isinstance(hours, list) and hours:
+            now = datetime.now(TIMEZONE)
+            pantry.is_open = _is_within_schedule(now, hours)
+
+        db.commit()
+        db.refresh(pantry)
+
+        status_label = "open" if pantry.is_open else "closed"
+        return PantryToggleStatusResponse(
+            ok=True,
+            pantryId=str(pantry.id),
+            isOpen=pantry.is_open,
+            manualOverride=False,
+            message=f"Switched to auto schedule (currently {status_label}).",
+        )
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        db.close()

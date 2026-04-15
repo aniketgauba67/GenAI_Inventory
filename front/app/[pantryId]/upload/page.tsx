@@ -45,6 +45,7 @@ export default function UploadPage() {
   const [pantries, setPantries] = useState<Array<{ pantryId: string; name: string }>>([]);
   const [pantryLoadError, setPantryLoadError] = useState<string | null>(null);
   const [isPantryOpen, setIsPantryOpen] = useState<boolean | null>(null);
+  const [isManualOverride, setIsManualOverride] = useState(false);
   const [togglingStatus, setTogglingStatus] = useState(false);
   const [uploadResult, setUploadResult] = useState<{
     ok: boolean;
@@ -131,7 +132,10 @@ export default function UploadPage() {
         const data = await res.json();
         if (!ignore && data.ok && Array.isArray(data.pantries)) {
           const match = data.pantries.find((p: { pantryId: string }) => String(p.pantryId) === String(pantryId));
-          if (match) setIsPantryOpen(match.isOpen ?? true);
+          if (match) {
+            setIsPantryOpen(match.isOpen ?? true);
+            setIsManualOverride(match.manualOverride ?? false);
+          }
         }
       } catch { /* ignore */ }
     }
@@ -152,12 +156,38 @@ export default function UploadPage() {
       const data = await res.json();
       if (data.ok) {
         setIsPantryOpen(data.isOpen);
+        setIsManualOverride(data.manualOverride ?? true);
         showToast(data.message, "success");
       } else {
         showToast(data.error || "Failed to toggle status.", "error");
       }
     } catch {
       showToast("Network error while toggling status.", "error");
+    } finally {
+      setTogglingStatus(false);
+    }
+  }
+
+  async function handleClearOverride() {
+    const effectiveId = isDirector ? targetPantryId : pantryId;
+    if (!effectiveId || togglingStatus) return;
+    setTogglingStatus(true);
+    try {
+      const res = await fetch(`${apiBase}/auth/pantry/clear-override`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pantryId: effectiveId }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setIsPantryOpen(data.isOpen);
+        setIsManualOverride(false);
+        showToast(data.message, "success");
+      } else {
+        showToast(data.error || "Failed to clear override.", "error");
+      }
+    } catch {
+      showToast("Network error.", "error");
     } finally {
       setTogglingStatus(false);
     }
@@ -231,19 +261,32 @@ export default function UploadPage() {
       rightAction={
         <div className="flex items-center gap-2">
           {isPantryOpen !== null && (
-            <button
-              type="button"
-              onClick={handleToggleStatus}
-              disabled={togglingStatus}
-              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
-                isPantryOpen
-                  ? "border-teal-300 bg-teal-50 text-teal-700 hover:bg-teal-100 dark:border-teal-800 dark:bg-teal-950/40 dark:text-teal-300 dark:hover:bg-teal-900/50"
-                  : "border-rose-300 bg-rose-50 text-rose-700 hover:bg-rose-100 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300 dark:hover:bg-rose-900/50"
-              }`}
-            >
-              <span className={`h-2 w-2 rounded-full ${isPantryOpen ? "bg-teal-500" : "bg-rose-500"}`} />
-              {togglingStatus ? "..." : isPantryOpen ? "Open" : "Closed"}
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={handleToggleStatus}
+                disabled={togglingStatus}
+                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                  isPantryOpen
+                    ? "border-teal-300 bg-teal-50 text-teal-700 hover:bg-teal-100 dark:border-teal-800 dark:bg-teal-950/40 dark:text-teal-300 dark:hover:bg-teal-900/50"
+                    : "border-rose-300 bg-rose-50 text-rose-700 hover:bg-rose-100 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300 dark:hover:bg-rose-900/50"
+                }`}
+              >
+                <span className={`h-2 w-2 rounded-full ${isPantryOpen ? "bg-teal-500" : "bg-rose-500"}`} />
+                {togglingStatus ? "..." : isPantryOpen ? "Open" : "Closed"}
+                {isManualOverride && !togglingStatus && <span className="ml-0.5 text-[9px] opacity-70">Manual</span>}
+              </button>
+              {isManualOverride && (
+                <button
+                  type="button"
+                  onClick={handleClearOverride}
+                  disabled={togglingStatus}
+                  className="rounded-full border border-slate-300 bg-white px-2.5 py-1.5 text-[10px] font-medium text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+                >
+                  Auto
+                </button>
+              )}
+            </>
           )}
           <Button variant="ghost" size="sm" onClick={() => signOut({ callbackUrl: "/" })}>
             Switch account

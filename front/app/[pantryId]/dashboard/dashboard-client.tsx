@@ -25,6 +25,7 @@ type PantryCredential = {
   location: string | null;
   hasCredentials: boolean;
   isOpen: boolean;
+  manualOverride: boolean;
 };
 
 type PantryManageDraft = {
@@ -87,7 +88,7 @@ export default function DashboardClient({
       if (data.ok) {
         setCredentials((prev) =>
           prev.map((c) =>
-            c.pantryId === pantryIdValue ? { ...c, isOpen: data.isOpen } : c
+            c.pantryId === pantryIdValue ? { ...c, isOpen: data.isOpen, manualOverride: data.manualOverride ?? true } : c
           )
         );
         showToast(data.message, "success");
@@ -96,6 +97,32 @@ export default function DashboardClient({
       }
     } catch {
       showToast("Network error while toggling pantry status.", "error");
+    } finally {
+      setTogglingRows((prev) => ({ ...prev, [pantryIdValue]: false }));
+    }
+  }
+
+  async function handleClearOverride(pantryIdValue: string) {
+    setTogglingRows((prev) => ({ ...prev, [pantryIdValue]: true }));
+    try {
+      const response = await fetch(`${apiBase}/auth/pantry/clear-override`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pantryId: pantryIdValue }),
+      });
+      const data = await response.json();
+      if (data.ok) {
+        setCredentials((prev) =>
+          prev.map((c) =>
+            c.pantryId === pantryIdValue ? { ...c, isOpen: data.isOpen, manualOverride: false } : c
+          )
+        );
+        showToast(data.message, "success");
+      } else {
+        showToast(data.error || "Failed to clear override.", "error");
+      }
+    } catch {
+      showToast("Network error.", "error");
     } finally {
       setTogglingRows((prev) => ({ ...prev, [pantryIdValue]: false }));
     }
@@ -732,7 +759,18 @@ export default function DashboardClient({
                       >
                         <span className={`h-1.5 w-1.5 rounded-full ${cred.isOpen ? "bg-teal-500" : "bg-rose-500"}`} />
                         {togglingRows[cred.pantryId] ? "..." : cred.isOpen ? "Open" : "Closed"}
+                        {cred.manualOverride && !togglingRows[cred.pantryId] && <span className="ml-0.5 normal-case opacity-70">Manual</span>}
                       </button>
+                      {cred.manualOverride && (
+                        <button
+                          type="button"
+                          onClick={() => handleClearOverride(cred.pantryId)}
+                          disabled={togglingRows[cred.pantryId]}
+                          className="rounded-full border border-slate-300 bg-white px-2 py-0.5 text-[9px] font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                        >
+                          Auto
+                        </button>
+                      )}
                       <Badge tone={cred.hasCredentials ? "success" : "warning"}>
                         {cred.hasCredentials ? "Configured" : "Missing"}
                       </Badge>
@@ -889,19 +927,32 @@ export default function DashboardClient({
                       </Badge>
                     </td>
                     <td className="px-4 py-3">
-                      <button
-                        type="button"
-                        onClick={() => handleTogglePantryStatus(cred.pantryId)}
-                        disabled={togglingRows[cred.pantryId]}
-                        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
-                          cred.isOpen
-                            ? "border-teal-300 bg-teal-50 text-teal-700 hover:bg-teal-100 dark:border-teal-800 dark:bg-teal-950/40 dark:text-teal-300"
-                            : "border-rose-300 bg-rose-50 text-rose-700 hover:bg-rose-100 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300"
-                        }`}
-                      >
-                        <span className={`h-2 w-2 rounded-full ${cred.isOpen ? "bg-teal-500" : "bg-rose-500"}`} />
-                        {togglingRows[cred.pantryId] ? "..." : cred.isOpen ? "Open" : "Closed"}
-                      </button>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleTogglePantryStatus(cred.pantryId)}
+                          disabled={togglingRows[cred.pantryId]}
+                          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                            cred.isOpen
+                              ? "border-teal-300 bg-teal-50 text-teal-700 hover:bg-teal-100 dark:border-teal-800 dark:bg-teal-950/40 dark:text-teal-300"
+                              : "border-rose-300 bg-rose-50 text-rose-700 hover:bg-rose-100 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300"
+                          }`}
+                        >
+                          <span className={`h-2 w-2 rounded-full ${cred.isOpen ? "bg-teal-500" : "bg-rose-500"}`} />
+                          {togglingRows[cred.pantryId] ? "..." : cred.isOpen ? "Open" : "Closed"}
+                          {cred.manualOverride && !togglingRows[cred.pantryId] && <span className="ml-0.5 text-[9px] opacity-70">Manual</span>}
+                        </button>
+                        {cred.manualOverride && (
+                          <button
+                            type="button"
+                            onClick={() => handleClearOverride(cred.pantryId)}
+                            disabled={togglingRows[cred.pantryId]}
+                            className="rounded-full border border-slate-300 bg-white px-2 py-1 text-[10px] font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                          >
+                            Auto
+                          </button>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex min-w-[240px] flex-col gap-2">

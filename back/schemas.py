@@ -77,6 +77,7 @@ class PantryCredentialSummary(BaseModel):
     location: str | None = None
     hasCredentials: bool
     isOpen: bool = True
+    manualOverride: bool = False
 
 
 class PantryCredentialRegistryResponse(BaseModel):
@@ -165,5 +166,6 @@ class PantryToggleStatusResponse(BaseModel):
     ok: bool
     pantryId: str | None = None
     isOpen: bool | None = None
+    manualOverride: bool | None = None
     message: str | None = None
     error: str | None = None
