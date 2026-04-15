@@ -21,6 +21,10 @@ class Pantry(Base):
     name = Column(String(100), nullable=False)
     # Optional location text for operators.
     location = Column(String(255), nullable=True)
+    # Whether the pantry is currently open for visitors.
+    is_open = Column(Boolean, default=True, nullable=False, server_default="true")
+    # Weekly schedule as JSON array: [{"day":"mon","open":"09:00","close":"17:00"}, ...]
+    operating_hours = Column(JSONB, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     __table_args__ = (

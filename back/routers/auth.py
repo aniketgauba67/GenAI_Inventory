@@ -22,6 +22,8 @@ try:
         PantryManageUpdateResponse,
         PantryPasswordUpdateRequest,
         PantryPasswordUpdateResponse,
+        PantryToggleStatusRequest,
+        PantryToggleStatusResponse,
     )
 except ImportError:
     from schemas import (
@@ -39,6 +41,8 @@ except ImportError:
         PantryManageUpdateResponse,
         PantryPasswordUpdateRequest,
         PantryPasswordUpdateResponse,
+        PantryToggleStatusRequest,
+        PantryToggleStatusResponse,
     )
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
@@ -252,4 +256,24 @@ def update_pantry_password(
     return PantryPasswordUpdateResponse(
         ok=True,
         message=f"Updated password for pantry {pantry_id_raw}.",
+    )
+
+
+@router.post("/pantry/toggle-status", response_model=PantryToggleStatusResponse)
+def toggle_pantry_status(payload: PantryToggleStatusRequest) -> PantryToggleStatusResponse:
+    pantry_id_raw = payload.pantryId.strip()
+    if not pantry_id_raw.isdigit():
+        return PantryToggleStatusResponse(ok=False, error="Pantry id must be numeric.")
+
+    pantry_id = int(pantry_id_raw)
+    result = _get_crud_module().toggle_pantry_status(pantry_id)
+    if result is None:
+        return PantryToggleStatusResponse(ok=False, error=f"Pantry {pantry_id_raw} not found.")
+
+    status_label = "open" if result["isOpen"] else "closed"
+    return PantryToggleStatusResponse(
+        ok=True,
+        pantryId=result["pantryId"],
+        isOpen=result["isOpen"],
+        message=f"Pantry is now {status_label}.",
     )

@@ -17,6 +17,7 @@ type PantryRecord = {
   lastUpdated: string | null;
   levels: Record<string, string>;
   originalQuantities: Record<string, number>;
+  isOpen: boolean;
 };
 
 const CATEGORY_ORDER = [
@@ -324,7 +325,12 @@ export default function HomePage() {
                             {pantry.location || "Address not available"}
                           </p>
                         </div>
-                        <span className={`mt-0.5 h-2.5 w-2.5 rounded-full ${selected ? "bg-orange-500" : "bg-teal-500"}`} />
+                        <div className="flex shrink-0 items-center gap-1.5">
+                          <span className={`h-2.5 w-2.5 rounded-full ${pantry.isOpen ? "bg-teal-500" : "bg-rose-400"}`} />
+                          <span className={`text-[10px] font-semibold uppercase tracking-wide ${pantry.isOpen ? "text-teal-600 dark:text-teal-400" : "text-rose-500 dark:text-rose-400"}`}>
+                            {pantry.isOpen ? "Open" : "Closed"}
+                          </span>
+                        </div>
                       </div>
                     </button>
                   );
@@ -359,6 +365,9 @@ export default function HomePage() {
                     </span>
                     <span className="rounded-full border border-orange-200 bg-orange-50 px-3 py-1 dark:border-orange-900/60 dark:bg-orange-950/40">
                       Last updated: {activePantry.lastUpdated ? new Date(activePantry.lastUpdated).toLocaleString() : "Not available"}
+                    </span>
+                    <span className={`rounded-full border px-3 py-1 font-semibold ${activePantry.isOpen ? "border-teal-200 bg-teal-50 text-teal-700 dark:border-teal-900/60 dark:bg-teal-950/40 dark:text-teal-300" : "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300"}`}>
+                      {activePantry.isOpen ? "Open" : "Closed"}
                     </span>
                   </div>
                 </div>

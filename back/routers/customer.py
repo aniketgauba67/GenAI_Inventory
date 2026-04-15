@@ -130,6 +130,7 @@ def list_customer_pantries():
                     "lastUpdated": last_updated,
                     "levels": levels,
                     "originalQuantities": original_quantities,
+                    "isOpen": pantry.is_open,
                 }
             )
 

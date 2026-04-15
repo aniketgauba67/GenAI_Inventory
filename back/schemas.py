@@ -76,6 +76,7 @@ class PantryCredentialSummary(BaseModel):
     name: str
     location: str | None = None
     hasCredentials: bool
+    isOpen: bool = True
 
 
 class PantryCredentialRegistryResponse(BaseModel):
@@ -148,5 +149,21 @@ class PantryCredentialDeleteResponse(BaseModel):
     """Result of removing pantry login credentials."""
 
     ok: bool
+    message: str | None = None
+    error: str | None = None
+
+
+class PantryToggleStatusRequest(BaseModel):
+    """Payload for toggling a pantry's open/closed status."""
+
+    pantryId: str = Field(min_length=1, description="Numeric pantry identifier")
+
+
+class PantryToggleStatusResponse(BaseModel):
+    """Result of toggling a pantry's open/closed status."""
+
+    ok: bool
+    pantryId: str | None = None
+    isOpen: bool | None = None
     message: str | None = None
     error: str | None = None

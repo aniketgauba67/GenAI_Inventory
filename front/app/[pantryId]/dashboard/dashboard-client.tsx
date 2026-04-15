@@ -24,6 +24,7 @@ type PantryCredential = {
   name: string;
   location: string | null;
   hasCredentials: boolean;
+  isOpen: boolean;
 };
 
 type PantryManageDraft = {
@@ -72,6 +73,33 @@ export default function DashboardClient({
   const [ownPasswordError, setOwnPasswordError] = useState<string | null>(null);
   const [savingOwnPassword, setSavingOwnPassword] = useState(false);
   const [deleteTargetPantryId, setDeleteTargetPantryId] = useState<string | null>(null);
+  const [togglingRows, setTogglingRows] = useState<Record<string, boolean>>({});
+
+  async function handleTogglePantryStatus(pantryIdValue: string) {
+    setTogglingRows((prev) => ({ ...prev, [pantryIdValue]: true }));
+    try {
+      const response = await fetch(`${apiBase}/auth/pantry/toggle-status`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pantryId: pantryIdValue }),
+      });
+      const data = await response.json();
+      if (data.ok) {
+        setCredentials((prev) =>
+          prev.map((c) =>
+            c.pantryId === pantryIdValue ? { ...c, isOpen: data.isOpen } : c
+          )
+        );
+        showToast(data.message, "success");
+      } else {
+        showToast(data.error || "Failed to toggle pantry status.", "error");
+      }
+    } catch {
+      showToast("Network error while toggling pantry status.", "error");
+    } finally {
+      setTogglingRows((prev) => ({ ...prev, [pantryIdValue]: false }));
+    }
+  }
 
   async function loadCredentials() {
     setLoadingCredentials(true);
@@ -691,9 +719,24 @@ export default function DashboardClient({
                         {cred.pantryId}
                       </p>
                     </div>
-                    <Badge tone={cred.hasCredentials ? "success" : "warning"}>
-                      {cred.hasCredentials ? "Configured" : "Missing"}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleTogglePantryStatus(cred.pantryId)}
+                        disabled={togglingRows[cred.pantryId]}
+                        className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide transition ${
+                          cred.isOpen
+                            ? "border-teal-300 bg-teal-50 text-teal-700 hover:bg-teal-100 dark:border-teal-800 dark:bg-teal-950/40 dark:text-teal-300"
+                            : "border-rose-300 bg-rose-50 text-rose-700 hover:bg-rose-100 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300"
+                        }`}
+                      >
+                        <span className={`h-1.5 w-1.5 rounded-full ${cred.isOpen ? "bg-teal-500" : "bg-rose-500"}`} />
+                        {togglingRows[cred.pantryId] ? "..." : cred.isOpen ? "Open" : "Closed"}
+                      </button>
+                      <Badge tone={cred.hasCredentials ? "success" : "warning"}>
+                        {cred.hasCredentials ? "Configured" : "Missing"}
+                      </Badge>
+                    </div>
                   </div>
 
                   <div className="mt-3">
@@ -792,6 +835,9 @@ export default function DashboardClient({
                     Credential Status
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-zinc-600 dark:text-zinc-300">
+                    Open / Closed
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-zinc-600 dark:text-zinc-300">
                     Manage
                   </th>
                 </tr>
@@ -804,6 +850,7 @@ export default function DashboardClient({
                         <td className="px-4 py-3"><Skeleton className="h-4 w-12" /></td>
                         <td className="px-4 py-3"><Skeleton className="h-4 w-48" /></td>
                         <td className="px-4 py-3"><Skeleton className="h-4 w-24" /></td>
+                        <td className="px-4 py-3"><Skeleton className="h-4 w-16" /></td>
                         <td className="px-4 py-3"><Skeleton className="h-8 w-28" /></td>
                       </tr>
                     ))}
@@ -812,7 +859,7 @@ export default function DashboardClient({
                 {!loadingCredentials && filteredCredentials.length === 0 && (
                   <tr>
                     <td
-                      colSpan={4}
+                      colSpan={5}
                       className="px-4 py-6"
                     >
                       <EmptyState
@@ -840,6 +887,21 @@ export default function DashboardClient({
                       <Badge tone={cred.hasCredentials ? "success" : "warning"}>
                         {cred.hasCredentials ? "Configured" : "Missing"}
                       </Badge>
+                    </td>
+                    <td className="px-4 py-3">
+                      <button
+                        type="button"
+                        onClick={() => handleTogglePantryStatus(cred.pantryId)}
+                        disabled={togglingRows[cred.pantryId]}
+                        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                          cred.isOpen
+                            ? "border-teal-300 bg-teal-50 text-teal-700 hover:bg-teal-100 dark:border-teal-800 dark:bg-teal-950/40 dark:text-teal-300"
+                            : "border-rose-300 bg-rose-50 text-rose-700 hover:bg-rose-100 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300"
+                        }`}
+                      >
+                        <span className={`h-2 w-2 rounded-full ${cred.isOpen ? "bg-teal-500" : "bg-rose-500"}`} />
+                        {togglingRows[cred.pantryId] ? "..." : cred.isOpen ? "Open" : "Closed"}
+                      </button>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex min-w-[240px] flex-col gap-2">

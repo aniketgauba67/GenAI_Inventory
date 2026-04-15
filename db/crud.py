@@ -140,12 +140,34 @@ def get_pantry_credential_registry() -> list[dict]:
                     "name": pantry.name,
                     "location": pantry.location,
                     "hasCredentials": credentials is not None,
+                    "isOpen": pantry.is_open,
                 }
             )
         print(f"✓ Loaded pantry credential registry for {len(registry)} pantries")
         return registry
     except Exception as e:
         print(f"✗ Error loading pantry credential registry: {e}")
+        raise
+    finally:
+        db.close()
+
+
+def toggle_pantry_status(pantry_id: int) -> dict | None:
+    """Toggle the is_open flag on a pantry and return the new state."""
+    db = SessionLocal()
+    try:
+        pantry = db.query(Pantry).filter(Pantry.id == pantry_id).first()
+        if pantry is None:
+            print(f"✗ Pantry {pantry_id} not found")
+            return None
+        pantry.is_open = not pantry.is_open
+        db.commit()
+        db.refresh(pantry)
+        print(f"✓ Toggled pantry {pantry_id} is_open → {pantry.is_open}")
+        return {"pantryId": str(pantry.id), "isOpen": pantry.is_open}
+    except Exception as e:
+        db.rollback()
+        print(f"✗ Error toggling pantry status: {e}")
         raise
     finally:
         db.close()
