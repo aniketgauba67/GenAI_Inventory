@@ -96,11 +96,16 @@ function pickRandomPantryId(pantries: PantryRecord[]): string {
 export default function HomePage() {
   const { showToast } = useToast();
   const { status, data: session } = useSession();
-  const [pantries, setPantries] = useState<PantryRecord[]>([]);
+  const [allPantries, setAllPantries] = useState<PantryRecord[]>([]);
+  const [timeFilteredPantries, setTimeFilteredPantries] = useState<PantryRecord[]>([]);
   const [selectedPantryId, setSelectedPantryId] = useState("");
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [useTimeSearch, setUseTimeSearch] = useState(false);
+  const [searchDay, setSearchDay] = useState<string>("mon");
+  const [searchTime, setSearchTime] = useState<string>("12:00");
+  const [timeSearchError, setTimeSearchError] = useState<string | null>(null);
 
   const sessionRole = (session?.user as { role?: string } | undefined)?.role;
   const sessionPantryId = (session?.user as { pantryId?: string } | undefined)?.pantryId;
@@ -111,6 +116,32 @@ export default function HomePage() {
     typeof window !== "undefined"
       ? process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
       : "";
+
+  async function loadPantriesByTime(day: string, time: string) {
+    setTimeSearchError(null);
+    try {
+      const response = await fetch(
+        `${apiBase}/customer/pantries-by-time?day=${encodeURIComponent(day)}&time=${encodeURIComponent(time)}`,
+        { cache: "no-store" }
+      );
+      const data = (await response.json()) as {
+        ok?: boolean;
+        pantries?: PantryRecord[];
+        error?: string;
+      };
+
+      if (!response.ok || !data.ok) {
+        setTimeSearchError(data.error || "Could not load pantries by time.");
+        return [];
+      }
+
+      return Array.isArray(data.pantries) ? data.pantries : [];
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : "Could not load pantries by time.";
+      setTimeSearchError(errMsg);
+      return [];
+    }
+  }
 
   useEffect(() => {
     let ignore = false;
@@ -129,19 +160,21 @@ export default function HomePage() {
         if (!response.ok || !data.ok || !Array.isArray(data.pantries)) {
           if (!ignore) {
             setError(data.error || "Could not load pantry availability.");
-            setPantries([]);
+            setAllPantries([]);
+            setTimeFilteredPantries([]);
           }
           return;
         }
 
         if (!ignore) {
-          setPantries(data.pantries);
+          setAllPantries(data.pantries);
           setSelectedPantryId(pickRandomPantryId(data.pantries));
         }
       } catch (loadError) {
         if (!ignore) {
           setError(loadError instanceof Error ? loadError.message : "Could not load pantry availability.");
-          setPantries([]);
+          setAllPantries([]);
+          setTimeFilteredPantries([]);
         }
       } finally {
         if (!ignore) setLoading(false);
@@ -158,28 +191,30 @@ export default function HomePage() {
   }, [apiBase]);
 
   const filteredPantries = useMemo(() => {
+    const sourcePantries = useTimeSearch ? timeFilteredPantries : allPantries;
     const normalizedQuery = query.trim().toLowerCase();
-    if (!normalizedQuery) return pantries;
+    if (!normalizedQuery) return sourcePantries;
 
-    return pantries.filter((pantry) => {
+    return sourcePantries.filter((pantry) => {
       return (
         pantry.pantryId.toLowerCase().includes(normalizedQuery) ||
         pantry.name.toLowerCase().includes(normalizedQuery) ||
         (pantry.location || "").toLowerCase().includes(normalizedQuery)
       );
     });
-  }, [pantries, query]);
+  }, [allPantries, query, timeFilteredPantries, useTimeSearch]);
 
   const activePantry = useMemo(() => {
-    if (pantries.length === 0) return null;
+    const sourcePantries = useTimeSearch ? timeFilteredPantries : allPantries;
+    if (sourcePantries.length === 0) return null;
 
-    const selected = pantries.find((pantry) => pantry.pantryId === selectedPantryId) || null;
+    const selected = sourcePantries.find((pantry) => pantry.pantryId === selectedPantryId) || null;
     const selectedVisible = filteredPantries.find((pantry) => pantry.pantryId === selectedPantryId) || null;
 
     if (selectedVisible) return selectedVisible;
     if (filteredPantries.length > 0) return filteredPantries[0];
-    return selected || pantries[0];
-  }, [pantries, filteredPantries, selectedPantryId]);
+    return selected || sourcePantries[0];
+  }, [allPantries, filteredPantries, selectedPantryId, timeFilteredPantries, useTimeSearch]);
 
   function handleAccessClick(href: string, label: string) {
     if (!isAuthenticated) {
@@ -193,6 +228,23 @@ export default function HomePage() {
     }
 
     window.location.href = href;
+  }
+
+  async function handleTimeSearch() {
+    const results = await loadPantriesByTime(searchDay, searchTime);
+    setTimeFilteredPantries(results);
+    setUseTimeSearch(true);
+    if (results.length > 0) {
+      setSelectedPantryId(results[0].pantryId);
+    }
+  }
+
+  function handleCancelTimeSearch() {
+    setUseTimeSearch(false);
+    setTimeFilteredPantries([]);
+    setTimeSearchError(null);
+    setQuery("");
+    setSelectedPantryId(pickRandomPantryId(allPantries));
   }
 
   return (
@@ -229,13 +281,12 @@ export default function HomePage() {
                       key={link.label}
                       type="button"
                       onClick={() => handleAccessClick(href, link.label)}
-                      className={`inline-flex items-center rounded-full border px-4 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-950 ${
-                        isVolunteer
-                          ? "border-teal-600 bg-teal-600 text-white shadow-sm shadow-teal-600/20 hover:bg-teal-700 focus-visible:ring-teal-500 dark:border-teal-400 dark:bg-teal-500 dark:text-slate-950"
-                          : isDirector
-                            ? "border-orange-500 bg-orange-500 text-white shadow-sm shadow-orange-500/20 hover:bg-orange-600 focus-visible:ring-orange-500"
-                            : "border-slate-300 bg-white/80 text-slate-700 hover:border-slate-400 hover:bg-white focus-visible:ring-slate-400 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-100 dark:hover:bg-slate-800"
-                      }`}
+                      className={`inline-flex items-center rounded-full border px-4 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-950 ${isVolunteer
+                        ? "border-teal-600 bg-teal-600 text-white shadow-sm shadow-teal-600/20 hover:bg-teal-700 focus-visible:ring-teal-500 dark:border-teal-400 dark:bg-teal-500 dark:text-slate-950"
+                        : isDirector
+                          ? "border-orange-500 bg-orange-500 text-white shadow-sm shadow-orange-500/20 hover:bg-orange-600 focus-visible:ring-orange-500"
+                          : "border-slate-300 bg-white/80 text-slate-700 hover:border-slate-400 hover:bg-white focus-visible:ring-slate-400 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-100 dark:hover:bg-slate-800"
+                        }`}
                     >
                       {link.label}
                     </button>
@@ -246,13 +297,12 @@ export default function HomePage() {
                   <Link
                     key={link.label}
                     href={href}
-                    className={`inline-flex items-center rounded-full border px-4 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-950 ${
-                      isVolunteer
-                        ? "border-teal-600 bg-teal-600 text-white shadow-sm shadow-teal-600/20 hover:bg-teal-700 focus-visible:ring-teal-500 dark:border-teal-400 dark:bg-teal-500 dark:text-slate-950"
-                        : isDirector
-                          ? "border-orange-500 bg-orange-500 text-white shadow-sm shadow-orange-500/20 hover:bg-orange-600 focus-visible:ring-orange-500"
-                          : "border-slate-300 bg-white/80 text-slate-700 hover:border-slate-400 hover:bg-white focus-visible:ring-slate-400 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-100 dark:hover:bg-slate-800"
-                    }`}
+                    className={`inline-flex items-center rounded-full border px-4 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-950 ${isVolunteer
+                      ? "border-teal-600 bg-teal-600 text-white shadow-sm shadow-teal-600/20 hover:bg-teal-700 focus-visible:ring-teal-500 dark:border-teal-400 dark:bg-teal-500 dark:text-slate-950"
+                      : isDirector
+                        ? "border-orange-500 bg-orange-500 text-white shadow-sm shadow-orange-500/20 hover:bg-orange-600 focus-visible:ring-orange-500"
+                        : "border-slate-300 bg-white/80 text-slate-700 hover:border-slate-400 hover:bg-white focus-visible:ring-slate-400 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-100 dark:hover:bg-slate-800"
+                      }`}
                   >
                     {link.label}
                   </Link>
@@ -277,7 +327,7 @@ export default function HomePage() {
                 Live inventory
               </p>
               <p className="mt-2 text-2xl font-semibold text-slate-950 dark:text-slate-50">
-                {loading ? "Loading" : pantries.length}
+                {loading ? "Loading" : allPantries.length}
               </p>
               <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Pantries available to browse right now.</p>
             </div>
@@ -307,22 +357,100 @@ export default function HomePage() {
         <section className="grid gap-4 lg:grid-cols-[minmax(320px,380px)_minmax(0,1fr)] xl:grid-cols-[minmax(340px,420px)_minmax(0,1fr)]">
           <div className="space-y-4">
             <Card className="border border-slate-200/80 bg-white/90 p-4 shadow-sm backdrop-blur dark:border-slate-800/80 dark:bg-slate-950/60">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <Input
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Search pantry by id, name, or address"
-                  className="sm:max-w-md"
-                />
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  {loading ? "Loading pantries..." : `${filteredPantries.length} pantry result(s)`}
-                </p>
-              </div>
+              {useTimeSearch ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-semibold text-slate-950 dark:text-slate-50">
+                      Pantries Open at Time
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={handleCancelTimeSearch}
+                      className="ml-auto text-xs font-semibold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                    >
+                      Back to Now
+                    </button>
+                  </div>
+                  <Input
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    placeholder="Search within time-filtered pantries"
+                    className="sm:max-w-md"
+                  />
+                  <div className="grid gap-2">
+                    <div>
+                      <label className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                        Day
+                      </label>
+                      <select
+                        value={searchDay}
+                        onChange={(e) => setSearchDay(e.target.value)}
+                        className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-950 placeholder-slate-400 focus:border-teal-500 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50 dark:placeholder-slate-500"
+                      >
+                        <option value="mon">Monday</option>
+                        <option value="tue">Tuesday</option>
+                        <option value="wed">Wednesday</option>
+                        <option value="thu">Thursday</option>
+                        <option value="fri">Friday</option>
+                        <option value="sat">Saturday</option>
+                        <option value="sun">Sunday</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                        Time (24-hour)
+                      </label>
+                      <input
+                        type="time"
+                        value={searchTime}
+                        onChange={(e) => setSearchTime(e.target.value)}
+                        className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-950 focus:border-teal-500 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50"
+                      />
+                    </div>
+                    <Button
+                      onClick={handleTimeSearch}
+                      className="w-full bg-teal-600 text-white hover:bg-teal-700"
+                    >
+                      Search by Time
+                    </Button>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    {loading ? "Loading..." : `${filteredPantries.length} pantry result(s)`}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <Input
+                      value={query}
+                      onChange={(event) => setQuery(event.target.value)}
+                      placeholder="Search pantry by id, name, or address"
+                      className="sm:max-w-md"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setUseTimeSearch(true)}
+                      className="text-xs font-semibold text-teal-600 hover:text-teal-700 dark:text-teal-400 dark:hover:text-teal-300"
+                    >
+                      Search by time
+                    </button>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    {loading ? "Loading pantries..." : `${filteredPantries.length} pantry result(s)`}
+                  </p>
+                </div>
+              )}
             </Card>
 
             {error && (
               <Card className="border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300">
                 {error}
+              </Card>
+            )}
+
+            {timeSearchError && (
+              <Card className="border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300">
+                {timeSearchError}
               </Card>
             )}
 
@@ -344,11 +472,10 @@ export default function HomePage() {
                       key={pantry.pantryId}
                       type="button"
                       onClick={() => setSelectedPantryId(pantry.pantryId)}
-                      className={`w-full rounded-2xl border px-3 py-3 text-left transition ${
-                        selected
-                          ? "border-teal-500 bg-teal-50 shadow-sm shadow-teal-500/10 dark:border-teal-400 dark:bg-teal-950/35"
-                          : "border-slate-200 bg-white hover:border-teal-200 hover:bg-teal-50/60 dark:border-slate-800 dark:bg-slate-950/80 dark:hover:border-teal-800 dark:hover:bg-slate-900"
-                      }`}
+                      className={`w-full rounded-2xl border px-3 py-3 text-left transition ${selected
+                        ? "border-teal-500 bg-teal-50 shadow-sm shadow-teal-500/10 dark:border-teal-400 dark:bg-teal-950/35"
+                        : "border-slate-200 bg-white hover:border-teal-200 hover:bg-teal-50/60 dark:border-slate-800 dark:bg-slate-950/80 dark:hover:border-teal-800 dark:hover:bg-slate-900"
+                        }`}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
