@@ -7,3 +7,5 @@ langchain-core>=0.3.0
 psycopg2-binary>=2.9.0
 sqlalchemy>=2.0.0
 bcrypt>=3.2.0
+scheduler==0.8.11
+tzdata
