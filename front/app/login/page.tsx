@@ -44,7 +44,7 @@ function resolveAuthenticatedTarget(
   }
 
   if (resolved === "/manager") {
-    return role === "manager" ? "/manager" : defaultTarget;
+    return "/manager";
   }
 
   if (resolved === "/director/dashboard") {

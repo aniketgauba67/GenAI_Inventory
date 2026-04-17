@@ -2,6 +2,9 @@
 
 type LevelBadgeProps = {
   level: string;
+  size?: "sm" | "lg";
+  friendlyText?: boolean;
+  className?: string;
 };
 
 const levelStyles: Record<string, string> = {
@@ -11,12 +14,29 @@ const levelStyles: Record<string, string> = {
   Out: "bg-zinc-200 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-200",
 };
 
-export default function LevelBadge({ level }: LevelBadgeProps) {
+const levelLabels: Record<string, { short: string; friendly: string }> = {
+  High: { short: "High", friendly: "High stock" },
+  Mid: { short: "Medium", friendly: "Medium stock" },
+  Low: { short: "Low", friendly: "Needs restock" },
+  Out: { short: "Out", friendly: "Out of stock" },
+};
+
+export default function LevelBadge({
+  level,
+  size = "sm",
+  friendlyText = false,
+  className = "",
+}: LevelBadgeProps) {
   const style = levelStyles[level] ?? "bg-zinc-200 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-200";
+  const labelSet = levelLabels[level] ?? levelLabels.Out;
+  const sizeClass =
+    size === "lg"
+      ? "min-w-28 px-3.5 py-2 text-sm"
+      : "min-w-14 px-2.5 py-1 text-xs";
   return (
-    <span className={`inline-flex min-w-14 items-center justify-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${style}`}>
-      <span className="h-1.5 w-1.5 rounded-full bg-current opacity-80" aria-hidden />
-      {level}
+    <span className={`inline-flex items-center justify-center gap-1.5 rounded-full font-semibold ${sizeClass} ${style} ${className}`}>
+      <span className={`${size === "lg" ? "h-2 w-2" : "h-1.5 w-1.5"} rounded-full bg-current opacity-80`} aria-hidden />
+      {friendlyText ? labelSet.friendly : labelSet.short}
     </span>
   );
 }
