@@ -9,11 +9,15 @@ log = logging.getLogger(__name__)
 
 DEFAULT_CHATBOT_SYSTEM_PROMPT = (
     "You are a helpful assistant to answer user questions regarding pantry and inventory operations. "
-    "Be concise, practical, and ask clarifying questions when details are missing."
+    "Be concise, practical, and ask clarifying questions when details are missing. "
+    "For current inventory questions, use the resolved pantry inventory in the database context as the source of truth. "
+    "Do not ask the user to choose between volunteer and warehouse data. "
+    "The precedence is fixed: prefer the latest volunteer submission if it is the same time or newer than the latest warehouse snapshot; "
+    "otherwise use the latest warehouse snapshot."
 )
 
 
-def _fetch_db_chat_context(pantry_id: int | None = None, recent_runs: int = 5) -> str | None:
+def _fetch_db_chat_context(pantry_id: int | None = None) -> str | None:
     """Fetch a compact, read-only DB snapshot for retrieval-augmented chat answers."""
     root_dir = Path(__file__).resolve().parents[2]
     db_dir = root_dir / "db"
@@ -23,7 +27,13 @@ def _fetch_db_chat_context(pantry_id: int | None = None, recent_runs: int = 5) -
     session = None
     try:
         from database import SessionLocal  # pyright: ignore[reportMissingImports]
-        from models import InventoryRun, Pantry  # pyright: ignore[reportMissingImports]
+        from models import InventoryItem, InventoryRun, Pantry  # pyright: ignore[reportMissingImports]
+        try:
+            from ..customer_inventory_state import resolve_customer_inventory_state
+            from ..inventory_domain import load_latest_inventory_run
+        except ImportError:
+            from customer_inventory_state import resolve_customer_inventory_state
+            from inventory_domain import load_latest_inventory_run
 
         session = SessionLocal()
 
@@ -32,35 +42,29 @@ def _fetch_db_chat_context(pantry_id: int | None = None, recent_runs: int = 5) -
             pantry_query = pantry_query.filter(Pantry.id == pantry_id)
 
         pantries = pantry_query.all()
-
-        runs_query = session.query(InventoryRun).order_by(InventoryRun.created_at.desc())
+        item_query = session.query(InventoryItem)
         if pantry_id is not None:
-            runs_query = runs_query.filter(InventoryRun.pantry_id == pantry_id)
+            item_query = item_query.filter(InventoryItem.pantry_id == pantry_id)
+        items = item_query.all()
 
-        runs = runs_query.limit(recent_runs).all()
+        item_levels_by_pantry: dict[int, dict[str, str]] = {}
+        item_original_by_pantry: dict[int, dict[str, int]] = {}
+        for item in items:
+            item_levels_by_pantry.setdefault(item.pantry_id, {})[item.category_name] = str(item.status or "")
+            item_original_by_pantry.setdefault(item.pantry_id, {})[item.category_name] = int(item.original_quantity or 0)
 
         context_payload = {
             "pantries": [
-                {
-                    "id": pantry.id,
-                    "name": pantry.name,
-                    "location": pantry.location,
-                    "isOpen": pantry.is_open,
-                    # [{"day":"mon","open":"11:00","close":"16:00"}, ...]
-                    "operatingHours": pantry.operating_hours or [],
-                }
+                _build_chat_pantry_snapshot(
+                    session,
+                    pantry,
+                    item_levels_by_pantry.get(pantry.id, {}),
+                    item_original_by_pantry.get(pantry.id, {}),
+                    resolve_customer_inventory_state,
+                    load_latest_inventory_run,
+                    InventoryRun,
+                )
                 for pantry in pantries
-            ],
-            "recentInventoryRuns": [
-                {
-                    "runId": run.run_id,
-                    "pantryId": run.pantry_id,
-                    "createdAt": run.created_at.isoformat(),
-                    "source": run.source,
-                    "inventory": run.inventory,
-                    "comparison": run.comparison,
-                }
-                for run in runs
             ],
         }
         return json.dumps(context_payload)
@@ -70,6 +74,38 @@ def _fetch_db_chat_context(pantry_id: int | None = None, recent_runs: int = 5) -
     finally:
         if session is not None:
             session.close()
+
+
+def _build_chat_pantry_snapshot(
+    session,
+    pantry,
+    fallback_levels: dict[str, str],
+    fallback_original_quantities: dict[str, int],
+    resolve_customer_inventory_state,
+    load_latest_inventory_run,
+    inventory_run_model,
+) -> dict:
+    """Build one pantry snapshot for customer-facing chat answers."""
+    latest_submit = load_latest_inventory_run(session, inventory_run_model, pantry.id, "volunteer-submit")
+    latest_warehouse = load_latest_inventory_run(session, inventory_run_model, pantry.id, "warehouse-snapshot")
+    resolved = resolve_customer_inventory_state(
+        latest_submit,
+        latest_warehouse,
+        fallback_levels=fallback_levels,
+        fallback_original_quantities=fallback_original_quantities,
+    )
+
+    return {
+        "id": pantry.id,
+        "name": pantry.name,
+        "location": pantry.location,
+        "isOpen": pantry.is_open,
+        "operatingHours": pantry.operating_hours or [],
+        "inventorySource": resolved["source"],
+        "lastUpdated": resolved["lastUpdated"],
+        "currentInventory": resolved["currentInventory"],
+        "levels": resolved["levels"],
+    }
 
 
 def _build_chat_model():

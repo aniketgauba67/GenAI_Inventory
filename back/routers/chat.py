@@ -29,7 +29,7 @@ def send_chat_message(payload: ChatMessageRequest) -> ChatMessageResponse:
     reply = call_gemini_chat(
         user_message=payload.message,
         history=payload.history,
-        pantry_id=None,
+        pantry_id=payload.pantry_id,
         include_db_context=True,
     )
     if not reply:
