@@ -234,6 +234,11 @@ export default function HomePage() {
   const [easyView, setEasyView] = useState(false);
   const [easyPickerOpen, setEasyPickerOpen] = useState(false);
   const [easyPickerQuery, setEasyPickerQuery] = useState("");
+  const [timeFilteredPantries, setTimeFilteredPantries] = useState<PantryRecord[]>([]);
+  const [useTimeSearch, setUseTimeSearch] = useState(false);
+  const [searchDay, setSearchDay] = useState<string>("mon");
+  const [searchTime, setSearchTime] = useState<string>("12:00");
+  const [timeSearchError, setTimeSearchError] = useState<string | null>(null);
 
   const sessionRole = (session?.user as { role?: string } | undefined)?.role;
   const sessionPantryId = (session?.user as { pantryId?: string } | undefined)?.pantryId;
@@ -244,6 +249,30 @@ export default function HomePage() {
     typeof window !== "undefined"
       ? process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
       : "";
+
+  async function loadPantriesByTime(day: string, time: string) {
+    setTimeSearchError(null);
+    try {
+      const response = await fetch(
+        `${apiBase}/customer/pantries-by-time?day=${encodeURIComponent(day)}&time=${encodeURIComponent(time)}`,
+        { cache: "no-store" },
+      );
+      const data = (await response.json()) as {
+        ok?: boolean;
+        pantries?: PantryRecord[];
+        error?: string;
+      };
+
+      if (!response.ok || !data.ok || !Array.isArray(data.pantries)) {
+        setTimeSearchError(data.error || "Could not load pantries by time.");
+        return [] as PantryRecord[];
+      }
+      return data.pantries;
+    } catch (err) {
+      setTimeSearchError(err instanceof Error ? err.message : "Could not load pantries by time.");
+      return [] as PantryRecord[];
+    }
+  }
 
   useEffect(() => {
     const savedPreference = window.localStorage.getItem(EASY_VIEW_STORAGE_KEY);
@@ -263,8 +292,14 @@ export default function HomePage() {
     if (!easyView) {
       setEasyPickerOpen(false);
       setEasyPickerQuery("");
+      return;
     }
-  }, [easyView]);
+    if (useTimeSearch) {
+      setUseTimeSearch(false);
+      setTimeFilteredPantries([]);
+      setTimeSearchError(null);
+    }
+  }, [easyView, useTimeSearch]);
 
   useEffect(() => {
     if (!(easyView && easyPickerOpen)) return;
@@ -293,6 +328,9 @@ export default function HomePage() {
           if (!ignore) {
             setError(data.error || "Could not load pantry availability.");
             setPantries([]);
+            setTimeFilteredPantries([]);
+            setUseTimeSearch(false);
+            setTimeSearchError(null);
           }
           return;
         }
@@ -300,11 +338,17 @@ export default function HomePage() {
         if (!ignore) {
           setPantries(data.pantries);
           setSelectedPantryId(pickRandomPantryId(data.pantries));
+          setTimeFilteredPantries([]);
+          setUseTimeSearch(false);
+          setTimeSearchError(null);
         }
       } catch (loadError) {
         if (!ignore) {
           setError(loadError instanceof Error ? loadError.message : "Could not load pantry availability.");
           setPantries([]);
+          setTimeFilteredPantries([]);
+          setUseTimeSearch(false);
+          setTimeSearchError(null);
         }
       } finally {
         if (!ignore) setLoading(false);
@@ -320,19 +364,25 @@ export default function HomePage() {
     };
   }, [apiBase]);
 
-  const filteredPantries = useMemo(() => {
-    if (easyView) return pantries;
-    const normalizedQuery = query.trim().toLowerCase();
-    if (!normalizedQuery) return pantries;
+  const sourcePantries = useMemo(
+    () => (easyView || !useTimeSearch ? pantries : timeFilteredPantries),
+    [easyView, pantries, timeFilteredPantries, useTimeSearch],
+  );
 
-    return pantries.filter((pantry) => {
+  const filteredPantries = useMemo(() => {
+    const basePantries = sourcePantries;
+    if (easyView) return basePantries;
+    const normalizedQuery = query.trim().toLowerCase();
+    if (!normalizedQuery) return basePantries;
+
+    return basePantries.filter((pantry) => {
       return (
         pantry.pantryId.toLowerCase().includes(normalizedQuery) ||
         pantry.name.toLowerCase().includes(normalizedQuery) ||
         (pantry.location || "").toLowerCase().includes(normalizedQuery)
       );
     });
-  }, [easyView, pantries, query]);
+  }, [easyView, query, sourcePantries]);
 
   const sortedFilteredPantries = useMemo(
     () => sortPantriesByHours(filteredPantries),
@@ -355,15 +405,15 @@ export default function HomePage() {
   }, [easyPickerQuery, pantries]);
 
   const activePantry = useMemo(() => {
-    if (pantries.length === 0) return null;
+    if (sourcePantries.length === 0) return null;
 
-    const selected = pantries.find((pantry) => pantry.pantryId === selectedPantryId) || null;
+    const selected = sourcePantries.find((pantry) => pantry.pantryId === selectedPantryId) || null;
     const selectedVisible = filteredPantries.find((pantry) => pantry.pantryId === selectedPantryId) || null;
 
     if (selectedVisible) return selectedVisible;
     if (filteredPantries.length > 0) return filteredPantries[0];
-    return selected || pantries[0];
-  }, [pantries, filteredPantries, selectedPantryId]);
+    return selected || sourcePantries[0];
+  }, [filteredPantries, selectedPantryId, sourcePantries]);
 
   function getDisplayLevel(pantry: PantryRecord, category: string): string {
     const original = Number(pantry.originalQuantities?.[category] ?? 0);
@@ -383,6 +433,23 @@ export default function HomePage() {
     }
 
     window.location.href = href;
+  }
+
+  async function handleTimeSearch() {
+    const results = await loadPantriesByTime(searchDay, searchTime);
+    setTimeFilteredPantries(results);
+    setUseTimeSearch(true);
+    if (results.length > 0) {
+      setSelectedPantryId(results[0].pantryId);
+    }
+  }
+
+  function handleCancelTimeSearch() {
+    setUseTimeSearch(false);
+    setTimeFilteredPantries([]);
+    setTimeSearchError(null);
+    setQuery("");
+    setSelectedPantryId(pickRandomPantryId(pantries));
   }
 
   return (
@@ -569,23 +636,103 @@ export default function HomePage() {
           ) : (
             <div className="space-y-4">
               <Card className="border border-slate-200/80 bg-white/90 p-4 shadow-sm backdrop-blur dark:border-slate-800/80 dark:bg-slate-950/60">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <Input
-                    id="pantrySearch"
-                    value={query}
-                    onChange={(event) => setQuery(event.target.value)}
-                    placeholder="Search pantry by id, name, or address"
-                    className="sm:max-w-md"
-                  />
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    {loading ? "Loading pantries..." : `${sortedFilteredPantries.length} pantry result(s)`}
-                  </p>
-                </div>
+                {useTimeSearch ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-semibold text-slate-950 dark:text-slate-50">
+                        Pantries Open at Time
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={handleCancelTimeSearch}
+                        className="ml-auto text-xs font-semibold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                      >
+                        Back to Now
+                      </button>
+                    </div>
+                    <Input
+                      id="pantrySearch"
+                      value={query}
+                      onChange={(event) => setQuery(event.target.value)}
+                      placeholder="Search within time-filtered pantries"
+                      className="sm:max-w-md"
+                    />
+                    <div className="grid gap-2">
+                      <div>
+                        <label className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                          Day
+                        </label>
+                        <select
+                          value={searchDay}
+                          onChange={(e) => setSearchDay(e.target.value)}
+                          className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-950 outline-none focus:border-teal-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50"
+                        >
+                          <option value="mon">Monday</option>
+                          <option value="tue">Tuesday</option>
+                          <option value="wed">Wednesday</option>
+                          <option value="thu">Thursday</option>
+                          <option value="fri">Friday</option>
+                          <option value="sat">Saturday</option>
+                          <option value="sun">Sunday</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                          Time (24-hour)
+                        </label>
+                        <input
+                          type="time"
+                          value={searchTime}
+                          onChange={(e) => setSearchTime(e.target.value)}
+                          className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-950 outline-none focus:border-teal-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50"
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        onClick={handleTimeSearch}
+                        className="w-full bg-teal-600 text-white hover:bg-teal-700"
+                      >
+                        Search by Time
+                      </Button>
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {loading ? "Loading..." : `${sortedFilteredPantries.length} pantry result(s)`}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <Input
+                        id="pantrySearch"
+                        value={query}
+                        onChange={(event) => setQuery(event.target.value)}
+                        placeholder="Search pantry by id, name, or address"
+                        className="sm:max-w-md"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setUseTimeSearch(true)}
+                        className="text-xs font-semibold text-teal-600 hover:text-teal-700 dark:text-teal-400 dark:hover:text-teal-300"
+                      >
+                        Search by time
+                      </button>
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {loading ? "Loading pantries..." : `${sortedFilteredPantries.length} pantry result(s)`}
+                    </p>
+                  </div>
+                )}
               </Card>
 
               {error && (
                 <Card className="border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300">
                   {error}
+                </Card>
+              )}
+
+              {timeSearchError && (
+                <Card className="border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300">
+                  {timeSearchError}
                 </Card>
               )}
 
