@@ -45,6 +45,9 @@ def _fetch_db_chat_context(pantry_id: int | None = None, recent_runs: int = 5) -
                     "id": pantry.id,
                     "name": pantry.name,
                     "location": pantry.location,
+                    "isOpen": pantry.is_open,
+                    # [{"day":"mon","open":"11:00","close":"16:00"}, ...]
+                    "operatingHours": pantry.operating_hours or [],
                 }
                 for pantry in pantries
             ],
