@@ -27,57 +27,15 @@ REAL_PANTRIES = [
         "name": "FPN Market on Brice St",
         "location": "1025 Brice St, Newark, OH 43055",
         "operating_hours": [
-            {"day": "tue", "open": "10:00", "close": "12:00"},
-            {"day": "thu", "open": "10:00", "close": "12:00"},
+            {"day": "mon", "open": "14:00", "close": "17:30"},
+            {"day": "thu", "open": "14:00", "close": "17:30"},
+            {"day": "tue", "open": "09:00", "close": "12:00"},
+            {"day": "sat", "open": "09:00", "close": "12:00"},
         ],
     },
     {
         "name": "Seventh Day Adventist",
         "location": "122 East Main St, Newark, OH 43055",
-        "operating_hours": [
-            {"day": "thu", "open": "09:30", "close": "11:00"},
-        ],
-    },
-    {
-        "name": "Last Call Ministries",
-        "location": "310 Everett Ave, Newark, OH 43055",
-        "operating_hours": [
-            {"day": "wed", "open": "16:30", "close": "18:00"},
-        ],
-    },
-    {
-        "name": "St. Vincent DePaul Society",
-        "location": "135 Wilson St, Newark, OH 43055",
-        "operating_hours": [
-            {"day": "tue", "open": "09:00", "close": "12:00"},
-        ],
-    },
-    {
-        "name": "Market Street Pantry",
-        "location": "37 1/2 South 4th St, Newark, OH 43055",
-        "operating_hours": [
-            {"day": "wed", "open": "16:30", "close": "18:30"},
-        ],
-    },
-    {
-        "name": "Family of Faith Church",
-        "location": "975 Mt. Vernon Rd, Newark, OH 43055",
-        "operating_hours": [
-            {"day": "mon", "open": "13:00", "close": "15:00"},
-            {"day": "wed", "open": "13:00", "close": "15:00"},
-        ],
-    },
-    {
-        "name": "Salvation Army",
-        "location": "250 East Main St, Newark, OH 43055",
-        "operating_hours": [
-            {"day": "tue", "open": "10:00", "close": "12:00"},
-            {"day": "thu", "open": "10:00", "close": "12:00"},
-        ],
-    },
-    {
-        "name": "Second Presbyterian Church",
-        "location": "42 East Church St, Newark, OH 43055",
         "operating_hours": [
             {"day": "tue", "open": "09:30", "close": "11:30"},
             {"day": "wed", "open": "09:30", "close": "11:30"},
@@ -85,32 +43,76 @@ REAL_PANTRIES = [
         ],
     },
     {
-        "name": "Newark Nazarene Church",
-        "location": "71 Maholm St, Newark, OH 43055",
+        "name": "Last Call Ministries",
+        "location": "310 Everett Ave, Newark, OH 43055",
         "operating_hours": [
             {"day": "mon", "open": "10:00", "close": "13:00"},
             {"day": "fri", "open": "10:00", "close": "13:00"},
         ],
     },
     {
-        "name": "Christ Cornerstone Church",
-        "location": "69 King Avenue, Newark, OH 43055",
+        "name": "St. Vincent DePaul Society",
+        "location": "135 Wilson St, Newark, OH 43055",
+        "operating_hours": [
+            {"day": "tue", "open": "18:30", "close": "20:00"},
+            {"day": "sat", "open": "09:00", "close": "11:00"},
+        ],
+    },
+    {
+        "name": "Market Street Pantry",
+        "location": "37 1/2 South 4th St, Newark, OH 43055",
         "operating_hours": [
             {"day": "wed", "open": "08:30", "close": "11:30"},
             {"day": "sat", "open": "08:30", "close": "11:30"},
         ],
     },
     {
-        "name": "Marne Church",
-        "location": "1019 Licking Valley Rd, Newark, OH 43055",
+        "name": "Family of Faith Church",
+        "location": "975 Mt. Vernon Rd, Newark, OH 43055",
         "operating_hours": [
-            {"day": "mon", "open": "12:00", "close": "13:00"},
-            {"day": "wed", "open": "12:00", "close": "13:00"},
-            {"day": "fri", "open": "12:00", "close": "13:00"},
+            {"day": "wed", "open": "16:30", "close": "18:30"},
         ],
     },
     {
-        "name": "Wright Memorial Methodist",
+        "name": "Salvation Army",
+        "location": "250 East Main St, Newark, OH 43055",
+        "operating_hours": [
+            {"day": "mon", "open": "13:00", "close": "15:00"},
+            {"day": "wed", "open": "13:00", "close": "15:00"},
+        ],
+    },
+    {
+        "name": "Second Presbyterian Church",
+        "location": "42 East Church St, Newark, OH 43055",
+        "operating_hours": [
+            {"day": "tue", "open": "10:00", "close": "12:00"},
+            {"day": "thu", "open": "10:00", "close": "12:00"},
+        ],
+    },
+    {
+        "name": "Newark Nazarene Church",
+        "location": "71 Maholm St, Newark, OH 43055",
+        "operating_hours": [
+            {"day": "tue", "open": "10:00", "close": "12:00"},
+            {"day": "thu", "open": "10:00", "close": "12:00"},
+        ],
+    },
+    {
+        "name": "Christ Cornerstone Church",
+        "location": "69 King Avenue, Newark, OH 43055",
+        "operating_hours": [
+            {"day": "wed", "open": "16:30", "close": "18:00"},
+        ],
+    },
+    {
+        "name": "Marne Church",
+        "location": "1019 Licking Valley Rd, Newark, OH 43055",
+        "operating_hours": [
+            {"day": "tue", "open": "09:00", "close": "12:00"},
+        ],
+    },
+    {
+        "name": "Wright Memorial Methodist (Once a Month)",
         "location": "735 Mt. Vernon Road, Newark, OH 43055",
         "operating_hours": [
             {"day": "tue", "open": "10:30", "close": "12:30"},
@@ -119,102 +121,99 @@ REAL_PANTRIES = [
     },
     # --- Licking County Area ---
     {
-        "name": "Waters Edge / Buckeye Lake",
+        "name": "Waters Edge/Buckeye Lake",
         "location": "4894 Walnut Rd, Buckeye Lake, OH 43008",
         "operating_hours": [
-            {"day": "mon", "open": "14:00", "close": "17:30"},
-            {"day": "tue", "open": "09:00", "close": "12:00"},
-            {"day": "thu", "open": "14:00", "close": "17:30"},
-            {"day": "sat", "open": "09:00", "close": "12:00"},
+            {"day": "mon", "open": "12:00", "close": "13:00"},
+            {"day": "wed", "open": "12:00", "close": "13:00"},
+            {"day": "fri", "open": "12:00", "close": "13:00"},
         ],
     },
     {
         "name": "Buckeye Lake LEADS",
         "location": "41 First St, Buckeye Lake, OH 43008",
         "operating_hours": [
-            {"day": "tue", "open": "10:00", "close": "12:00"},
-            {"day": "thu", "open": "10:00", "close": "12:00"},
+            {"day": "tue", "open": "09:00", "close": "12:00"},
+            {"day": "thu", "open": "09:00", "close": "12:00"},
         ],
     },
     {
         "name": "Jacksontown UMC",
         "location": "9350 Jacksontown Rd, Jacksontown, OH 43030",
         "operating_hours": [
-            {"day": "tue", "open": "09:00", "close": "12:00"},
-            {"day": "thu", "open": "09:00", "close": "12:00"},
+            {"day": "wed", "open": "10:00", "close": "12:00"},
+            {"day": "wed", "open": "18:00", "close": "19:00"},
         ],
     },
     {
         "name": "Pataskala LEADS",
         "location": "12536 Adams Lane SW, Pataskala, OH",
         "operating_hours": [
-            {"day": "tue", "open": "18:30", "close": "20:00"},
-            {"day": "sat", "open": "09:00", "close": "11:00"},
+            {"day": "mon", "open": "10:00", "close": "12:00"},
+            {"day": "wed", "open": "10:00", "close": "12:00"},
         ],
     },
     {
-        "name": "Pataskala UMC",
+        "name": "Pataskala UMC (April-Nov.)",
         "location": "458 South Main St, Pataskala, OH 43062",
         "operating_hours": [
-            {"day": "mon", "open": "10:00", "close": "12:00"},
-            {"day": "wed", "open": "10:00", "close": "12:00"},
+            {"day": "tue", "open": "11:30", "close": "12:30"},
         ],
     },
     {
-        "name": "Kirkersville UMC",
+        "name": "Kirkersville UMC (March-Nov.)",
         "location": "108 East Main St, Kirkersville, OH 43033",
         "operating_hours": [
-            {"day": "wed", "open": "10:00", "close": "12:00"},
-            {"day": "wed", "open": "18:00", "close": "19:00"},
+            {"day": "wed", "open": "09:00", "close": "09:30"},
         ],
     },
     {
-        "name": "Alexandria UMC",
+        "name": "Alexandria UMC (March-Nov.)",
         "location": "72 Church St, Alexandria, OH 43001",
         "operating_hours": [
-            {"day": "thu", "open": "15:30", "close": "17:30"},
+            {"day": "thu", "open": "09:30", "close": "11:00"},
         ],
     },
     {
-        "name": "St. Alban's Fire Dept",
+        "name": "St. Alban's Fire Dept (Nov-March)",
         "location": "25 East Main St, Alexandria, OH 43001",
-        "operating_hours": [],
+        "operating_hours": [
+            {"day": "thu", "open": "09:30", "close": "11:00"},
+        ],
     },
     {
-        "name": "Christ Ev. Lutheran Church",
+        "name": "Christ Ev. Lutheran Church (Easter-Thanksgiving)",
         "location": "732 Hebron Rd, Heath, OH 43056",
         "operating_hours": [
-            {"day": "mon", "open": "10:00", "close": "12:00"},
-            {"day": "thu", "open": "10:00", "close": "12:00"},
+            {"day": "fri", "open": "09:30", "close": "10:30"},
         ],
     },
     {
-        "name": "Heath Fire Department",
+        "name": "Heath Fire Department (Thanksgiving-Easter)",
         "location": "93 Heath Rd, Heath, OH 43056",
         "operating_hours": [
-            {"day": "mon", "open": "10:00", "close": "12:00"},
-            {"day": "thu", "open": "10:00", "close": "12:00"},
+            {"day": "fri", "open": "09:30", "close": "10:30"},
         ],
     },
     {
         "name": "Croton Church of Christ",
         "location": "40 S. Main St, Croton, OH 43013",
         "operating_hours": [
-            {"day": "wed", "open": "09:00", "close": "09:30"},
+            {"day": "mon", "open": "10:00", "close": "12:00"},
         ],
     },
     {
-        "name": "Johnstown / Faithcare Pantry",
+        "name": "Johnstown/Faithcare Pantry",
         "location": "140 Pratt St, Johnstown, OH 43031",
         "operating_hours": [
-            {"day": "fri", "open": "09:30", "close": "10:30"},
+            {"day": "thu", "open": "10:00", "close": "12:00"},
         ],
     },
     {
         "name": "Utica LEADS",
         "location": "308 North Main St, Utica, OH 43080",
         "operating_hours": [
-            {"day": "tue", "open": "11:30", "close": "12:30"},
+            {"day": "thu", "open": "15:30", "close": "17:30"},
         ],
     },
 ]

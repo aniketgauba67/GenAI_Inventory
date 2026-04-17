@@ -1,9 +1,35 @@
 """Example usage of SQLAlchemy ORM for pantry inventory"""
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 from sqlalchemy import text
 from database import SessionLocal
 from models import Pantry, InventoryItem, LoginCredentials, DirectorCredentials
 from password_utils import hash_password, verify_password
+
+
+TIMEZONE = ZoneInfo("America/New_York")
+DAY_MAP = {0: "mon", 1: "tue", 2: "wed", 3: "thu", 4: "fri", 5: "sat", 6: "sun"}
+
+
+def _time_to_minutes(value: str) -> int:
+    hour_text, minute_text = value.split(":")
+    return int(hour_text) * 60 + int(minute_text)
+
+
+def _compute_current_open_state(hours: list[dict] | None) -> bool:
+    if not isinstance(hours, list) or not hours:
+        return False
+
+    now = datetime.now(TIMEZONE)
+    current_day = DAY_MAP[now.weekday()]
+    current_minutes = now.hour * 60 + now.minute
+
+    for slot in hours:
+        if slot.get("day") != current_day:
+            continue
+        if _time_to_minutes(slot["open"]) <= current_minutes < _time_to_minutes(slot["close"]):
+            return True
+    return False
 
 
 
@@ -142,6 +168,7 @@ def get_pantry_credential_registry() -> list[dict]:
                     "hasCredentials": credentials is not None,
                     "isOpen": pantry.is_open,
                     "manualOverride": pantry.manual_override,
+                    "operatingHours": pantry.operating_hours or [],
                 }
             )
         print(f"✓ Loaded pantry credential registry for {len(registry)} pantries")
@@ -177,12 +204,6 @@ def toggle_pantry_status(pantry_id: int) -> dict | None:
 
 def clear_manual_override(pantry_id: int) -> dict | None:
     """Clear manual_override and immediately re-evaluate the schedule."""
-    from datetime import datetime
-    from zoneinfo import ZoneInfo
-
-    TIMEZONE = ZoneInfo("America/New_York")
-    DAY_MAP = {0: "mon", 1: "tue", 2: "wed", 3: "thu", 4: "fri", 5: "sat", 6: "sun"}
-
     db = SessionLocal()
     try:
         pantry = db.query(Pantry).filter(Pantry.id == pantry_id).first()
@@ -192,19 +213,7 @@ def clear_manual_override(pantry_id: int) -> dict | None:
 
         hours = pantry.operating_hours
         if isinstance(hours, list) and hours:
-            now = datetime.now(TIMEZONE)
-            current_day = DAY_MAP[now.weekday()]
-            current_minutes = now.hour * 60 + now.minute
-            should_be_open = False
-            for slot in hours:
-                if slot.get("day") != current_day:
-                    continue
-                h_o, m_o = slot["open"].split(":")
-                h_c, m_c = slot["close"].split(":")
-                if int(h_o) * 60 + int(m_o) <= current_minutes < int(h_c) * 60 + int(m_c):
-                    should_be_open = True
-                    break
-            pantry.is_open = should_be_open
+            pantry.is_open = _compute_current_open_state(hours)
 
         db.commit()
         db.refresh(pantry)
@@ -213,6 +222,36 @@ def clear_manual_override(pantry_id: int) -> dict | None:
     except Exception as e:
         db.rollback()
         print(f"✗ Error clearing manual override: {e}")
+        raise
+    finally:
+        db.close()
+
+
+def update_pantry_operating_hours(pantry_id: int, operating_hours: list[dict]) -> dict | None:
+    """Replace one pantry's weekly operating-hours schedule."""
+    db = SessionLocal()
+    try:
+        pantry = db.query(Pantry).filter(Pantry.id == pantry_id).first()
+        if pantry is None:
+            return None
+
+        normalized_hours = list(operating_hours) if operating_hours else []
+        pantry.operating_hours = normalized_hours or None
+        if not pantry.manual_override:
+            pantry.is_open = _compute_current_open_state(normalized_hours)
+
+        db.commit()
+        db.refresh(pantry)
+        print(f"✓ Updated operating hours for pantry {pantry_id}")
+        return {
+            "pantryId": str(pantry.id),
+            "operatingHours": pantry.operating_hours or [],
+            "isOpen": pantry.is_open,
+            "manualOverride": pantry.manual_override,
+        }
+    except Exception as e:
+        db.rollback()
+        print(f"✗ Error updating operating hours: {e}")
         raise
     finally:
         db.close()

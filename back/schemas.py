@@ -69,6 +69,14 @@ class DirectorPasswordUpdateResponse(BaseModel):
     error: str | None = None
 
 
+class OperatingHourSlot(BaseModel):
+    """One weekly pantry operating-hours window."""
+
+    day: str = Field(min_length=3, description="Day of week (mon-sun)")
+    open: str = Field(min_length=4, description="Opening time in HH:MM format")
+    close: str = Field(min_length=4, description="Closing time in HH:MM format")
+
+
 class PantryCredentialSummary(BaseModel):
     """Director dashboard row summarizing one pantry's auth setup."""
 
@@ -78,6 +86,7 @@ class PantryCredentialSummary(BaseModel):
     hasCredentials: bool
     isOpen: bool = True
     manualOverride: bool = False
+    operatingHours: list[OperatingHourSlot] = Field(default_factory=list)
 
 
 class PantryCredentialRegistryResponse(BaseModel):
@@ -165,6 +174,28 @@ class PantryToggleStatusResponse(BaseModel):
 
     ok: bool
     pantryId: str | None = None
+    isOpen: bool | None = None
+    manualOverride: bool | None = None
+    message: str | None = None
+    error: str | None = None
+
+
+class PantryScheduleUpdateRequest(BaseModel):
+    """Payload for replacing one pantry's weekly operating hours."""
+
+    pantryId: str = Field(min_length=1, description="Numeric pantry identifier")
+    operatingHours: list[OperatingHourSlot] = Field(
+        default_factory=list,
+        description="Weekly operating hours as day/open/close entries",
+    )
+
+
+class PantryScheduleUpdateResponse(BaseModel):
+    """Result of updating one pantry's operating hours."""
+
+    ok: bool
+    pantryId: str | None = None
+    operatingHours: list[OperatingHourSlot] = Field(default_factory=list)
     isOpen: bool | None = None
     manualOverride: bool | None = None
     message: str | None = None

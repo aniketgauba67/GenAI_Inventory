@@ -7,6 +7,7 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException, status
 
 try:
+    from ..operating_hours import normalize_operating_hours
     from ..schemas import (
         AuthenticatedUser,
         DirectorPasswordUpdateRequest,
@@ -22,10 +23,13 @@ try:
         PantryManageUpdateResponse,
         PantryPasswordUpdateRequest,
         PantryPasswordUpdateResponse,
+        PantryScheduleUpdateRequest,
+        PantryScheduleUpdateResponse,
         PantryToggleStatusRequest,
         PantryToggleStatusResponse,
     )
 except ImportError:
+    from operating_hours import normalize_operating_hours
     from schemas import (
         AuthenticatedUser,
         DirectorPasswordUpdateRequest,
@@ -41,6 +45,8 @@ except ImportError:
         PantryManageUpdateResponse,
         PantryPasswordUpdateRequest,
         PantryPasswordUpdateResponse,
+        PantryScheduleUpdateRequest,
+        PantryScheduleUpdateResponse,
         PantryToggleStatusRequest,
         PantryToggleStatusResponse,
     )
@@ -256,6 +262,44 @@ def update_pantry_password(
     return PantryPasswordUpdateResponse(
         ok=True,
         message=f"Updated password for pantry {pantry_id_raw}.",
+    )
+
+
+@router.post("/pantry/schedule", response_model=PantryScheduleUpdateResponse)
+def update_pantry_schedule(
+    payload: PantryScheduleUpdateRequest,
+) -> PantryScheduleUpdateResponse:
+    pantry_id_raw = payload.pantryId.strip()
+    if not pantry_id_raw.isdigit():
+        return PantryScheduleUpdateResponse(ok=False, error="Pantry id must be numeric.")
+
+    normalized_hours, error = normalize_operating_hours(payload.operatingHours)
+    if error:
+        return PantryScheduleUpdateResponse(ok=False, error=error)
+
+    pantry_id = int(pantry_id_raw)
+    result = _get_crud_module().update_pantry_operating_hours(pantry_id, normalized_hours)
+    if result is None:
+        return PantryScheduleUpdateResponse(ok=False, error=f"Pantry {pantry_id_raw} not found.")
+
+    if normalized_hours:
+        if result.get("manualOverride"):
+            message = "Operating hours saved. Current open/closed state is still manually overridden."
+        else:
+            message = "Operating hours saved and current open/closed status refreshed."
+    else:
+        if result.get("manualOverride"):
+            message = "Operating hours cleared. Current open/closed state is still manually overridden."
+        else:
+            message = "Operating hours cleared. Pantry is now using manual open/closed status only."
+
+    return PantryScheduleUpdateResponse(
+        ok=True,
+        pantryId=result["pantryId"],
+        operatingHours=result.get("operatingHours", []),
+        isOpen=result.get("isOpen"),
+        manualOverride=result.get("manualOverride"),
+        message=message,
     )
 
 
