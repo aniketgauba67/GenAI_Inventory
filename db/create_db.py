@@ -8,8 +8,8 @@ load_dotenv()
 
 try:
     print("✓ Initializing database with SQLAlchemy...")
-     
-    init_db() # Uncomment to reset database (drops all tables and recreates them), use with caution due to potential monetary costs
+
+    # init_db() # Uncomment to reset database (drops all tables and recreates them), use with caution due to potential monetary costs
 
     print("✓ Database tables created successfully!")
     
