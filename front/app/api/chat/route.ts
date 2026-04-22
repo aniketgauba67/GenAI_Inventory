@@ -17,7 +17,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+    const apiBase = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
     const response = await fetch(`${apiBase}/chat/message`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

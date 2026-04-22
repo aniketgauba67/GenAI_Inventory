@@ -95,11 +95,12 @@ export const authOptions: NextAuthOptions = {
     },
   },
 
-  secret:
-    process.env.NEXTAUTH_SECRET ||
-    (process.env.NODE_ENV === "production"
-      ? undefined
-      : "dev-secret-min-32-chars-for-nextauth-jwt"),
+  secret: (() => {
+    if (process.env.NEXTAUTH_SECRET) return process.env.NEXTAUTH_SECRET;
+    if (process.env.NODE_ENV === "production")
+      throw new Error("NEXTAUTH_SECRET environment variable is required in production");
+    return "dev-secret-min-32-chars-for-nextauth-jwt";
+  })(),
 };
 
 const handler = NextAuth(authOptions);
