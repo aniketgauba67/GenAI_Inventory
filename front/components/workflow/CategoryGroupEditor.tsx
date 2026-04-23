@@ -1,6 +1,6 @@
 import Input from "../ui/Input";
 
-const CATEGORY_GROUPS: Array<{ title: string; categories: string[] }> = [
+export const CATEGORY_GROUPS: Array<{ title: string; categories: string[] }> = [
   { title: "Drinks & Breakfast", categories: ["Beverages", "Juices", "Cereal", "Breakfast"] },
   { title: "Proteins", categories: ["Meat", "Fish", "Poultry", "Frozen"] },
   { title: "Produce & Soup", categories: ["Vegetables", "Fruits", "Nuts", "Soup"] },

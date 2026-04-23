@@ -119,9 +119,6 @@ function LoginForm() {
           Pantry Login
         </h1>
         <p className="mb-8 text-center text-sm text-zinc-500 dark:text-zinc-400">
-          Enter your credentials to access your inventory management.
-        </p>
-        <p className="mb-6 text-center text-xs text-zinc-500 dark:text-zinc-400">
           Use your pantry ID and password provided by your team.
         </p>
 

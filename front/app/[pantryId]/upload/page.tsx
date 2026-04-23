@@ -11,9 +11,9 @@ import Alert from "../../../components/ui/Alert";
 import SectionHeader from "../../../components/ui/SectionHeader";
 import FlowStepper from "../../../components/workflow/FlowStepper";
 import UploadDropzone from "../../../components/workflow/UploadDropzone";
-import FileList from "../../../components/workflow/FileList";
 import { useToast } from "../../../components/ui/Toast";
 import EmptyState from "../../../components/ui/EmptyState";
+import { getApiBase } from "../../../lib/api";
 
 export default function UploadPage() {
   const { showToast } = useToast();
@@ -88,10 +88,7 @@ export default function UploadPage() {
     [previews]
   );
 
-  const apiBase =
-    typeof window !== "undefined"
-      ? process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
-      : "";
+  const apiBase = getApiBase();
 
   useEffect(() => {
     if (!isDirector) {
@@ -272,7 +269,7 @@ export default function UploadPage() {
                     : "border-rose-300 bg-rose-50 text-rose-700 hover:bg-rose-100 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300 dark:hover:bg-rose-900/50"
                 }`}
               >
-                <span className={`h-2 w-2 rounded-full ${isPantryOpen ? "bg-teal-500" : "bg-rose-500"}`} />
+                <span aria-hidden="true" className={`h-2 w-2 rounded-full ${isPantryOpen ? "bg-teal-500" : "bg-rose-500"}`} />
                 {togglingStatus ? "..." : isPantryOpen ? "Open" : "Closed"}
                 {isManualOverride && !togglingStatus && <span className="ml-0.5 text-[9px] opacity-70">Manual</span>}
               </button>
@@ -323,7 +320,7 @@ export default function UploadPage() {
           </Card>
         )}
         <Card>
-          <FlowStepper steps={["Upload", "Review", "Submit"]} currentStep={0} />
+          <FlowStepper steps={["Upload", "Review", "Submit"]} currentStep={0} status={uploading ? "uploading" : undefined} />
         </Card>
         {uploading && (
           <Alert tone="info">Processing images and detecting inventory. This can take a few seconds.</Alert>
@@ -378,10 +375,12 @@ export default function UploadPage() {
                   <button
                     type="button"
                     onClick={() => removeImage(i)}
-                    className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-lg leading-none text-white transition hover:bg-black/70 active:scale-95"
+                    className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white transition hover:bg-black/70 hover:scale-110 active:scale-95"
                     aria-label={`Remove image ${i + 1}`}
                   >
-                    x
+                    <svg aria-hidden="true" width="14" height="14" viewBox="0 0 14 14" fill="none">
+                      <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                    </svg>
                   </button>
                   <span className="absolute bottom-2 left-2 max-w-[80%] truncate text-xs text-white/90 drop-shadow">
                     {files[i]?.name}
@@ -389,9 +388,6 @@ export default function UploadPage() {
                 </li>
               ))}
             </ul>
-            <div className="mt-4">
-              <FileList files={files} onRemove={removeImage} />
-            </div>
             <Button
               type="button"
               onClick={handleSendToBackend}
@@ -399,8 +395,14 @@ export default function UploadPage() {
               block
               variant="secondary"
               size="lg"
-              className="mt-4"
+              className="mt-4 inline-flex items-center justify-center gap-2"
             >
+              {uploading && (
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                </svg>
+              )}
               {uploading ? "Detecting inventory..." : "Detect inventory"}
             </Button>
             {uploadResult && (
@@ -420,21 +422,6 @@ export default function UploadPage() {
           </Card>
         )}
 
-        <Card className="mt-6">
-          <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Account</p>
-          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-            Need to use a different volunteer, manager, or director login?
-          </p>
-          <Button
-            type="button"
-            onClick={() => signOut({ callbackUrl: "/" })}
-            block
-            variant="ghost"
-            className="mt-3"
-          >
-            Switch account
-          </Button>
-        </Card>
       </div>
     </AppShell>
   );

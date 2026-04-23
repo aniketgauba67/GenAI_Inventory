@@ -11,8 +11,10 @@ import SectionHeader from "../../components/ui/SectionHeader";
 import FlowStepper from "../../components/workflow/FlowStepper";
 import UploadDropzone from "../../components/workflow/UploadDropzone";
 import FileList from "../../components/workflow/FileList";
+import Select from "../../components/ui/Select";
 import { useToast } from "../../components/ui/Toast";
 import EmptyState from "../../components/ui/EmptyState";
+import { getApiBase } from "../../lib/api";
 
 const STORAGE_KEY = "managerOrderFormDraft";
 
@@ -34,10 +36,7 @@ export default function ManagerViewPage() {
   const [isManualOverride, setIsManualOverride] = useState(false);
   const [togglingStatus, setTogglingStatus] = useState(false);
 
-  const apiBase =
-    typeof window !== "undefined"
-      ? process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
-      : "";
+  const apiBase = getApiBase();
 
   useEffect(() => {
     if (!isDirector && sessionPantryId) {
@@ -240,17 +239,16 @@ export default function ManagerViewPage() {
               title="Choose target pantry"
               subtitle="Director form uploads need an explicit pantry selection before extraction."
             />
-            <select
+            <Select
               value={targetPantryId}
               onChange={(e) => setTargetPantryId(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
             >
               {pantries.map((p) => (
                 <option key={p.pantryId} value={p.pantryId}>
                   {p.pantryId} - {p.name}
                 </option>
               ))}
-            </select>
+            </Select>
             <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">
               Current form target: {targetPantryId || "Select a pantry"}
             </p>
@@ -297,21 +295,6 @@ export default function ManagerViewPage() {
         </Card>
         {error && <Alert tone="error">{error}</Alert>}
 
-        <Card className="mt-6">
-          <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Account</p>
-          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-            To login as another role, switch account here.
-          </p>
-          <Button
-            type="button"
-            onClick={() => signOut({ callbackUrl: "/" })}
-            block
-            variant="ghost"
-            className="mt-3"
-          >
-            Switch account
-          </Button>
-        </Card>
       </div>
     </AppShell>
   );

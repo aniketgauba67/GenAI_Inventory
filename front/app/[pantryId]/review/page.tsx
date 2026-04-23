@@ -17,6 +17,7 @@ import StickyActionBar from "../../../components/workflow/StickyActionBar";
 import EmptyState from "../../../components/ui/EmptyState";
 import Skeleton from "../../../components/ui/Skeleton";
 import { useToast } from "../../../components/ui/Toast";
+import { getApiBase } from "../../../lib/api";
 
 type InventoryRecord = Record<string, number>;
 
@@ -73,10 +74,7 @@ export default function ReviewPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitResult, setSubmitResult] = useState<SubmitResponse | null>(null);
 
-  const apiBase =
-    typeof window !== "undefined"
-      ? process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
-      : "";
+  const apiBase = getApiBase();
 
   useEffect(() => {
     async function loadDraft() {

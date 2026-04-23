@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { signOut, useSession } from "next-auth/react";
 import LevelBadge from "../components/inventory/LevelBadge";
 import Card from "../components/ui/Card";
@@ -9,6 +9,10 @@ import Input from "../components/ui/Input";
 import { useToast } from "../components/ui/Toast";
 import Button from "../components/ui/Button";
 import FloatingChat from "../components/chat/FloatingChat";
+import { getApiBase } from "../lib/api";
+import Select from "../components/ui/Select";
+import Skeleton from "../components/ui/Skeleton";
+import { CATEGORY_GROUPS } from "../components/workflow/CategoryGroupEditor";
 
 type OperatingSlot = { day: string; open: string; close: string };
 
@@ -169,27 +173,14 @@ function groupHoursByDay(hours: OperatingSlot[]): { day: string; slots: { open: 
     .map((d) => ({ day: d, slots: map.get(d)! }));
 }
 
-const CATEGORY_ORDER = [
-  "Beverages",
-  "Juices",
-  "Cereal",
-  "Breakfast",
-  "Meat",
-  "Fish",
-  "Poultry",
-  "Frozen",
-  "Vegetables",
-  "Fruits",
-  "Nuts",
-  "Soup",
-  "Grains",
-  "Pasta",
-  "Snacks",
-  "Spices",
-  "Sauces",
-  "Condiments",
-  "Misc Products",
-];
+function formatRelativeTime(iso: string): string {
+  const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60_000);
+  if (mins < 2) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
 
 const accessLinks = [
   { label: "Volunteer", loginHref: "/login?callbackUrl=/volunteer", directHref: "/volunteer" },
@@ -239,16 +230,15 @@ export default function HomePage() {
   const [searchDay, setSearchDay] = useState<string>("mon");
   const [searchTime, setSearchTime] = useState<string>("12:00");
   const [timeSearchError, setTimeSearchError] = useState<string | null>(null);
+  const [accessMenuOpen, setAccessMenuOpen] = useState(false);
+  const accessMenuRef = useRef<HTMLDivElement>(null);
 
   const sessionRole = (session?.user as { role?: string } | undefined)?.role;
   const sessionPantryId = (session?.user as { pantryId?: string } | undefined)?.pantryId;
   const isDirectorSession = sessionRole === "director" || sessionPantryId === "director";
   const isAuthenticated = status === "authenticated";
 
-  const apiBase =
-    typeof window !== "undefined"
-      ? process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
-      : "";
+  const apiBase = getApiBase();
 
   async function loadPantriesByTime(day: string, time: string) {
     setTimeSearchError(null);
@@ -302,11 +292,27 @@ export default function HomePage() {
   }, [easyView, useTimeSearch]);
 
   useEffect(() => {
+    if (!accessMenuOpen) return;
+    function handleMouseDown(e: MouseEvent) {
+      if (accessMenuRef.current && !accessMenuRef.current.contains(e.target as Node)) {
+        setAccessMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleMouseDown);
+    return () => document.removeEventListener("mousedown", handleMouseDown);
+  }, [accessMenuOpen]);
+
+  useEffect(() => {
     if (!(easyView && easyPickerOpen)) return;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setEasyPickerOpen(false);
+    }
+    document.addEventListener("keydown", handleKeyDown);
     return () => {
       document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", handleKeyDown);
     };
   }, [easyPickerOpen, easyView]);
 
@@ -497,6 +503,8 @@ export default function HomePage() {
                   ? (isVolunteer ? volunteerHref : link.directHref)
                   : link.loginHref;
                 const shouldBlock = isAuthenticated && isDirector && !isDirectorSession;
+                // Hide Manager/Director on mobile (sm:) in non-easy-view — replaced by "More" dropdown
+                const hideOnMobile = !easyView && !isVolunteer;
 
                 if (shouldBlock) {
                   return (
@@ -504,7 +512,7 @@ export default function HomePage() {
                       key={link.label}
                       type="button"
                       onClick={() => handleAccessClick(href, link.label)}
-                      className={`inline-flex items-center rounded-full border font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-950 ${easyView ? "px-6 py-3 text-base" : "px-4 py-2 text-sm"} ${
+                      className={`${hideOnMobile ? "hidden sm:inline-flex" : "inline-flex"} items-center rounded-full border font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-950 ${easyView ? "px-6 py-3 text-base" : "px-4 py-2 text-sm"} ${
                         isVolunteer
                           ? "border-teal-600 bg-teal-600 text-white shadow-sm shadow-teal-600/20 hover:bg-teal-700 focus-visible:ring-teal-500 dark:border-teal-400 dark:bg-teal-500 dark:text-slate-950"
                           : isDirector
@@ -521,7 +529,7 @@ export default function HomePage() {
                   <Link
                     key={link.label}
                     href={href}
-                    className={`inline-flex items-center rounded-full border font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-950 ${easyView ? "px-6 py-3 text-base" : "px-4 py-2 text-sm"} ${
+                    className={`${hideOnMobile ? "hidden sm:inline-flex" : "inline-flex"} items-center rounded-full border font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-950 ${easyView ? "px-6 py-3 text-base" : "px-4 py-2 text-sm"} ${
                       isVolunteer
                         ? "border-teal-600 bg-teal-600 text-white shadow-sm shadow-teal-600/20 hover:bg-teal-700 focus-visible:ring-teal-500 dark:border-teal-400 dark:bg-teal-500 dark:text-slate-950"
                         : isDirector
@@ -533,6 +541,49 @@ export default function HomePage() {
                   </Link>
                 );
               })}
+              {!easyView && (
+                <div className="relative sm:hidden" ref={accessMenuRef}>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setAccessMenuOpen((prev) => !prev)}
+                  >
+                    More ▾
+                  </Button>
+                  {accessMenuOpen && (
+                    <div className="absolute right-0 top-full z-50 mt-1 flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-900">
+                      {accessLinks.slice(1).map((link, i) => {
+                        const isDirectorLink = i === 1;
+                        const href = isAuthenticated ? link.directHref : link.loginHref;
+                        const shouldBlock = isAuthenticated && isDirectorLink && !isDirectorSession;
+                        if (shouldBlock) {
+                          return (
+                            <button
+                              key={link.label}
+                              type="button"
+                              onClick={() => { setAccessMenuOpen(false); handleAccessClick(href, link.label); }}
+                              className={`px-5 py-3 text-left text-sm font-semibold transition hover:bg-slate-50 dark:hover:bg-slate-800 ${isDirectorLink ? "text-orange-600 dark:text-orange-400" : "text-slate-700 dark:text-slate-200"}`}
+                            >
+                              {link.label}
+                            </button>
+                          );
+                        }
+                        return (
+                          <Link
+                            key={link.label}
+                            href={href}
+                            onClick={() => setAccessMenuOpen(false)}
+                            className={`px-5 py-3 text-sm font-semibold transition hover:bg-slate-50 dark:hover:bg-slate-800 ${isDirectorLink ? "text-orange-600 dark:text-orange-400" : "text-slate-700 dark:text-slate-200"}`}
+                          >
+                            {link.label}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
               {isAuthenticated && (
                 <Button
                   type="button"
@@ -561,43 +612,6 @@ export default function HomePage() {
             </Card>
           )}
 
-          {!easyView && (
-            <div className="grid gap-3 sm:grid-cols-3">
-            <div className={`rounded-3xl border border-teal-200/80 bg-white/80 shadow-sm backdrop-blur dark:border-teal-900/60 dark:bg-slate-950/60 ${easyView ? "p-5" : "p-4"}`}>
-              <p className="text-xs font-semibold uppercase tracking-wide text-teal-700 dark:text-teal-300">
-                {easyView ? "Pantries to browse" : "Live inventory"}
-              </p>
-              <p className={`mt-2 font-semibold text-slate-950 dark:text-slate-50 ${easyView ? "text-3xl" : "text-2xl"}`}>
-                {loading ? "Loading" : pantries.length}
-              </p>
-              <p className={`mt-1 text-slate-600 dark:text-slate-300 ${easyView ? "text-base" : "text-sm"}`}>
-                {easyView ? "Number of pantry locations you can view." : "Pantries available to browse right now."}
-              </p>
-            </div>
-            <div className={`rounded-3xl border border-orange-200/80 bg-white/80 shadow-sm backdrop-blur dark:border-orange-900/60 dark:bg-slate-950/60 ${easyView ? "p-5" : "p-4"}`}>
-              <p className="text-xs font-semibold uppercase tracking-wide text-orange-700 dark:text-orange-300">
-                {easyView ? "Matching pantries" : "Search results"}
-              </p>
-              <p className={`mt-2 font-semibold text-slate-950 dark:text-slate-50 ${easyView ? "text-3xl" : "text-2xl"}`}>
-                {loading ? "Loading" : filteredPantries.length}
-              </p>
-              <p className={`mt-1 text-slate-600 dark:text-slate-300 ${easyView ? "text-base" : "text-sm"}`}>
-                {easyView ? "Pantries that match your search." : "Matches for the current query."}
-              </p>
-            </div>
-            <div className={`rounded-3xl border border-slate-200/80 bg-white/80 shadow-sm backdrop-blur dark:border-slate-800/80 dark:bg-slate-950/60 ${easyView ? "p-5" : "p-4"}`}>
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                {easyView ? "Now viewing" : "Active pantry"}
-              </p>
-              <p className={`mt-2 font-semibold text-slate-950 dark:text-slate-50 ${easyView ? "text-3xl" : "text-2xl"}`}>
-                {activePantry ? activePantry.pantryId : "None"}
-              </p>
-              <p className={`mt-1 text-slate-600 dark:text-slate-300 ${easyView ? "text-base" : "text-sm"}`}>
-                {activePantry ? activePantry.name : (easyView ? "Choose a pantry from the list." : "Select a pantry to inspect")}
-              </p>
-            </div>
-            </div>
-          )}
         </header>
 
         <section className={easyView ? "grid gap-5 xl:grid-cols-1" : "grid gap-4 lg:grid-cols-[minmax(320px,380px)_minmax(0,1fr)] xl:grid-cols-[minmax(340px,420px)_minmax(0,1fr)]"}>
@@ -662,10 +676,10 @@ export default function HomePage() {
                         <label className="text-xs font-semibold text-slate-600 dark:text-slate-300">
                           Day
                         </label>
-                        <select
+                        <Select
                           value={searchDay}
                           onChange={(e) => setSearchDay(e.target.value)}
-                          className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-950 outline-none focus:border-teal-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50"
+                          className="mt-1"
                         >
                           <option value="mon">Monday</option>
                           <option value="tue">Tuesday</option>
@@ -674,17 +688,17 @@ export default function HomePage() {
                           <option value="fri">Friday</option>
                           <option value="sat">Saturday</option>
                           <option value="sun">Sunday</option>
-                        </select>
+                        </Select>
                       </div>
                       <div>
                         <label className="text-xs font-semibold text-slate-600 dark:text-slate-300">
                           Time (24-hour)
                         </label>
-                        <input
+                        <Input
                           type="time"
                           value={searchTime}
                           onChange={(e) => setSearchTime(e.target.value)}
-                          className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-950 outline-none focus:border-teal-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50"
+                          className="mt-1"
                         />
                       </div>
                       <Button
@@ -695,9 +709,6 @@ export default function HomePage() {
                         Search by Time
                       </Button>
                     </div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                      {loading ? "Loading..." : `${sortedFilteredPantries.length} pantry result(s)`}
-                    </p>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -709,16 +720,15 @@ export default function HomePage() {
                         placeholder="Search pantry by id, name, or address"
                         className="sm:max-w-md"
                       />
-                      <button
-                        type="button"
-                        onClick={() => setUseTimeSearch(true)}
-                        className="text-xs font-semibold text-teal-600 hover:text-teal-700 dark:text-teal-400 dark:hover:text-teal-300"
-                      >
+                      <Button type="button" variant="ghost" size="sm" onClick={() => setUseTimeSearch(true)}>
                         Search by time
-                      </button>
+                      </Button>
                     </div>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
-                      {loading ? "Loading pantries..." : `${sortedFilteredPantries.length} pantry result(s)`}
+                      {loading
+                        ? "Loading pantries..."
+                        : `${pantries.length} pantries · ${sortedFilteredPantries.length} matching${activePantry ? ` · Viewing: ${activePantry.name}` : ""}`
+                      }
                     </p>
                   </div>
                 )}
@@ -742,6 +752,17 @@ export default function HomePage() {
                   <p className="text-xs text-slate-500 dark:text-slate-400">Tap a location to inspect details</p>
                 </div>
                 <div className="mt-3 max-h-[56vh] space-y-2 overflow-y-auto pr-1">
+                  {loading && (
+                    <div className="space-y-2">
+                      {[0, 1, 2, 3].map((i) => (
+                        <div key={i} className="rounded-2xl border border-slate-200 p-3 dark:border-slate-800">
+                          <Skeleton className="h-4 w-48" />
+                          <Skeleton className="mt-2 h-3 w-32" />
+                          <Skeleton className="mt-1 h-3 w-40" />
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   {!loading && sortedFilteredPantries.length === 0 && (
                     <p className="rounded-2xl border border-dashed border-slate-300 px-3 py-4 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
                       No pantries match your search.
@@ -775,7 +796,7 @@ export default function HomePage() {
                             </p>
                           </div>
                           <div className="flex shrink-0 items-center gap-1.5">
-                            <span className={`h-2.5 w-2.5 rounded-full ${pantry.isOpen ? "bg-teal-500" : "bg-rose-400"}`} />
+                            <span aria-hidden="true" className={`h-2.5 w-2.5 rounded-full ${pantry.isOpen ? "bg-teal-500" : "bg-rose-400"}`} />
                             <span className={`text-[10px] font-semibold uppercase tracking-wide ${pantry.isOpen ? "text-teal-600 dark:text-teal-400" : "text-rose-500 dark:text-rose-400"}`}>
                               {pantry.isOpen ? "Open" : "Closed"}
                             </span>
@@ -808,6 +829,19 @@ export default function HomePage() {
                     <p className={`mt-1 text-slate-600 dark:text-slate-300 ${easyView ? "text-base" : "text-sm"}`}>
                       {activePantry.location || "Address not available"}
                     </p>
+                    {activePantry.location && (
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(activePantry.location)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`mt-1 inline-flex items-center gap-1 font-medium text-sky-600 hover:underline dark:text-sky-400 ${easyView ? "text-base" : "text-sm"}`}
+                      >
+                        Get directions
+                        <svg aria-hidden="true" width="11" height="11" viewBox="0 0 12 12" fill="none">
+                          <path d="M1 11 11 1M11 1H5M11 1v6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                        </svg>
+                      </a>
+                    )}
                   </div>
                   <div className={`flex flex-wrap gap-2 text-slate-500 dark:text-slate-400 ${easyView ? "text-sm" : "text-xs"}`}>
                     <span className="rounded-full border border-teal-200 bg-teal-50 px-3 py-1 dark:border-teal-900/60 dark:bg-teal-950/40">
@@ -815,7 +849,9 @@ export default function HomePage() {
                     </span>
                     <span className="rounded-full border border-orange-200 bg-orange-50 px-3 py-1 dark:border-orange-900/60 dark:bg-orange-950/40">
                       {easyView ? "Updated: " : "Last updated: "}
-                      {activePantry.lastUpdated ? new Date(activePantry.lastUpdated).toLocaleString() : (easyView ? "Info coming soon" : "Not available")}
+                      {activePantry.lastUpdated
+                        ? `${formatRelativeTime(activePantry.lastUpdated)} · ${new Date(activePantry.lastUpdated).toLocaleDateString()}`
+                        : (easyView ? "Info coming soon" : "Not available")}
                     </span>
                     <span className={`rounded-full border px-3 py-1 font-semibold ${activePantry.isOpen ? "border-teal-200 bg-teal-50 text-teal-700 dark:border-teal-900/60 dark:bg-teal-950/40 dark:text-teal-300" : "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300"}`}>
                       {activePantry.isOpen ? (easyView ? "Open now" : "Open") : (easyView ? "Closed now" : "Closed")}
@@ -860,37 +896,46 @@ export default function HomePage() {
                   </div>
                 )}
 
-                <div className={`mt-4 grid ${easyView ? "gap-3 sm:grid-cols-1 xl:grid-cols-2 2xl:grid-cols-2" : "gap-2 sm:grid-cols-2 2xl:grid-cols-3"}`}>
-                  {CATEGORY_ORDER.map((category) => (
-                    <div
-                      key={category}
-                      className={`flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-3 dark:border-slate-800 dark:bg-slate-900/70 ${easyView ? "py-4" : "py-2.5"}`}
-                    >
-                      <div className="min-w-0">
-                        <span className={`${easyView ? "text-base font-semibold" : "text-sm"} text-slate-700 dark:text-slate-200`}>{category}</span>
-                        <p className={`${easyView ? "text-sm font-medium" : "text-xs"} text-slate-500 dark:text-slate-400`}>
-                          {easyView ? "Starting amount: " : "Original: "}
-                          {Number(activePantry.originalQuantities?.[category] ?? 0)}
-                        </p>
-                        {easyView && (
-                          <p className="mt-1 text-sm text-slate-700 dark:text-slate-200">
-                            {getFriendlyLevelHint(getDisplayLevel(activePantry, category))}
-                          </p>
-                        )}
+                <div className="mt-4 space-y-4">
+                  {CATEGORY_GROUPS.map((group) => (
+                    <section key={group.title}>
+                      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                        {group.title}
+                      </p>
+                      <div className={`grid ${easyView ? "gap-3 xl:grid-cols-2" : "gap-2 sm:grid-cols-2 2xl:grid-cols-3"}`}>
+                        {group.categories.map((category) => (
+                          <div
+                            key={category}
+                            className={`flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-3 dark:border-slate-800 dark:bg-slate-900/70 ${easyView ? "py-4" : "py-2.5"}`}
+                          >
+                            <div className="min-w-0">
+                              <span className={`${easyView ? "text-base font-semibold" : "text-sm"} text-slate-700 dark:text-slate-200`}>{category}</span>
+                              <p className={`${easyView ? "text-sm font-medium" : "text-xs"} text-slate-500 dark:text-slate-400`}>
+                                {easyView ? "Starting amount: " : "Original: "}
+                                {Number(activePantry.originalQuantities?.[category] ?? 0)}
+                              </p>
+                              {easyView && (
+                                <p className="mt-1 text-sm text-slate-700 dark:text-slate-200">
+                                  {getFriendlyLevelHint(getDisplayLevel(activePantry, category))}
+                                </p>
+                              )}
+                            </div>
+                            <div className="ml-3 shrink-0">
+                              <LevelBadge
+                                level={getDisplayLevel(activePantry, category)}
+                                size={easyView ? "lg" : "sm"}
+                                friendlyText={easyView}
+                              />
+                              {easyView && (
+                                <p className="mt-1 text-center text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                  {getFriendlyLevelText(getDisplayLevel(activePantry, category))}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                      <div className="ml-3 shrink-0">
-                        <LevelBadge
-                          level={getDisplayLevel(activePantry, category)}
-                          size={easyView ? "lg" : "sm"}
-                          friendlyText={easyView}
-                        />
-                        {easyView && (
-                          <p className="mt-1 text-center text-xs font-semibold text-slate-700 dark:text-slate-300">
-                            {getFriendlyLevelText(getDisplayLevel(activePantry, category))}
-                          </p>
-                        )}
-                      </div>
-                    </div>
+                    </section>
                   ))}
                 </div>
               </>
@@ -927,9 +972,21 @@ export default function HomePage() {
                 onChange={(event) => setEasyPickerQuery(event.target.value)}
                 placeholder="Search pantry by name, id, or address"
                 className="mt-4 min-h-[52px] text-base"
+                autoFocus
               />
             </div>
             <div className="flex-1 overflow-y-auto p-4 sm:p-5">
+              {loading && (
+                <div className="space-y-3">
+                  {[0, 1, 2, 3].map((i) => (
+                    <div key={i} className="rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
+                      <Skeleton className="h-5 w-56" />
+                      <Skeleton className="mt-2 h-4 w-32" />
+                      <Skeleton className="mt-1 h-4 w-44" />
+                    </div>
+                  ))}
+                </div>
+              )}
               {!loading && easyPickerPantries.length === 0 && (
                 <p className="rounded-xl border border-dashed border-slate-300 px-4 py-6 text-base text-slate-600 dark:border-slate-700 dark:text-slate-300">
                   No pantry matches your search.

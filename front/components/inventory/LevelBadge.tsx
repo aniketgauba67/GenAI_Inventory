@@ -34,8 +34,12 @@ export default function LevelBadge({
       ? "min-w-28 px-3.5 py-2 text-sm"
       : "min-w-14 px-2.5 py-1 text-xs";
   return (
-    <span className={`inline-flex items-center justify-center gap-1.5 rounded-full font-semibold ${sizeClass} ${style} ${className}`}>
-      <span className={`${size === "lg" ? "h-2 w-2" : "h-1.5 w-1.5"} rounded-full bg-current opacity-80`} aria-hidden />
+    <span
+      role="img"
+      aria-label={`Stock level: ${friendlyText ? labelSet.friendly : labelSet.short}`}
+      className={`inline-flex items-center justify-center gap-1.5 rounded-full font-semibold ${sizeClass} ${style} ${className}`}
+    >
+      <span className={`${size === "lg" ? "h-2 w-2" : "h-1.5 w-1.5"} rounded-full bg-current opacity-80`} aria-hidden="true" />
       {friendlyText ? labelSet.friendly : labelSet.short}
     </span>
   );

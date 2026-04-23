@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 type ChatRequestPayload = {
   message?: string;
   history?: Array<["user" | "assistant", string]>;
+  pantryId?: string | null;
 };
 
 export async function POST(req: Request) {
@@ -24,7 +25,7 @@ export async function POST(req: Request) {
       body: JSON.stringify({
         message,
         history: payload.history || [],
-        pantry_id: null,
+        pantry_id: payload.pantryId ?? null,
       }),
       cache: "no-store",
     });
