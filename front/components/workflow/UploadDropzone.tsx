@@ -24,18 +24,18 @@ export default function UploadDropzone({
 }: UploadDropzoneProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
-  function handleDrop(e: DragEvent<HTMLLabelElement>) {
+  function handleDrop(e: DragEvent<HTMLDivElement>) {
     e.preventDefault();
     setIsDragging?.(false);
     if (!disabled) onFiles(e.dataTransfer.files);
   }
 
-  function handleDragOver(e: DragEvent<HTMLLabelElement>) {
+  function handleDragOver(e: DragEvent<HTMLDivElement>) {
     e.preventDefault();
     if (!disabled) setIsDragging?.(true);
   }
 
-  function handleDragLeave(e: DragEvent<HTMLLabelElement>) {
+  function handleDragLeave(e: DragEvent<HTMLDivElement>) {
     e.preventDefault();
     setIsDragging?.(false);
   }

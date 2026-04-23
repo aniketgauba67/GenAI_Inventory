@@ -399,7 +399,7 @@ export default function DashboardClient({
 
       setRowDrafts((prev) => ({
         ...prev,
-        [pantryIdValue]: { name: "", location: "", newPassword: "" },
+        [pantryIdValue]: { name: "", location: "", newPassword: "", operatingHours: [] },
       }));
       setRowNotice((prev) => ({
         ...prev,
