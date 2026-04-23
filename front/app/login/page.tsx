@@ -1,7 +1,7 @@
 "use client";
 
 import { signIn, useSession } from "next-auth/react";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Card from "../../components/ui/Card";
 import Input from "../../components/ui/Input";
@@ -54,7 +54,7 @@ function resolveAuthenticatedTarget(
   return resolved;
 }
 
-export default function LoginPage() {
+function LoginForm() {
   const searchParams = useSearchParams();
   const { status, data: session } = useSession();
   const [username, setUsername] = useState("");
@@ -96,6 +96,8 @@ export default function LoginPage() {
       window.location.href = target;
     }
   }
+
+  if (status === "loading") return null;
 
   if (status === "authenticated") {
     return (
@@ -168,5 +170,13 @@ export default function LoginPage() {
         </form>
       </Card>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }
