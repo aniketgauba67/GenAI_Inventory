@@ -169,6 +169,13 @@ class PantryToggleStatusRequest(BaseModel):
     pantryId: str = Field(min_length=1, description="Numeric pantry identifier")
 
 
+class PantrySetStatusRequest(BaseModel):
+    """Payload for explicitly setting a pantry's open/closed status."""
+
+    pantryId: str = Field(min_length=1, description="Numeric pantry identifier")
+    isOpen: bool = Field(description="Whether the pantry should be marked open")
+
+
 class PantryToggleStatusResponse(BaseModel):
     """Result of toggling a pantry's open/closed status."""
 

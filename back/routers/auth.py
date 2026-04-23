@@ -25,6 +25,7 @@ try:
         PantryPasswordUpdateResponse,
         PantryScheduleUpdateRequest,
         PantryScheduleUpdateResponse,
+        PantrySetStatusRequest,
         PantryToggleStatusRequest,
         PantryToggleStatusResponse,
     )
@@ -47,6 +48,7 @@ except ImportError:
         PantryPasswordUpdateResponse,
         PantryScheduleUpdateRequest,
         PantryScheduleUpdateResponse,
+        PantrySetStatusRequest,
         PantryToggleStatusRequest,
         PantryToggleStatusResponse,
     )
@@ -311,6 +313,27 @@ def toggle_pantry_status(payload: PantryToggleStatusRequest) -> PantryToggleStat
 
     pantry_id = int(pantry_id_raw)
     result = _get_crud_module().toggle_pantry_status(pantry_id)
+    if result is None:
+        return PantryToggleStatusResponse(ok=False, error=f"Pantry {pantry_id_raw} not found.")
+
+    status_label = "open" if result["isOpen"] else "closed"
+    return PantryToggleStatusResponse(
+        ok=True,
+        pantryId=result["pantryId"],
+        isOpen=result["isOpen"],
+        manualOverride=result.get("manualOverride", True),
+        message=f"Pantry is now {status_label} (manual override on).",
+    )
+
+
+@router.post("/pantry/set-status", response_model=PantryToggleStatusResponse)
+def set_pantry_status(payload: PantrySetStatusRequest) -> PantryToggleStatusResponse:
+    pantry_id_raw = payload.pantryId.strip()
+    if not pantry_id_raw.isdigit():
+        return PantryToggleStatusResponse(ok=False, error="Pantry id must be numeric.")
+
+    pantry_id = int(pantry_id_raw)
+    result = _get_crud_module().set_pantry_status(pantry_id, payload.isOpen)
     if result is None:
         return PantryToggleStatusResponse(ok=False, error=f"Pantry {pantry_id_raw} not found.")
 
