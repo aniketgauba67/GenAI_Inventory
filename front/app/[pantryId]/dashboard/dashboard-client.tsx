@@ -163,10 +163,12 @@ export default function DashboardClient({
       if (response.ok && data.ok) {
         setCredentials((prev) =>
           prev.map((c) =>
-            c.pantryId === pantryIdValue ? { ...c, isOpen: data.isOpen, manualOverride: data.manualOverride ?? true } : c
+            c.pantryId === pantryIdValue
+              ? { ...c, isOpen: data.isOpen ?? c.isOpen, manualOverride: data.manualOverride ?? true }
+              : c
           )
         );
-        showToast(data.message, "success");
+        showToast(data.message || "Pantry status updated.", "success");
         return;
       }
 
@@ -191,7 +193,7 @@ export default function DashboardClient({
             c.pantryId === pantryIdValue
               ? {
                   ...c,
-                  isOpen: firstToggle.data.isOpen,
+                  isOpen: firstToggle.data.isOpen ?? c.isOpen,
                   manualOverride: firstToggle.data.manualOverride ?? true,
                 }
               : c
@@ -215,7 +217,7 @@ export default function DashboardClient({
           c.pantryId === pantryIdValue
             ? {
                 ...c,
-                isOpen: secondToggle.data.isOpen,
+                isOpen: secondToggle.data.isOpen ?? c.isOpen,
                 manualOverride: secondToggle.data.manualOverride ?? true,
               }
             : c
@@ -241,10 +243,12 @@ export default function DashboardClient({
       if (data.ok) {
         setCredentials((prev) =>
           prev.map((c) =>
-            c.pantryId === pantryIdValue ? { ...c, isOpen: data.isOpen, manualOverride: false } : c
+            c.pantryId === pantryIdValue
+              ? { ...c, isOpen: data.isOpen ?? c.isOpen, manualOverride: false }
+              : c
           )
         );
-        showToast(data.message, "success");
+        showToast(data.message || "Pantry override cleared.", "success");
       } else {
         showToast(data.error || "Failed to clear override.", "error");
       }
