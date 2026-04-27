@@ -47,6 +47,11 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>WKAppBoundDomains</key>
+	<array>
+		<string>www.inventorymanagement.dev</string>
+		<string>inventorymanagement.dev</string>
+	</array>
 	<key>NSCameraUsageDescription</key>
 	<string>Take shelf photos for inventory detection</string>
 	<key>NSPhotoLibraryUsageDescription</key>

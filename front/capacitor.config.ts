@@ -12,8 +12,6 @@ const config: CapacitorConfig = {
     androidScheme: "https",
   },
   ios: {
-    backgroundColor: "#ffffff",
-    contentInset: "always",
     limitsNavigationsToAppBoundDomains: true,
   },
   plugins: {

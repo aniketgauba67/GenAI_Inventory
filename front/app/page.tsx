@@ -463,6 +463,7 @@ export default function HomePage() {
       className={`relative min-h-screen overflow-hidden px-4 py-5 sm:px-6 sm:py-6 lg:px-8 ${
         easyView ? "bg-white text-slate-950 dark:bg-slate-950 dark:text-slate-50" : ""
       }`}
+      style={{ paddingTop: "max(calc(env(safe-area-inset-top) + 1.25rem), 4rem)" }}
     >
       <div className={`pointer-events-none absolute inset-x-0 top-0 -z-10 h-[28rem] bg-[radial-gradient(circle_at_15%_20%,rgba(13,148,136,0.22),transparent_34%),radial-gradient(circle_at_85%_10%,rgba(249,115,22,0.18),transparent_28%),linear-gradient(to_bottom,rgba(255,255,255,0.92),rgba(255,255,255,0.62),transparent)] dark:bg-[radial-gradient(circle_at_15%_20%,rgba(13,148,136,0.2),transparent_34%),radial-gradient(circle_at_85%_10%,rgba(249,115,22,0.16),transparent_28%),linear-gradient(to_bottom,rgba(15,23,42,0.94),rgba(15,23,42,0.72),transparent)] ${easyView ? "hidden" : ""}`} />
       <div className={`mx-auto flex w-full max-w-7xl flex-col ${easyView ? "gap-7" : "gap-6"} ${easyView && easyPickerOpen ? "pointer-events-none blur-[2px]" : ""}`}>
