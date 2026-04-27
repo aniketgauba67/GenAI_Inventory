@@ -1,5 +1,3 @@
-import Input from "../ui/Input";
-
 export const CATEGORY_GROUPS: Array<{ title: string; categories: string[] }> = [
   { title: "Drinks & Breakfast", categories: ["Beverages", "Juices", "Cereal", "Breakfast"] },
   { title: "Proteins", categories: ["Meat", "Fish", "Poultry", "Frozen"] },
@@ -18,24 +16,54 @@ export default function CategoryGroupEditor({ values, onChange, inputPrefix = "c
   return (
     <div className="space-y-4">
       {CATEGORY_GROUPS.map((group) => (
-        <section key={group.title} className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/40">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{group.title}</h3>
-          <ul className="mt-3 space-y-2">
-            {group.categories.map((category) => (
-              <li key={category} className="flex items-center justify-between gap-3">
-                <label htmlFor={`${inputPrefix}-${category}`} className="text-sm text-slate-700 dark:text-slate-200">
-                  {category}
-                </label>
-                <Input
-                  id={`${inputPrefix}-${category}`}
-                  type="number"
-                  min={0}
-                  value={Number(values[category] ?? 0)}
-                  onChange={(e) => onChange(category, e.target.value)}
-                  className="w-28"
-                />
-              </li>
-            ))}
+        <section key={group.title} className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/40">
+          <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            {group.title}
+          </h3>
+          <ul className="space-y-3">
+            {group.categories.map((category) => {
+              const count = values[category] ?? 0;
+              return (
+                <li key={category} className="flex items-center justify-between gap-4">
+                  <label
+                    id={`${inputPrefix}-${category}-label`}
+                    className="text-base font-medium text-slate-700 dark:text-slate-200"
+                  >
+                    {category}
+                  </label>
+                  <div
+                    role="group"
+                    aria-labelledby={`${inputPrefix}-${category}-label`}
+                    className="flex items-center rounded-xl border border-slate-300/90 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:border-slate-700 dark:bg-slate-800"
+                  >
+                    <button
+                      type="button"
+                      aria-label={`Decrease ${category}`}
+                      onClick={() => onChange(category, String(Math.max(0, count - 1)))}
+                      className="flex h-11 w-11 items-center justify-center rounded-l-xl text-xl font-semibold text-slate-600 transition active:scale-90 hover:bg-slate-100 disabled:opacity-40 dark:text-slate-300 dark:hover:bg-slate-700"
+                      disabled={count <= 0}
+                    >
+                      −
+                    </button>
+                    <span
+                      aria-live="polite"
+                      aria-atomic="true"
+                      className="min-w-[3ch] select-none text-center text-base font-semibold tabular-nums text-slate-900 dark:text-slate-100"
+                    >
+                      {count}
+                    </span>
+                    <button
+                      type="button"
+                      aria-label={`Increase ${category}`}
+                      onClick={() => onChange(category, String(count + 1))}
+                      className="flex h-11 w-11 items-center justify-center rounded-r-xl text-xl font-semibold text-slate-600 transition active:scale-90 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700"
+                    >
+                      +
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         </section>
       ))}

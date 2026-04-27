@@ -22,9 +22,9 @@ const variantMap: Record<Variant, string> = {
 };
 
 const sizeMap: Record<Size, string> = {
-  sm: "px-3 py-1.5 text-xs",
-  md: "px-4 py-2.5 text-sm",
-  lg: "px-5 py-3 text-sm",
+  sm: "px-4 py-2.5 text-sm min-h-[44px]",
+  md: "px-5 py-3 text-sm min-h-[48px]",
+  lg: "px-6 py-4 text-base min-h-[56px]",
 };
 
 export default function Button({
@@ -37,7 +37,7 @@ export default function Button({
 }: ButtonProps) {
   return (
     <button
-      className={`rounded-xl font-semibold tracking-[0.01em] shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-60 dark:focus-visible:ring-offset-slate-900 ${sizeMap[size]} ${variantMap[variant]} ${block ? "w-full" : ""} ${className}`}
+      className={`cursor-pointer rounded-xl font-semibold tracking-[0.01em] shadow-sm transition active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-60 dark:focus-visible:ring-offset-slate-900 ${sizeMap[size]} ${variantMap[variant]} ${block ? "w-full" : ""} ${className}`}
       {...props}
     >
       {children}
