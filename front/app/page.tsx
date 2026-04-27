@@ -225,6 +225,7 @@ export default function HomePage() {
   const [easyView, setEasyView] = useState(false);
   const [easyPickerOpen, setEasyPickerOpen] = useState(false);
   const [easyPickerQuery, setEasyPickerQuery] = useState("");
+  const [pantryListExpanded, setPantryListExpanded] = useState(false);
   const [timeFilteredPantries, setTimeFilteredPantries] = useState<PantryRecord[]>([]);
   const [useTimeSearch, setUseTimeSearch] = useState(false);
   const [searchDay, setSearchDay] = useState<string>("mon");
@@ -445,6 +446,7 @@ export default function HomePage() {
     const results = await loadPantriesByTime(searchDay, searchTime);
     setTimeFilteredPantries(results);
     setUseTimeSearch(true);
+    setPantryListExpanded(true);
     if (results.length > 0) {
       setSelectedPantryId(results[0].pantryId);
     }
@@ -455,7 +457,13 @@ export default function HomePage() {
     setTimeFilteredPantries([]);
     setTimeSearchError(null);
     setQuery("");
+    setPantryListExpanded(false);
     setSelectedPantryId(pickRandomPantryId(pantries));
+  }
+
+  function handlePantrySelect(pantryIdValue: string) {
+    setSelectedPantryId(pantryIdValue);
+    setPantryListExpanded(false);
   }
 
   return (
@@ -668,7 +676,10 @@ export default function HomePage() {
                     <Input
                       id="pantrySearch"
                       value={query}
-                      onChange={(event) => setQuery(event.target.value)}
+                      onChange={(event) => {
+                        setQuery(event.target.value);
+                        setPantryListExpanded(true);
+                      }}
                       placeholder="Search within time-filtered pantries"
                       className="sm:max-w-md"
                     />
@@ -717,20 +728,51 @@ export default function HomePage() {
                       <Input
                         id="pantrySearch"
                         value={query}
-                        onChange={(event) => setQuery(event.target.value)}
+                        onChange={(event) => {
+                          setQuery(event.target.value);
+                          setPantryListExpanded(true);
+                        }}
                         placeholder="Search pantry by id, name, or address"
                         className="sm:max-w-md"
                       />
-                      <Button type="button" variant="ghost" size="sm" onClick={() => setUseTimeSearch(true)}>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setUseTimeSearch(true);
+                          setPantryListExpanded(true);
+                        }}
+                      >
                         Search by time
                       </Button>
                     </div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                      {loading
-                        ? "Loading pantries..."
-                        : `${pantries.length} pantries · ${sortedFilteredPantries.length} matching${activePantry ? ` · Viewing: ${activePantry.name}` : ""}`
-                      }
-                    </p>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        {loading
+                          ? "Loading pantries..."
+                          : activePantry && !pantryListExpanded && !query
+                            ? `Viewing: ${activePantry.name}`
+                            : `${pantries.length} pantries · ${sortedFilteredPantries.length} matching${activePantry ? ` · Viewing: ${activePantry.name}` : ""}`
+                        }
+                      </p>
+                      {activePantry && !useTimeSearch && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (pantryListExpanded || query) {
+                              setQuery("");
+                              setPantryListExpanded(false);
+                              return;
+                            }
+                            setPantryListExpanded(true);
+                          }}
+                          className="self-start text-xs font-semibold text-teal-700 hover:text-teal-800 dark:text-teal-300 dark:hover:text-teal-200 sm:self-auto"
+                        >
+                          {pantryListExpanded || query ? "Show selected only" : "Change pantry"}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 )}
               </Card>
@@ -750,7 +792,11 @@ export default function HomePage() {
               <Card className="border border-slate-200/80 bg-white/90 p-4 shadow-sm backdrop-blur dark:border-slate-800/80 dark:bg-slate-950/60">
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-sm font-semibold text-slate-950 dark:text-slate-50">Pantry List</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Tap a location to inspect details</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    {activePantry && !pantryListExpanded && !query && !useTimeSearch
+                      ? "Selected location"
+                      : "Tap a location to inspect details"}
+                  </p>
                 </div>
                 <div className="mt-3 max-h-[56vh] space-y-2 overflow-y-auto pr-1">
                   {loading && (
@@ -769,14 +815,17 @@ export default function HomePage() {
                       No pantries match your search.
                     </p>
                   )}
-                  {sortedFilteredPantries.map((pantry) => {
+                  {(activePantry && !pantryListExpanded && !query && !useTimeSearch
+                    ? [activePantry]
+                    : sortedFilteredPantries
+                  ).map((pantry) => {
                     const selected = activePantry?.pantryId === pantry.pantryId;
                     const timing = getPantryTimingMeta(pantry, new Date());
                     return (
                       <button
                         key={pantry.pantryId}
                         type="button"
-                        onClick={() => setSelectedPantryId(pantry.pantryId)}
+                        onClick={() => handlePantrySelect(pantry.pantryId)}
                         className={`w-full rounded-2xl border px-3 py-3 text-left transition ${
                           selected
                             ? "border-teal-500 bg-teal-50 shadow-sm shadow-teal-500/10 dark:border-teal-400 dark:bg-teal-950/35"
