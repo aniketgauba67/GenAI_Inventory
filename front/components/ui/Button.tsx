@@ -22,9 +22,9 @@ const variantMap: Record<Variant, string> = {
 };
 
 const sizeMap: Record<Size, string> = {
-  sm: "px-4 py-2.5 text-sm min-h-[44px]",
+  sm: "px-4 py-2.5 text-xs min-h-[44px]",
   md: "px-5 py-3 text-sm min-h-[48px]",
-  lg: "px-6 py-4 text-base min-h-[56px]",
+  lg: "px-6 py-3 text-sm min-h-[56px]",
 };
 
 export default function Button({

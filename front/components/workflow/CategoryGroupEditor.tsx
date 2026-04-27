@@ -23,17 +23,18 @@ export default function CategoryGroupEditor({ values, onChange, inputPrefix = "c
           <ul className="space-y-3">
             {group.categories.map((category) => {
               const count = values[category] ?? 0;
+              const inputId = `${inputPrefix}-${category}`;
               return (
                 <li key={category} className="flex items-center justify-between gap-4">
                   <label
-                    id={`${inputPrefix}-${category}-label`}
+                    htmlFor={inputId}
                     className="text-base font-medium text-slate-700 dark:text-slate-200"
                   >
                     {category}
                   </label>
                   <div
                     role="group"
-                    aria-labelledby={`${inputPrefix}-${category}-label`}
+                    aria-label={`${category} quantity controls`}
                     className="flex items-center rounded-xl border border-slate-300/90 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:border-slate-700 dark:bg-slate-800"
                   >
                     <button
@@ -45,13 +46,14 @@ export default function CategoryGroupEditor({ values, onChange, inputPrefix = "c
                     >
                       −
                     </button>
-                    <span
-                      aria-live="polite"
-                      aria-atomic="true"
-                      className="min-w-[3ch] select-none text-center text-base font-semibold tabular-nums text-slate-900 dark:text-slate-100"
-                    >
-                      {count}
-                    </span>
+                    <input
+                      id={inputId}
+                      type="number"
+                      min="0"
+                      value={count}
+                      onChange={(e) => onChange(category, e.target.value)}
+                      className="h-11 w-16 border-x border-slate-200 bg-transparent text-center text-base font-semibold tabular-nums text-slate-900 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky-500 dark:border-slate-700 dark:text-slate-100"
+                    />
                     <button
                       type="button"
                       aria-label={`Increase ${category}`}
