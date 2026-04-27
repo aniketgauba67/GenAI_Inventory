@@ -65,6 +65,15 @@ async def upload_images(
             "ok": True,
         })
 
+    if not image_parts:
+        log.warning("Upload contained no valid image files")
+        return {
+            "ok": False,
+            "error": "No valid image files were provided.",
+            "count": len(results),
+            "files": results,
+        }
+
     max_quantities: dict[str, int] | None = None
     if pantry_id is not None and image_parts:
         db = SessionLocal()
@@ -90,10 +99,19 @@ async def upload_images(
         log.info("Calling Gemini with %s image(s) in one request", len(image_parts))
         inventory = call_gemini_inventory_images(image_parts, max_quantities=max_quantities)
     log.info("Upload done: %s file(s) received", len(results))
-    out = {"ok": True, "count": len(results), "files": results}
-    if inventory is not None:
-        out["inventory"] = inventory
 
-        if pantry_id is not None:
-            save_inventory_draft(pantry_id, inventory, results)
+    if inventory is None:
+        log.warning("Inventory detection returned no result")
+        return {
+            "ok": False,
+            "error": "Could not detect inventory from the uploaded image(s). Try a clearer shelf photo.",
+            "count": len(results),
+            "files": results,
+        }
+
+    out = {"ok": True, "count": len(results), "files": results}
+    out["inventory"] = inventory
+
+    if pantry_id is not None:
+        save_inventory_draft(pantry_id, inventory, results)
     return out
