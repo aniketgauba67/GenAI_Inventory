@@ -58,7 +58,7 @@ export default function UploadDropzone({
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       if (!msg.toLowerCase().includes("cancel")) {
-        setCameraError("Camera permission denied or unavailable.");
+        setCameraError(msg || "Camera permission denied or unavailable.");
       }
     } finally {
       setCameraLoading(false);
@@ -74,7 +74,7 @@ export default function UploadDropzone({
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       if (!msg.toLowerCase().includes("cancel")) {
-        setCameraError("Could not access photo library.");
+        setCameraError(msg || "Could not access photo library.");
       }
     } finally {
       setCameraLoading(false);

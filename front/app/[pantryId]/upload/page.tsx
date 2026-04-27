@@ -203,11 +203,11 @@ export default function UploadPage() {
       const form = new FormData();
       files.forEach((f) => form.append("files", f));
       form.append("pantry_id", effectivePantryId);
-      const res = await fetch(`${apiBase}/upload`, {
+      const res = await fetch("/api/upload", {
         method: "POST",
         body: form,
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({ ok: false, error: "Upload failed." }));
       if (res.ok && data.ok) {
         const successfulFiles = data.files
           ?.filter((x: { ok?: boolean }) => x.ok)
@@ -237,8 +237,9 @@ export default function UploadPage() {
           router.push(`/${pantryId}/review${isDirector ? `?targetPantryId=${effectivePantryId}` : ""}`);
         }
       } else {
-        setUploadResult({ ok: false, message: data.error || "Upload failed" });
-        showToast(data.error || "Upload failed", "error");
+        const message = data.error || `Upload failed (${res.status})`;
+        setUploadResult({ ok: false, message });
+        showToast(message, "error");
       }
     } catch (e) {
       setUploadResult({
