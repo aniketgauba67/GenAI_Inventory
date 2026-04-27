@@ -43,6 +43,10 @@ jobs:
     name: Frontend tests
     runs-on: ubuntu-latest
 
+    env:
+      NEXTAUTH_SECRET: ci-nextauth-secret-min-32-characters
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+
     defaults:
       run:
         working-directory: front
