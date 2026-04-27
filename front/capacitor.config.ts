@@ -11,9 +11,7 @@ const config: CapacitorConfig = {
     cleartext: serverUrl.startsWith("http://"),
     androidScheme: "https",
   },
-  ios: {
-    limitsNavigationsToAppBoundDomains: true,
-  },
+  ios: {},
   plugins: {
     Camera: {
       presentationStyle: "fullscreen",

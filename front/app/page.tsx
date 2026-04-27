@@ -478,9 +478,18 @@ export default function HomePage() {
         <header className="space-y-5 pt-1 sm:pt-2">
           <div className="flex flex-col gap-4 border-b border-slate-200/80 pb-5 dark:border-slate-800/80 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
-              <p className={`${easyView ? "text-sm tracking-[0.18em]" : "text-xs tracking-[0.24em]"} font-semibold uppercase text-teal-700 dark:text-teal-300`}>
-                Food Pantry Network
-              </p>
+              <div className="mb-3 flex items-center gap-3">
+                <img
+                  src="/fpn icon-transparent.png"
+                  alt="FPN Logo"
+                  className={`object-contain dark:hidden ${easyView ? "h-16 w-auto sm:h-20" : "h-12 w-auto sm:h-16"}`}
+                />
+                <img
+                  src="/fpn icon-transparent-dark.png"
+                  alt="FPN Logo"
+                  className={`hidden object-contain dark:inline ${easyView ? "h-16 w-auto sm:h-20" : "h-12 w-auto sm:h-16"}`}
+                />
+              </div>
               <h1 className={`mt-3 font-semibold tracking-tight text-slate-950 dark:text-slate-50 ${easyView ? "text-4xl leading-tight sm:text-5xl lg:text-6xl" : "text-3xl sm:text-4xl lg:text-5xl"}`}>
                 Pantry Locations and Stock
               </h1>
