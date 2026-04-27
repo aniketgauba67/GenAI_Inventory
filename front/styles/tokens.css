@@ -44,4 +44,17 @@
   --border: #334155;
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35);
   --shadow-md: 0 10px 28px rgba(0, 0, 0, 0.35);
+
+  --brand-50: #0c1a29;
+  --brand-100: #0d2136;
+  --brand-500: #38bdf8;
+  --brand-600: #7dd3fc;
+  --brand-700: #bae6fd;
+
+  --success-100: #052e16;
+  --success-600: #4ade80;
+  --warning-100: #1c1408;
+  --warning-600: #fbbf24;
+  --danger-100: #1f0909;
+  --danger-600: #f87171;
 }

@@ -4,6 +4,7 @@
 html {
   color-scheme: light dark;
   background: var(--background);
+  scroll-behavior: smooth;
 }
 
 :root {
@@ -29,12 +30,32 @@ body {
     var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), "Inter", "Segoe UI", sans-serif;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition: color 0.3s ease;
 }
 
 * {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  overscroll-behavior-y: contain;
+}
+
+button, a, input, select, textarea, [role="button"] {
+  touch-action: manipulation;
+}
+
+.overflow-y-auto,
+.overflow-x-auto {
+  -webkit-overflow-scrolling: touch;
 }
 
 @keyframes shimmer {
