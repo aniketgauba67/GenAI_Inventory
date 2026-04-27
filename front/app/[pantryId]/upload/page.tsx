@@ -15,6 +15,8 @@ import { useToast } from "../../../components/ui/Toast";
 import EmptyState from "../../../components/ui/EmptyState";
 import { getApiBase } from "../../../lib/api";
 
+const UPLOAD_TIMEOUT_MS = 90000;
+
 export default function UploadPage() {
   const { showToast } = useToast();
   const params = useParams();
@@ -199,6 +201,8 @@ export default function UploadPage() {
     }
     setUploading(true);
     setUploadResult(null);
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), UPLOAD_TIMEOUT_MS);
     try {
       const form = new FormData();
       files.forEach((f) => form.append("files", f));
@@ -206,9 +210,10 @@ export default function UploadPage() {
       const res = await fetch("/api/upload", {
         method: "POST",
         body: form,
+        signal: controller.signal,
       });
       const data = await res.json().catch(() => ({ ok: false, error: "Upload failed." }));
-      if (res.ok && data.ok) {
+      if (res.ok && data.ok && data.inventory) {
         const successfulFiles = data.files
           ?.filter((x: { ok?: boolean }) => x.ok)
           .map((x: { filename?: string; size_bytes?: number }) => ({
@@ -237,17 +242,28 @@ export default function UploadPage() {
           router.push(`/${pantryId}/review${isDirector ? `?targetPantryId=${effectivePantryId}` : ""}`);
         }
       } else {
-        const message = data.error || `Upload failed (${res.status})`;
+        const message =
+          data.error ||
+          (res.ok && data.ok
+            ? "Detection did not return inventory. Try a clearer shelf photo."
+            : `Upload failed (${res.status})`);
         setUploadResult({ ok: false, message });
         showToast(message, "error");
       }
     } catch (e) {
+      const message =
+        e instanceof Error && e.name === "AbortError"
+          ? "Inventory detection timed out. Try one clear photo at a time."
+          : e instanceof Error
+            ? e.message
+            : "Network error";
       setUploadResult({
         ok: false,
-        message: e instanceof Error ? e.message : "Network error",
+        message,
       });
-      showToast("Network error while uploading files.", "error");
+      showToast(message, "error");
     } finally {
+      window.clearTimeout(timeoutId);
       setUploading(false);
     }
   }
@@ -324,7 +340,7 @@ export default function UploadPage() {
           <FlowStepper steps={["Upload", "Review", "Submit"]} currentStep={0} status={uploading ? "uploading" : undefined} />
         </Card>
         {uploading && (
-          <Alert tone="info">Processing images and detecting inventory. This can take a few seconds.</Alert>
+          <Alert tone="info">Processing images and detecting inventory. This can take up to a minute.</Alert>
         )}
         <Card className="text-sm text-zinc-600 dark:text-zinc-300">
           <p className="font-medium text-zinc-900 dark:text-zinc-100">Volunteer flow</p>

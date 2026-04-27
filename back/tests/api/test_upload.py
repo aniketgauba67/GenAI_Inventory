@@ -92,7 +92,7 @@ class TestUploadEndpoint:
                 files=[_make_text_file()],
             )
         data = resp.json()
-        # Upload may succeed overall but the file should be marked as not ok
+        assert data["ok"] is False
         assert any(
             f.get("ok") is False or "Not an image" in str(f.get("error", ""))
             for f in data.get("files", [data])
@@ -131,14 +131,15 @@ class TestUploadEndpoint:
         assert resp.status_code == 200
         assert resp.json()["ok"] is True
 
-    def test_upload_gemini_returns_none_gives_no_inventory_key(self, client):
+    def test_upload_gemini_returns_none_reports_detection_error(self, client):
         with patch("routers.upload.call_gemini_inventory_images", return_value=None):
             resp = client.post(
                 "/upload",
                 files=[_make_image()],
             )
         data = resp.json()
-        assert data["ok"] is True
+        assert data["ok"] is False
+        assert "detect inventory" in data["error"].lower()
         assert "inventory" not in data
 
     def test_upload_inventory_saved_to_draft_when_pantry_id_provided(self, client):
