@@ -6,7 +6,7 @@ The working schema stores both warehouse imports and volunteer submissions in th
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import uuid4
 
 from fastapi import APIRouter
@@ -45,10 +45,29 @@ DB_DIR = ROOT_DIR / "db"
 if str(DB_DIR) not in sys.path:
     sys.path.insert(0, str(DB_DIR))
 
-from database import Base, SessionLocal, engine  # noqa: E402
+from database import Base, SessionLocal  # noqa: E402
 from models import InventoryItem, InventoryRun, Pantry  # noqa: E402
 
 router = APIRouter(tags=["volunteer-inventory"])
+
+
+def _ensure_inventory_run_table(db) -> None:
+    """Create the run-history table against the current session bind.
+
+    Using the session's bind keeps tests isolated from the production engine when
+    SessionLocal is mocked.
+    """
+    Base.metadata.create_all(bind=db.get_bind(), tables=[InventoryRun.__table__])
+
+
+def _utc_timestamp() -> str:
+    """Return an ISO-8601 UTC timestamp with a trailing Z."""
+    return (
+        datetime.now(timezone.utc)
+        .replace(microsecond=0)
+        .isoformat()
+        .replace("+00:00", "Z")
+    )
 
 
 class VolunteerInventorySubmitRequest(BaseModel):
@@ -84,11 +103,11 @@ def store_warehouse_inventory_snapshot(payload: WarehouseInventorySnapshotReques
 
     normalized_inventory = normalize_inventory(payload.inventory)
 
-    # Create the run-history table if it does not exist yet, without touching other tables.
-    Base.metadata.create_all(bind=engine, tables=[InventoryRun.__table__])
-
     db = SessionLocal()
     try:
+        # Create the run-history table if it does not exist yet, without touching other tables.
+        _ensure_inventory_run_table(db)
+
         pantry = resolve_pantry(db, Pantry, payload.pantryId)
         if pantry is None:
             return {"ok": False, "error": "Pantry not found"}
@@ -99,7 +118,7 @@ def store_warehouse_inventory_snapshot(payload: WarehouseInventorySnapshotReques
         run_record = {
             "pk": str(uuid4()),
             "pantryId": pantry.id,
-            "createdAt": datetime.utcnow().replace(microsecond=0).isoformat() + "Z",
+            "createdAt": _utc_timestamp(),
             "files": payload.files or [],
             "inventory": normalized_inventory,
             "comparison": {
@@ -140,11 +159,11 @@ def submit_inventory(payload: VolunteerInventorySubmitRequest):
 
     normalized_inventory = normalize_inventory(payload.inventory)
 
-    # Ensure the run-history table exists before we query or insert into it.
-    Base.metadata.create_all(bind=engine, tables=[InventoryRun.__table__])
-
     db = SessionLocal()
     try:
+        # Ensure the run-history table exists before we query or insert into it.
+        _ensure_inventory_run_table(db)
+
         pantry = resolve_pantry(db, Pantry, payload.pantryId)
         if pantry is None:
             return {"ok": False, "error": "Pantry not found"}
@@ -170,7 +189,7 @@ def submit_inventory(payload: VolunteerInventorySubmitRequest):
         run_record = {
             "pk": str(uuid4()),
             "pantryId": pantry.id,
-            "createdAt": datetime.utcnow().replace(microsecond=0).isoformat() + "Z",
+            "createdAt": _utc_timestamp(),
             "files": [],
             "inventory": normalized_inventory,
             "comparison": {

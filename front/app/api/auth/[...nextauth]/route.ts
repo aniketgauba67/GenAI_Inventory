@@ -6,7 +6,7 @@ const apiBase =
   process.env.API_URL ||
   "http://localhost:8000";
 
-export const authOptions: NextAuthOptions = {
+const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       id: "credentials",
