@@ -6,3 +6,21 @@ __pycache__/
 .env/
 env
 .env
+
+# Keep test suites and test-only tooling off main.
+TESTING.md
+pytest.ini
+back/requirements-dev.txt
+back/tests/
+front/__tests__/
+front/e2e/
+front/jest.config.js
+front/jest.setup.ts
+front/playwright.config.ts
+
+# Generated test artifacts
+.coverage
+.pytest_cache/
+htmlcov/
+front/coverage/
+front/test-results/
