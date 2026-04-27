@@ -54,6 +54,8 @@
 	</array>
 	<key>NSCameraUsageDescription</key>
 	<string>Take shelf photos for inventory detection</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Save shelf photos for inventory detection</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Choose shelf photos for inventory detection</string>
 </dict>
