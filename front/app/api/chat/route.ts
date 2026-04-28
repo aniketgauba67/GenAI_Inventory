@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 type ChatRequestPayload = {
   message?: string;
   history?: Array<["user" | "assistant", string]>;
+  pantryId?: string | null;
 };
 
 export async function POST(req: Request) {
@@ -17,14 +18,14 @@ export async function POST(req: Request) {
       );
     }
 
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+    const apiBase = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
     const response = await fetch(`${apiBase}/chat/message`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         message,
         history: payload.history || [],
-        pantry_id: null,
+        pantry_id: payload.pantryId ?? null,
       }),
       cache: "no-store",
     });

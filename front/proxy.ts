@@ -7,7 +7,7 @@ const secret =
     ? undefined
     : "dev-secret-min-32-chars-for-nextauth-jwt");
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   // Allow direct access to static files in /public (e.g. .svg, .png).

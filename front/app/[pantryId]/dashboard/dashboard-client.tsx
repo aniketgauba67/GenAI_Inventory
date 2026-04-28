@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { signOut } from "next-auth/react";
 import Button from "../../../components/ui/Button";
 import Input from "../../../components/ui/Input";
@@ -12,6 +12,8 @@ import EmptyState from "../../../components/ui/EmptyState";
 import Skeleton from "../../../components/ui/Skeleton";
 import ConfirmModal from "../../../components/ui/ConfirmModal";
 import { useToast } from "../../../components/ui/Toast";
+import { getApiBase } from "../../../lib/api";
+import Select from "../../../components/ui/Select";
 
 type DashboardLink = {
   label: string;
@@ -39,15 +41,53 @@ type DashboardClientProps = {
   links: DashboardLink[];
 };
 
+const DAY_OPTIONS = [
+  { value: "mon", label: "Mon" },
+  { value: "tue", label: "Tue" },
+  { value: "wed", label: "Wed" },
+  { value: "thu", label: "Thu" },
+  { value: "fri", label: "Fri" },
+  { value: "sat", label: "Sat" },
+  { value: "sun", label: "Sun" },
+];
+
+const DAY_LABELS: Record<string, string> = Object.fromEntries(
+  DAY_OPTIONS.map((option) => [option.value, option.label]),
+);
+
+function cloneOperatingHours(hours: OperatingHourSlot[] | undefined): OperatingHourSlot[] {
+  return Array.isArray(hours) ? hours.map((slot) => ({ ...slot })) : [];
+}
+
+function buildEmptyOperatingHour(): OperatingHourSlot {
+  return { day: "mon", open: "09:00", close: "12:00" };
+}
+
+function formatOperatingHours(hours: OperatingHourSlot[] | undefined): string {
+  if (!hours || hours.length === 0) {
+    return "No weekly hours set";
+  }
+
+  return hours
+    .map((slot) => `${DAY_LABELS[slot.day] || slot.day} ${slot.open}-${slot.close}`)
+    .join(" • ");
+}
+
+function buildRowDraftFromCredential(pantry?: PantryCredential): PantryManageDraft {
+  return {
+    name: "",
+    location: "",
+    newPassword: "",
+    operatingHours: cloneOperatingHours(pantry?.operatingHours),
+  };
+}
+
 export default function DashboardClient({
   pantryId,
   links,
 }: DashboardClientProps) {
   const { showToast } = useToast();
-  const apiBase =
-    typeof window !== "undefined"
-      ? (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000")
-      : "";
+  const apiBase = getApiBase();
   const [credentials, setCredentials] = useState<PantryCredential[]>([]);
   const [rowDrafts, setRowDrafts] = useState<Record<string, PantryManageDraft>>({});
   const [rowNotice, setRowNotice] = useState<Record<string, string>>({});
@@ -76,27 +116,108 @@ export default function DashboardClient({
   const [deleteTargetPantryId, setDeleteTargetPantryId] = useState<string | null>(null);
   const [togglingRows, setTogglingRows] = useState<Record<string, boolean>>({});
 
-  async function handleTogglePantryStatus(pantryIdValue: string) {
+  async function postStatusRequest(path: string, payload: Record<string, unknown>) {
+    const response = await fetch(`${apiBase}${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    let data: {
+      ok?: boolean;
+      isOpen?: boolean;
+      manualOverride?: boolean;
+      message?: string;
+      error?: string;
+    } = {};
+
+    try {
+      data = await response.json();
+    } catch {
+      data = {};
+    }
+
+    return { response, data };
+  }
+
+  async function handleSetPantryStatus(
+    pantryIdValue: string,
+    isOpen: boolean,
+    cred: PantryCredential,
+  ) {
     setTogglingRows((prev) => ({ ...prev, [pantryIdValue]: true }));
     try {
-      const response = await fetch(`${apiBase}/auth/pantry/toggle-status`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pantryId: pantryIdValue }),
+      const { response, data } = await postStatusRequest("/auth/pantry/set-status", {
+        pantryId: pantryIdValue,
+        isOpen,
       });
-      const data = await response.json();
-      if (data.ok) {
+
+      if (response.ok && data.ok) {
         setCredentials((prev) =>
           prev.map((c) =>
-            c.pantryId === pantryIdValue ? { ...c, isOpen: data.isOpen, manualOverride: data.manualOverride ?? true } : c
+            c.pantryId === pantryIdValue
+              ? { ...c, isOpen: data.isOpen ?? c.isOpen, manualOverride: data.manualOverride ?? true }
+              : c
           )
         );
-        showToast(data.message, "success");
-      } else {
-        showToast(data.error || "Failed to toggle pantry status.", "error");
+        showToast(data.message || "Pantry status updated.", "success");
+        return;
       }
+
+      if (response.status !== 404) {
+        showToast(data.error || "Failed to update pantry status.", "error");
+        return;
+      }
+
+      const shouldDoubleToggle = cred.isOpen === isOpen;
+      const firstToggle = await postStatusRequest("/auth/pantry/toggle-status", {
+        pantryId: pantryIdValue,
+      });
+
+      if (!firstToggle.response.ok || !firstToggle.data.ok) {
+        showToast(firstToggle.data.error || "Failed to update pantry status.", "error");
+        return;
+      }
+
+      if (!shouldDoubleToggle) {
+        setCredentials((prev) =>
+          prev.map((c) =>
+            c.pantryId === pantryIdValue
+              ? {
+                ...c,
+                isOpen: firstToggle.data.isOpen ?? c.isOpen,
+                manualOverride: firstToggle.data.manualOverride ?? true,
+              }
+              : c
+          )
+        );
+        showToast(firstToggle.data.message || "Pantry status updated.", "success");
+        return;
+      }
+
+      const secondToggle = await postStatusRequest("/auth/pantry/toggle-status", {
+        pantryId: pantryIdValue,
+      });
+
+      if (!secondToggle.response.ok || !secondToggle.data.ok) {
+        showToast(secondToggle.data.error || "Failed to update pantry status.", "error");
+        return;
+      }
+
+      setCredentials((prev) =>
+        prev.map((c) =>
+          c.pantryId === pantryIdValue
+            ? {
+              ...c,
+              isOpen: secondToggle.data.isOpen ?? c.isOpen,
+              manualOverride: secondToggle.data.manualOverride ?? true,
+            }
+            : c
+        )
+      );
+      showToast(`Pantry is now ${isOpen ? "open" : "closed"} (manual override on).`, "success");
     } catch {
-      showToast("Network error while toggling pantry status.", "error");
+      showToast("Network error while updating pantry status.", "error");
     } finally {
       setTogglingRows((prev) => ({ ...prev, [pantryIdValue]: false }));
     }
@@ -114,10 +235,12 @@ export default function DashboardClient({
       if (data.ok) {
         setCredentials((prev) =>
           prev.map((c) =>
-            c.pantryId === pantryIdValue ? { ...c, isOpen: data.isOpen, manualOverride: false } : c
+            c.pantryId === pantryIdValue
+              ? { ...c, isOpen: data.isOpen ?? c.isOpen, manualOverride: false }
+              : c
           )
         );
-        showToast(data.message, "success");
+        showToast(data.message || "Pantry override cleared.", "success");
       } else {
         showToast(data.error || "Failed to clear override.", "error");
       }
@@ -218,16 +341,17 @@ export default function DashboardClient({
     };
   }, [rowNotice]);
 
-  function ensureRowDraft(pantryIdValue: string) {
+  function getCurrentCredential(pantryIdValue: string): PantryCredential | undefined {
+    return credentials.find((entry) => entry.pantryId === pantryIdValue);
+  }
+
+  function ensureRowDraft(pantryIdValue: string, forceRefresh = false) {
     setRowDrafts((prev) => {
-      if (prev[pantryIdValue]) return prev;
+      if (prev[pantryIdValue] && !forceRefresh) return prev;
+      const pantry = getCurrentCredential(pantryIdValue);
       return {
         ...prev,
-        [pantryIdValue]: {
-          name: "",
-          location: "",
-          newPassword: "",
-        },
+        [pantryIdValue]: buildRowDraftFromCredential(pantry),
       };
     });
   }
@@ -240,17 +364,67 @@ export default function DashboardClient({
     setRowDrafts((prev) => ({
       ...prev,
       [pantryIdValue]: {
-        name: prev[pantryIdValue]?.name ?? "",
-        location: prev[pantryIdValue]?.location ?? "",
-        newPassword: prev[pantryIdValue]?.newPassword ?? "",
+        ...(prev[pantryIdValue] ?? buildRowDraftFromCredential(getCurrentCredential(pantryIdValue))),
         [field]: value,
       },
     }));
   }
 
+  function updateRowOperatingHour(
+    pantryIdValue: string,
+    index: number,
+    field: keyof OperatingHourSlot,
+    value: string
+  ) {
+    setRowDrafts((prev) => {
+      const baseDraft = prev[pantryIdValue] ?? buildRowDraftFromCredential(getCurrentCredential(pantryIdValue));
+      const currentHours = cloneOperatingHours(baseDraft.operatingHours);
+      if (!currentHours[index]) return prev;
+      currentHours[index] = { ...currentHours[index], [field]: value };
+      return {
+        ...prev,
+        [pantryIdValue]: {
+          ...baseDraft,
+          operatingHours: currentHours,
+        },
+      };
+    });
+  }
+
+  function addRowOperatingHour(pantryIdValue: string) {
+    setRowDrafts((prev) => ({
+      ...prev,
+      [pantryIdValue]: {
+        ...(prev[pantryIdValue] ?? buildRowDraftFromCredential(getCurrentCredential(pantryIdValue))),
+        operatingHours: [
+          ...cloneOperatingHours(
+            (prev[pantryIdValue] ?? buildRowDraftFromCredential(getCurrentCredential(pantryIdValue))).operatingHours
+          ),
+          buildEmptyOperatingHour(),
+        ],
+      },
+    }));
+  }
+
+  function removeRowOperatingHour(pantryIdValue: string, index: number) {
+    setRowDrafts((prev) => {
+      const baseDraft = prev[pantryIdValue] ?? buildRowDraftFromCredential(getCurrentCredential(pantryIdValue));
+      return {
+        ...prev,
+        [pantryIdValue]: {
+          ...baseDraft,
+          operatingHours: baseDraft.operatingHours.filter((_, slotIndex) => slotIndex !== index),
+        },
+      };
+    });
+  }
+
   function toggleRowMenu(pantryIdValue: string) {
-    ensureRowDraft(pantryIdValue);
-    setOpenRowMenu((prev) => (prev === pantryIdValue ? null : pantryIdValue));
+    const nextOpen = openRowMenu === pantryIdValue ? null : pantryIdValue;
+    if (nextOpen === pantryIdValue) {
+      ensureRowDraft(pantryIdValue, true);
+    }
+    setOpenRowMenu(nextOpen);
   }
 
   async function saveRowUpdate(pantryIdValue: string) {
@@ -302,10 +476,11 @@ export default function DashboardClient({
         return;
       }
 
-      setRowDrafts((prev) => ({
-        ...prev,
-        [pantryIdValue]: { name: "", location: "", newPassword: "" },
-      }));
+      setRowDrafts((prev) => {
+        const next = { ...prev };
+        delete next[pantryIdValue];
+        return next;
+      });
       setRowNotice((prev) => ({
         ...prev,
         [pantryIdValue]: data.message || "Pantry updated.",
@@ -482,8 +657,205 @@ export default function DashboardClient({
     }
   }
 
+  function getPantryStatusChoice(cred: PantryCredential): "auto" | "open" | "closed" {
+    if (!cred.manualOverride) return "auto";
+    return cred.isOpen ? "open" : "closed";
+  }
+
+  async function handleStatusChoice(
+    pantryIdValue: string,
+    choice: "auto" | "open" | "closed",
+    cred: PantryCredential,
+  ) {
+    const current = getPantryStatusChoice(cred);
+    if (choice === current) return;
+    if (choice === "auto") {
+      await handleClearOverride(pantryIdValue);
+    } else {
+      await handleSetPantryStatus(pantryIdValue, choice === "open", cred);
+    }
+  }
+
+  function renderStatusToggle(cred: PantryCredential) {
+    const current = getPantryStatusChoice(cred);
+    return (
+      <div role="group" aria-label="Pantry status" className="flex overflow-hidden rounded-lg border border-slate-300 dark:border-slate-700">
+        {(["auto", "open", "closed"] as const).map((choice) => (
+          <button
+            key={choice}
+            type="button"
+            onClick={() => void handleStatusChoice(cred.pantryId, choice, cred)}
+            disabled={!!togglingRows[cred.pantryId]}
+            aria-pressed={current === choice}
+            className={`flex-1 px-3 py-1.5 text-xs font-semibold capitalize transition ${current === choice
+                ? choice === "open"
+                  ? "bg-teal-600 text-white dark:bg-teal-500"
+                  : choice === "closed"
+                    ? "bg-rose-600 text-white dark:bg-rose-500"
+                    : "bg-slate-700 text-white dark:bg-slate-200 dark:text-slate-900"
+                : "bg-white text-slate-600 hover:bg-slate-50 dark:bg-zinc-900 dark:text-slate-300 dark:hover:bg-zinc-800"
+              }`}
+          >
+            {choice.charAt(0).toUpperCase() + choice.slice(1)}
+          </button>
+        ))}
+      </div>
+    );
+  }
+
+  function renderManagePanel(cred: PantryCredential) {
+    const draft = rowDrafts[cred.pantryId] ?? {
+      name: "",
+      location: "",
+      newPassword: "",
+      operatingHours: cloneOperatingHours(cred.operatingHours),
+    };
+
+    return (
+      <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-800/60">
+        <p className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">
+          Leave name, location, or password blank to keep their current values. Operating hours are saved separately.
+        </p>
+        <div className="grid gap-2 lg:grid-cols-3">
+          <Input
+            value={draft.name}
+            onChange={(e) => updateRowDraftField(cred.pantryId, "name", e.target.value)}
+            type="text"
+            placeholder="New name"
+          />
+          <Input
+            value={draft.location}
+            onChange={(e) => updateRowDraftField(cred.pantryId, "location", e.target.value)}
+            type="text"
+            placeholder="New location"
+          />
+          <Input
+            value={draft.newPassword}
+            onChange={(e) => updateRowDraftField(cred.pantryId, "newPassword", e.target.value)}
+            type="password"
+            placeholder="New password"
+          />
+          <button
+            type="button"
+            onClick={() => saveRowUpdate(cred.pantryId)}
+            disabled={savingRows[cred.pantryId]}
+            className="self-start rounded-lg bg-zinc-900 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-zinc-800 disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+          >
+            {savingRows[cred.pantryId] ? "Saving..." : "Update Details"}
+          </button>
+        </div>
+
+        <div className="mt-4 rounded-xl border border-zinc-200 bg-white/90 p-4 dark:border-zinc-700 dark:bg-zinc-900/80">
+          <div className="flex flex-col gap-1">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
+              Operating Hours
+            </p>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              Current hours: {formatOperatingHours(cred.operatingHours)}
+            </p>
+            {cred.manualOverride && (
+              <p className="text-xs text-amber-700 dark:text-amber-300">
+                Manual override is active. Saving hours will not change the current open/closed state until Auto is restored.
+              </p>
+            )}
+          </div>
+
+          <div className="mt-3 flex flex-col gap-2">
+            {draft.operatingHours.length === 0 && (
+              <div className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 px-3 py-4 text-sm text-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400">
+                No weekly schedule set yet. Use &quot;Add Time Slot&quot; to create the pantry schedule.
+              </div>
+            )}
+
+            {draft.operatingHours.map((slot, index) => (
+              <div
+                key={`${cred.pantryId}-hours-${index}`}
+                className="grid gap-3 rounded-xl border border-zinc-200 bg-white p-3 dark:border-zinc-700 dark:bg-zinc-900 lg:grid-cols-[110px_minmax(0,1fr)_minmax(0,1fr)_auto]"
+              >
+                <label className="flex min-w-0 flex-col gap-1">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
+                    Day
+                  </span>
+                  <Select
+                    value={slot.day}
+                    onChange={(e) => updateRowOperatingHour(cred.pantryId, index, "day", e.target.value)}
+                  >
+                    {DAY_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </Select>
+                </label>
+                <label className="flex min-w-0 flex-col gap-1">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
+                    Open
+                  </span>
+                  <Input
+                    value={slot.open}
+                    onChange={(e) => updateRowOperatingHour(cred.pantryId, index, "open", e.target.value)}
+                    type="time"
+                    className="min-w-0"
+                  />
+                </label>
+                <label className="flex min-w-0 flex-col gap-1">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
+                    Close
+                  </span>
+                  <Input
+                    value={slot.close}
+                    onChange={(e) => updateRowOperatingHour(cred.pantryId, index, "close", e.target.value)}
+                    type="time"
+                    className="min-w-0"
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={() => removeRowOperatingHour(cred.pantryId, index)}
+                  disabled={savingRows[cred.pantryId]}
+                  className="rounded-lg border border-red-300 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-wide text-red-700 transition hover:bg-red-50 disabled:opacity-60 dark:border-red-800 dark:bg-zinc-900 dark:text-red-300 dark:hover:bg-red-950/30 lg:self-end"
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => addRowOperatingHour(cred.pantryId)}
+                disabled={savingRows[cred.pantryId]}
+                className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-wide text-zinc-700 transition hover:bg-zinc-50 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
+              >
+                Add Time Slot
+              </button>
+              <button
+                type="button"
+                onClick={() => saveRowSchedule(cred.pantryId)}
+                disabled={savingRows[cred.pantryId]}
+                className="rounded-lg bg-zinc-900 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-zinc-800 disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+              >
+                {savingRows[cred.pantryId] ? "Saving..." : "Save Hours"}
+              </button>
+            </div>
+          </div>
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setDeleteTargetPantryId(cred.pantryId)}
+            disabled={savingRows[cred.pantryId]}
+            className="rounded-lg border border-red-300 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-wide text-red-700 transition hover:bg-red-50 disabled:opacity-60 dark:border-red-800 dark:bg-zinc-900 dark:text-red-300 dark:hover:bg-red-950/30"
+          >
+            {savingRows[cred.pantryId] ? "Working..." : "Remove Login Credentials"}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <main className="relative min-h-screen overflow-hidden bg-zinc-100 px-4 py-6 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100 sm:px-6 sm:py-10">
+    <main className="relative min-h-screen overflow-hidden bg-zinc-100 px-4 py-6 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100 sm:px-6 sm:py-10" style={{ paddingTop: "max(calc(env(safe-area-inset-top) + 1.5rem), 4rem)" }}>
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-24 -left-24 h-72 w-72 rounded-full bg-orange-200/30 blur-3xl dark:bg-orange-500/10" />
         <div className="absolute -right-24 bottom-0 h-72 w-72 rounded-full bg-orange-200/40 blur-3xl dark:bg-orange-500/10" />
@@ -559,12 +931,11 @@ export default function DashboardClient({
                       <p className="text-xs text-zinc-500 dark:text-zinc-400">
                         This will update the stored password for director@example.com in the database.
                       </p>
-                      <input
+                      <Input
                         value={ownPasswordDraft}
                         onChange={(e) => setOwnPasswordDraft(e.target.value)}
                         type="password"
                         placeholder="Enter new password"
-                        className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-zinc-500 dark:focus:ring-zinc-800"
                       />
                       <button
                         type="button"
@@ -621,15 +992,15 @@ export default function DashboardClient({
                 setCreatePantryNotice(null);
                 setCreatePantryError(null);
               }}
-            className="rounded-lg bg-zinc-900 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
-          >
-            {showCreatePantryForm ? "Close" : "Create Pantry Login"}
-          </button>
-          <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
-            Use this only when a pantry needs first-time credentials or a reset.
-          </p>
+              className="rounded-lg bg-zinc-900 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+            >
+              {showCreatePantryForm ? "Close" : "Create Pantry Login"}
+            </button>
+            <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+              Use this only when a pantry needs first-time credentials or a reset.
+            </p>
 
-          {showCreatePantryForm && (
+            {showCreatePantryForm && (
               <div className="mt-3 grid gap-2 sm:grid-cols-3">
                 <input
                   value={newPantryName}
@@ -746,31 +1117,8 @@ export default function DashboardClient({
                         {cred.pantryId}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => handleTogglePantryStatus(cred.pantryId)}
-                        disabled={togglingRows[cred.pantryId]}
-                        className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide transition ${
-                          cred.isOpen
-                            ? "border-teal-300 bg-teal-50 text-teal-700 hover:bg-teal-100 dark:border-teal-800 dark:bg-teal-950/40 dark:text-teal-300"
-                            : "border-rose-300 bg-rose-50 text-rose-700 hover:bg-rose-100 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300"
-                        }`}
-                      >
-                        <span className={`h-1.5 w-1.5 rounded-full ${cred.isOpen ? "bg-teal-500" : "bg-rose-500"}`} />
-                        {togglingRows[cred.pantryId] ? "..." : cred.isOpen ? "Open" : "Closed"}
-                        {cred.manualOverride && !togglingRows[cred.pantryId] && <span className="ml-0.5 normal-case opacity-70">Manual</span>}
-                      </button>
-                      {cred.manualOverride && (
-                        <button
-                          type="button"
-                          onClick={() => handleClearOverride(cred.pantryId)}
-                          disabled={togglingRows[cred.pantryId]}
-                          className="rounded-full border border-slate-300 bg-white px-2 py-0.5 text-[9px] font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
-                        >
-                          Auto
-                        </button>
-                      )}
+                    <div className="flex flex-wrap items-center gap-2">
+                      {renderStatusToggle(cred)}
                       <Badge tone={cred.hasCredentials ? "success" : "warning"}>
                         {cred.hasCredentials ? "Configured" : "Missing"}
                       </Badge>
@@ -859,7 +1207,7 @@ export default function DashboardClient({
               ))}
           </div>
 
-          <div className="hidden overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800 md:block">
+          <div className="hidden overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800 md:block">
             <table className="min-w-full">
               <thead className="bg-zinc-100/80 dark:bg-zinc-800/70">
                 <tr>
@@ -908,54 +1256,31 @@ export default function DashboardClient({
                   </tr>
                 )}
                 {filteredCredentials.map((cred) => (
-                  <tr
-                    key={cred.pantryId}
-                    className="align-top transition hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
-                  >
-                    <td className="px-4 py-3 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                      {cred.pantryId}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-zinc-700 dark:text-zinc-300">
-                      <div className="font-semibold text-zinc-900 dark:text-zinc-100">{cred.name}</div>
-                      <div className="text-xs text-zinc-500 dark:text-zinc-400">
-                        {cred.location || "No location"}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-zinc-700 dark:text-zinc-300">
-                      <Badge tone={cred.hasCredentials ? "success" : "warning"}>
-                        {cred.hasCredentials ? "Configured" : "Missing"}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => handleTogglePantryStatus(cred.pantryId)}
-                          disabled={togglingRows[cred.pantryId]}
-                          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
-                            cred.isOpen
-                              ? "border-teal-300 bg-teal-50 text-teal-700 hover:bg-teal-100 dark:border-teal-800 dark:bg-teal-950/40 dark:text-teal-300"
-                              : "border-rose-300 bg-rose-50 text-rose-700 hover:bg-rose-100 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300"
-                          }`}
-                        >
-                          <span className={`h-2 w-2 rounded-full ${cred.isOpen ? "bg-teal-500" : "bg-rose-500"}`} />
-                          {togglingRows[cred.pantryId] ? "..." : cred.isOpen ? "Open" : "Closed"}
-                          {cred.manualOverride && !togglingRows[cred.pantryId] && <span className="ml-0.5 text-[9px] opacity-70">Manual</span>}
-                        </button>
-                        {cred.manualOverride && (
-                          <button
-                            type="button"
-                            onClick={() => handleClearOverride(cred.pantryId)}
-                            disabled={togglingRows[cred.pantryId]}
-                            className="rounded-full border border-slate-300 bg-white px-2 py-1 text-[10px] font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
-                          >
-                            Auto
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex min-w-[240px] flex-col gap-2">
+                  <Fragment key={cred.pantryId}>
+                    <tr className="align-top transition hover:bg-zinc-50 dark:hover:bg-zinc-800/60">
+                      <td className="px-4 py-3 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                        {cred.pantryId}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-zinc-700 dark:text-zinc-300">
+                        <div className="font-semibold text-zinc-900 dark:text-zinc-100">{cred.name}</div>
+                        <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                          {cred.location || "No location"}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-zinc-700 dark:text-zinc-300">
+                        <Badge tone={cred.hasCredentials ? "success" : "warning"}>
+                          {cred.hasCredentials ? "Configured" : "Missing"}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3">
+                        {renderStatusToggle(cred)}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-zinc-700 dark:text-zinc-300">
+                        <div className="max-w-xs whitespace-normal text-xs leading-5 text-zinc-600 dark:text-zinc-300">
+                          {formatOperatingHours(cred.operatingHours)}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
                         <button
                           type="button"
                           onClick={() => toggleRowMenu(cred.pantryId)}
@@ -963,73 +1288,28 @@ export default function DashboardClient({
                         >
                           {openRowMenu === cred.pantryId ? "Close" : "Manage"}
                         </button>
-
-                        {openRowMenu === cred.pantryId && (
-                          <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-800/60">
-                            <p className="mb-2 text-xs text-zinc-500 dark:text-zinc-400">
-                              Leave any field blank to keep its current value.
-                            </p>
-                            <div className="flex flex-col gap-2">
-                              <input
-                                value={rowDrafts[cred.pantryId]?.name ?? ""}
-                                onChange={(e) =>
-                                  updateRowDraftField(cred.pantryId, "name", e.target.value)
-                                }
-                                type="text"
-                                placeholder="New name"
-                                className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-zinc-500 dark:focus:ring-zinc-800"
-                              />
-                              <input
-                                value={rowDrafts[cred.pantryId]?.location ?? ""}
-                                onChange={(e) =>
-                                  updateRowDraftField(cred.pantryId, "location", e.target.value)
-                                }
-                                type="text"
-                                placeholder="New location"
-                                className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-zinc-500 dark:focus:ring-zinc-800"
-                              />
-                              <input
-                                value={rowDrafts[cred.pantryId]?.newPassword ?? ""}
-                                onChange={(e) =>
-                                  updateRowDraftField(cred.pantryId, "newPassword", e.target.value)
-                                }
-                                type="password"
-                                placeholder="New password"
-                                className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-zinc-500 dark:focus:ring-zinc-800"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => saveRowUpdate(cred.pantryId)}
-                                disabled={savingRows[cred.pantryId]}
-                                className="self-start rounded-lg bg-zinc-900 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-zinc-800 disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
-                              >
-                                {savingRows[cred.pantryId] ? "Saving..." : "Update"}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setDeleteTargetPantryId(cred.pantryId)}
-                                disabled={savingRows[cred.pantryId]}
-                                className="self-start rounded-lg border border-red-300 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-wide text-red-700 transition hover:bg-red-50 disabled:opacity-60 dark:border-red-800 dark:bg-zinc-900 dark:text-red-300 dark:hover:bg-red-950/30"
-                              >
-                                {savingRows[cred.pantryId] ? "Working..." : "Remove Login Credentials"}
-                              </button>
-                            </div>
+                      </td>
+                    </tr>
+                    {openRowMenu === cred.pantryId && (
+                      <tr className="bg-zinc-50/70 dark:bg-zinc-950/40">
+                        <td colSpan={6} className="px-4 pb-4 pt-0">
+                          <div className="pt-2">
+                            {renderManagePanel(cred)}
+                            {rowError[cred.pantryId] && (
+                              <p className="mt-2 text-xs text-red-600 dark:text-red-400">
+                                {rowError[cred.pantryId]}
+                              </p>
+                            )}
+                            {rowNotice[cred.pantryId] && (
+                              <p className="mt-2 text-xs text-emerald-700 dark:text-emerald-400">
+                                {rowNotice[cred.pantryId]}
+                              </p>
+                            )}
                           </div>
-                        )}
-
-                        {rowError[cred.pantryId] && (
-                          <p className="text-xs text-red-600 dark:text-red-400">
-                            {rowError[cred.pantryId]}
-                          </p>
-                        )}
-                        {rowNotice[cred.pantryId] && (
-                          <p className="text-xs text-emerald-700 dark:text-emerald-400">
-                            {rowNotice[cred.pantryId]}
-                          </p>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
                 ))}
               </tbody>
             </table>

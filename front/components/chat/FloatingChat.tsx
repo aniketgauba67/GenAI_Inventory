@@ -56,9 +56,12 @@ function TypingMarkdown({
   onTypingDone,
   onTypingProgress,
 }: TypingMarkdownProps) {
-  const [displayedText, setDisplayedText] = useState(shouldType ? "" : text);
+  const [animatedText, setAnimatedText] = useState("");
   const onTypingDoneRef = useRef(onTypingDone);
   const onTypingProgressRef = useRef(onTypingProgress);
+
+  // Derive displayedText: when not in typing mode, show full text directly (no state needed)
+  const displayedText = shouldType ? animatedText : text;
 
   useEffect(() => {
     onTypingDoneRef.current = onTypingDone;
@@ -69,20 +72,21 @@ function TypingMarkdown({
   }, [onTypingProgress]);
 
   useEffect(() => {
-    if (!shouldType) {
-      setDisplayedText(text);
-      return;
-    }
+    if (!shouldType) return;
 
     let cancelled = false;
     let index = 0;
-    setDisplayedText("");
+
+    // Reset async so it doesn't trigger synchronous cascade in the effect body
+    window.setTimeout(() => {
+      if (!cancelled) setAnimatedText("");
+    }, 0);
 
     const tick = () => {
       if (cancelled) return;
 
       index += 1;
-      setDisplayedText(text.slice(0, index));
+      setAnimatedText(text.slice(0, index));
       onTypingProgressRef.current?.();
 
       if (index >= text.length) {
@@ -194,7 +198,7 @@ export default function FloatingChat({ pantryId = "" }: FloatingChatProps) {
         body: JSON.stringify({
           message: trimmed,
           history,
-          pantryId: null,
+          pantryId: pantryId || null,
         }),
       });
 

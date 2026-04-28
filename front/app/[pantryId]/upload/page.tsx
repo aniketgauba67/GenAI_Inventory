@@ -11,9 +11,11 @@ import Alert from "../../../components/ui/Alert";
 import SectionHeader from "../../../components/ui/SectionHeader";
 import FlowStepper from "../../../components/workflow/FlowStepper";
 import UploadDropzone from "../../../components/workflow/UploadDropzone";
-import FileList from "../../../components/workflow/FileList";
 import { useToast } from "../../../components/ui/Toast";
 import EmptyState from "../../../components/ui/EmptyState";
+import { getApiBase } from "../../../lib/api";
+
+const UPLOAD_TIMEOUT_MS = 90000;
 
 export default function UploadPage() {
   const { showToast } = useToast();
@@ -88,10 +90,7 @@ export default function UploadPage() {
     [previews]
   );
 
-  const apiBase =
-    typeof window !== "undefined"
-      ? process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
-      : "";
+  const apiBase = getApiBase();
 
   useEffect(() => {
     if (!isDirector) {
@@ -202,16 +201,19 @@ export default function UploadPage() {
     }
     setUploading(true);
     setUploadResult(null);
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), UPLOAD_TIMEOUT_MS);
     try {
       const form = new FormData();
       files.forEach((f) => form.append("files", f));
       form.append("pantry_id", effectivePantryId);
-      const res = await fetch(`${apiBase}/upload`, {
+      const res = await fetch("/api/upload", {
         method: "POST",
         body: form,
+        signal: controller.signal,
       });
-      const data = await res.json();
-      if (res.ok && data.ok) {
+      const data = await res.json().catch(() => ({ ok: false, error: "Upload failed." }));
+      if (res.ok && data.ok && data.inventory) {
         const successfulFiles = data.files
           ?.filter((x: { ok?: boolean }) => x.ok)
           .map((x: { filename?: string; size_bytes?: number }) => ({
@@ -240,16 +242,28 @@ export default function UploadPage() {
           router.push(`/${pantryId}/review${isDirector ? `?targetPantryId=${effectivePantryId}` : ""}`);
         }
       } else {
-        setUploadResult({ ok: false, message: data.error || "Upload failed" });
-        showToast(data.error || "Upload failed", "error");
+        const message =
+          data.error ||
+          (res.ok && data.ok
+            ? "Detection did not return inventory. Try a clearer shelf photo."
+            : `Upload failed (${res.status})`);
+        setUploadResult({ ok: false, message });
+        showToast(message, "error");
       }
     } catch (e) {
+      const message =
+        e instanceof Error && e.name === "AbortError"
+          ? "Inventory detection timed out. Try one clear photo at a time."
+          : e instanceof Error
+            ? e.message
+            : "Network error";
       setUploadResult({
         ok: false,
-        message: e instanceof Error ? e.message : "Network error",
+        message,
       });
-      showToast("Network error while uploading files.", "error");
+      showToast(message, "error");
     } finally {
+      window.clearTimeout(timeoutId);
       setUploading(false);
     }
   }
@@ -266,29 +280,29 @@ export default function UploadPage() {
                 type="button"
                 onClick={handleToggleStatus}
                 disabled={togglingStatus}
-                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                className={`inline-flex min-h-[44px] items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-semibold transition ${
                   isPantryOpen
                     ? "border-teal-300 bg-teal-50 text-teal-700 hover:bg-teal-100 dark:border-teal-800 dark:bg-teal-950/40 dark:text-teal-300 dark:hover:bg-teal-900/50"
                     : "border-rose-300 bg-rose-50 text-rose-700 hover:bg-rose-100 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300 dark:hover:bg-rose-900/50"
                 }`}
               >
-                <span className={`h-2 w-2 rounded-full ${isPantryOpen ? "bg-teal-500" : "bg-rose-500"}`} />
+                <span aria-hidden="true" className={`h-2 w-2 rounded-full ${isPantryOpen ? "bg-teal-500" : "bg-rose-500"}`} />
                 {togglingStatus ? "..." : isPantryOpen ? "Open" : "Closed"}
-                {isManualOverride && !togglingStatus && <span className="ml-0.5 text-[9px] opacity-70">Manual</span>}
+                {isManualOverride && !togglingStatus && <span className="ml-0.5 text-[10px] opacity-70">Manual</span>}
               </button>
               {isManualOverride && (
                 <button
                   type="button"
                   onClick={handleClearOverride}
                   disabled={togglingStatus}
-                  className="rounded-full border border-slate-300 bg-white px-2.5 py-1.5 text-[10px] font-medium text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+                  className="min-h-[44px] rounded-full border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
                 >
                   Auto
                 </button>
               )}
             </>
           )}
-          <Button variant="ghost" size="sm" onClick={() => signOut({ callbackUrl: "/" })}>
+          <Button variant="ghost" size="md" className="min-h-[44px] px-5 text-base" onClick={() => signOut({ callbackUrl: "/" })}>
             Switch account
           </Button>
         </div>
@@ -298,9 +312,11 @@ export default function UploadPage() {
         { label: "Review", href: `/${pantryId}/review` },
       ]}
     >
-      <div className="mx-auto max-w-3xl space-y-4">
+      <div className="relative">
+        <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-56 bg-[radial-gradient(circle_at_18%_12%,rgba(13,148,136,0.18),transparent_34%),radial-gradient(circle_at_82%_0%,rgba(249,115,22,0.14),transparent_30%)]" />
+        <div className="mx-auto max-w-3xl space-y-5">
         {isDirector && (
-          <Card>
+          <Card className="rounded-3xl border border-slate-200/80 bg-white/90 p-5 shadow-sm backdrop-blur dark:border-slate-800/80 dark:bg-slate-950/60">
             <SectionHeader
               title="Choose target pantry"
               subtitle="Director uploads need an explicit pantry selection before detection starts."
@@ -322,22 +338,22 @@ export default function UploadPage() {
             {pantryLoadError && <Alert tone="error" className="mt-3">{pantryLoadError}</Alert>}
           </Card>
         )}
-        <Card>
-          <FlowStepper steps={["Upload", "Review", "Submit"]} currentStep={0} />
+        <Card className="rounded-3xl border border-slate-200/80 bg-white/90 p-5 shadow-sm backdrop-blur dark:border-slate-800/80 dark:bg-slate-950/60">
+          <FlowStepper steps={["Upload", "Review", "Submit"]} currentStep={0} status={uploading ? "uploading" : undefined} />
         </Card>
         {uploading && (
-          <Alert tone="info">Processing images and detecting inventory. This can take a few seconds.</Alert>
+          <Alert tone="info" className="text-base">Processing images and detecting inventory. This can take up to a minute.</Alert>
         )}
-        <Card className="text-sm text-zinc-600 dark:text-zinc-300">
-          <p className="font-medium text-zinc-900 dark:text-zinc-100">Volunteer flow</p>
-          <p className="mt-1">1. Upload shelf photo(s) 2. Review detected counts 3. Submit inventory levels</p>
+        <Card className="rounded-3xl border border-slate-200/80 bg-white/90 p-5 text-base text-zinc-600 shadow-sm backdrop-blur dark:border-slate-800/80 dark:bg-slate-950/60 dark:text-zinc-300">
+          <p className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Volunteer flow</p>
+          <p className="mt-1 leading-7">1. Upload shelf photo(s) 2. Review detected counts 3. Submit inventory levels</p>
           {isDirector && (
-            <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+            <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
               Director target pantry: {targetPantryId || "Not selected"}
             </p>
           )}
         </Card>
-        <Card>
+        <Card className="rounded-3xl border border-slate-200/80 bg-white/90 p-5 shadow-sm backdrop-blur dark:border-slate-800/80 dark:bg-slate-950/60">
           <SectionHeader title="Upload images" subtitle="Tap to select files or drag and drop" />
           <UploadDropzone
             onFiles={handleFiles}
@@ -357,8 +373,8 @@ export default function UploadPage() {
         </Card>
 
         {previews.length > 0 && (
-          <Card className="mt-6" aria-label="Upload preview">
-            <h2 className="mb-3 text-sm font-medium text-zinc-600 dark:text-zinc-400">
+          <Card className="mt-6 rounded-3xl border border-slate-200/80 bg-white/90 p-5 shadow-sm backdrop-blur dark:border-slate-800/80 dark:bg-slate-950/60" aria-label="Upload preview">
+            <h2 className="mb-3 text-base font-semibold text-zinc-700 dark:text-zinc-300">
               Selected ({previews.length})
             </h2>
             <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -378,10 +394,12 @@ export default function UploadPage() {
                   <button
                     type="button"
                     onClick={() => removeImage(i)}
-                    className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-lg leading-none text-white transition hover:bg-black/70 active:scale-95"
+                    className="absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded-full bg-black/50 text-white transition hover:bg-black/70 hover:scale-110 active:scale-95"
                     aria-label={`Remove image ${i + 1}`}
                   >
-                    x
+                    <svg aria-hidden="true" width="14" height="14" viewBox="0 0 14 14" fill="none">
+                      <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                    </svg>
                   </button>
                   <span className="absolute bottom-2 left-2 max-w-[80%] truncate text-xs text-white/90 drop-shadow">
                     {files[i]?.name}
@@ -389,9 +407,6 @@ export default function UploadPage() {
                 </li>
               ))}
             </ul>
-            <div className="mt-4">
-              <FileList files={files} onRemove={removeImage} />
-            </div>
             <Button
               type="button"
               onClick={handleSendToBackend}
@@ -399,15 +414,21 @@ export default function UploadPage() {
               block
               variant="secondary"
               size="lg"
-              className="mt-4"
+              className="mt-4 inline-flex items-center justify-center gap-2 text-base"
             >
+              {uploading && (
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                </svg>
+              )}
               {uploading ? "Detecting inventory..." : "Detect inventory"}
             </Button>
             {uploadResult && (
               <div className="mt-3 space-y-1">
                 <Alert tone={uploadResult.ok ? "success" : "error"}>{uploadResult.message}</Alert>
                 {uploadResult.ok && uploadResult.files && uploadResult.files.length > 0 && (
-                  <ul className="list-inside list-disc text-xs text-zinc-500 dark:text-zinc-400">
+                  <ul className="list-inside list-disc text-sm text-zinc-500 dark:text-zinc-400">
                     {uploadResult.files.map((f, i) => (
                       <li key={i}>
                         {f.filename} ({f.size_bytes.toLocaleString()} bytes)
@@ -420,21 +441,7 @@ export default function UploadPage() {
           </Card>
         )}
 
-        <Card className="mt-6">
-          <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Account</p>
-          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-            Need to use a different volunteer, manager, or director login?
-          </p>
-          <Button
-            type="button"
-            onClick={() => signOut({ callbackUrl: "/" })}
-            block
-            variant="ghost"
-            className="mt-3"
-          >
-            Switch account
-          </Button>
-        </Card>
+        </div>
       </div>
     </AppShell>
   );

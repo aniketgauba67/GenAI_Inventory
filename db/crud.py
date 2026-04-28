@@ -202,6 +202,28 @@ def toggle_pantry_status(pantry_id: int) -> dict | None:
         db.close()
 
 
+def set_pantry_status(pantry_id: int, is_open: bool) -> dict | None:
+    """Explicitly set is_open and enable manual_override."""
+    db = SessionLocal()
+    try:
+        pantry = db.query(Pantry).filter(Pantry.id == pantry_id).first()
+        if pantry is None:
+            print(f"✗ Pantry {pantry_id} not found")
+            return None
+        pantry.is_open = is_open
+        pantry.manual_override = True
+        db.commit()
+        db.refresh(pantry)
+        print(f"✓ Set pantry {pantry_id} is_open → {pantry.is_open} (manual_override=True)")
+        return {"pantryId": str(pantry.id), "isOpen": pantry.is_open, "manualOverride": True}
+    except Exception as e:
+        db.rollback()
+        print(f"✗ Error setting pantry status: {e}")
+        raise
+    finally:
+        db.close()
+
+
 def clear_manual_override(pantry_id: int) -> dict | None:
     """Clear manual_override and immediately re-evaluate the schedule."""
     db = SessionLocal()
