@@ -204,7 +204,7 @@ export default function ManagerViewPage() {
                 type="button"
                 onClick={handleToggleStatus}
                 disabled={togglingStatus}
-                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                className={`inline-flex min-h-[44px] items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-semibold transition ${
                   isPantryOpen
                     ? "border-teal-300 bg-teal-50 text-teal-700 hover:bg-teal-100 dark:border-teal-800 dark:bg-teal-950/40 dark:text-teal-300 dark:hover:bg-teal-900/50"
                     : "border-rose-300 bg-rose-50 text-rose-700 hover:bg-rose-100 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300 dark:hover:bg-rose-900/50"
@@ -212,29 +212,31 @@ export default function ManagerViewPage() {
               >
                 <span className={`h-2 w-2 rounded-full ${isPantryOpen ? "bg-teal-500" : "bg-rose-500"}`} />
                 {togglingStatus ? "..." : isPantryOpen ? "Open" : "Closed"}
-                {isManualOverride && !togglingStatus && <span className="ml-0.5 text-[9px] opacity-70">Manual</span>}
+                {isManualOverride && !togglingStatus && <span className="ml-0.5 text-[10px] opacity-70">Manual</span>}
               </button>
               {isManualOverride && (
                 <button
                   type="button"
                   onClick={handleClearOverride}
                   disabled={togglingStatus}
-                  className="rounded-full border border-slate-300 bg-white px-2.5 py-1.5 text-[10px] font-medium text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+                  className="min-h-[44px] rounded-full border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
                 >
                   Auto
                 </button>
               )}
             </>
           )}
-          <Button variant="ghost" size="sm" onClick={() => signOut({ callbackUrl: "/" })}>
+          <Button variant="ghost" size="md" className="min-h-[44px] px-5 text-base" onClick={() => signOut({ callbackUrl: "/" })}>
             Switch account
           </Button>
         </div>
       }
     >
-      <div className="mx-auto max-w-2xl space-y-4">
+      <div className="relative">
+        <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-56 bg-[radial-gradient(circle_at_18%_12%,rgba(13,148,136,0.18),transparent_34%),radial-gradient(circle_at_82%_0%,rgba(249,115,22,0.14),transparent_30%)]" />
+        <div className="mx-auto max-w-2xl space-y-5">
         {isDirector && (
-          <Card>
+          <Card className="rounded-3xl border border-slate-200/80 bg-white/90 p-5 shadow-sm backdrop-blur dark:border-slate-800/80 dark:bg-slate-950/60">
             <SectionHeader
               title="Choose target pantry"
               subtitle="Director form uploads need an explicit pantry selection before extraction."
@@ -255,19 +257,19 @@ export default function ManagerViewPage() {
             {pantryLoadError && <Alert tone="error" className="mt-3">{pantryLoadError}</Alert>}
           </Card>
         )}
-        <Card>
+        <Card className="rounded-3xl border border-slate-200/80 bg-white/90 p-5 shadow-sm backdrop-blur dark:border-slate-800/80 dark:bg-slate-950/60">
           <FlowStepper steps={["Upload", "Review", "Save Baseline"]} currentStep={0} />
         </Card>
-        <Card className="text-sm text-zinc-600 dark:text-zinc-300">
-          <p className="font-medium text-zinc-900 dark:text-zinc-100">Manager flow</p>
-          <p className="mt-1">
+        <Card className="rounded-3xl border border-slate-200/80 bg-white/90 p-5 text-base text-zinc-600 shadow-sm backdrop-blur dark:border-slate-800/80 dark:bg-slate-950/60 dark:text-zinc-300">
+          <p className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Manager flow</p>
+          <p className="mt-1 leading-7">
             Upload warehouse order form pages, review extracted category totals, then save as pantry baseline.
           </p>
-          <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+          <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
             Active pantry target: {targetPantryId || "Not selected"}
           </p>
         </Card>
-        <Card>
+        <Card className="rounded-3xl border border-slate-200/80 bg-white/90 p-5 shadow-sm backdrop-blur dark:border-slate-800/80 dark:bg-slate-950/60">
           <SectionHeader title="Upload order forms" subtitle="You can upload multiple pages in one request." />
           <UploadDropzone
             onFiles={handleFiles}
@@ -287,7 +289,7 @@ export default function ManagerViewPage() {
           {files.length > 0 && (
             <div className="mt-4 space-y-4">
               <FileList files={files} onRemove={(index) => setFiles((prev) => prev.filter((_, i) => i !== index))} />
-              <Button type="button" onClick={handleExtract} disabled={uploading} block size="lg">
+              <Button type="button" onClick={handleExtract} disabled={uploading} block size="lg" className="text-base">
                 {uploading ? "Extracting from form..." : "Extract category totals"}
               </Button>
             </div>
@@ -295,6 +297,7 @@ export default function ManagerViewPage() {
         </Card>
         {error && <Alert tone="error">{error}</Alert>}
 
+        </div>
       </div>
     </AppShell>
   );
