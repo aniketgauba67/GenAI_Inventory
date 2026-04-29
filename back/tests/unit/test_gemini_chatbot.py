@@ -14,7 +14,13 @@ if str(DB_DIR) not in sys.path:
 
 
 def _mock_pantry(pantry_id: int, name: str, location: str, is_open: bool = True):
-    return SimpleNamespace(id=pantry_id, name=name, location=location, is_open=is_open)
+    return SimpleNamespace(
+        id=pantry_id,
+        name=name,
+        location=location,
+        is_open=is_open,
+        operating_hours=[{"day": "fri", "open": "09:30", "close": "10:30"}],
+    )
 
 
 def _mock_pantry_session(pantries):
@@ -135,3 +141,26 @@ def test_nearest_pantry_by_city_uses_all_pantry_locations():
     assert "Heath Fire Department" in reply
     assert "closed" in reply
     assert "FPN Market at LMHS" not in reply
+
+
+def test_nearest_pantry_with_user_location_returns_distance_and_details():
+    mock_session = _mock_pantry_session([
+        _mock_pantry(1, "FPN Market at LMHS", "131 McMillen Dr, Newark, OH 43055"),
+        _mock_pantry(2, "Heath Fire Department (Thanksgiving-Easter)", "93 Heath Rd, Heath, OH 43056", is_open=False),
+        _mock_pantry(3, "Johnstown/Faithcare Pantry", "140 Pratt St, Johnstown, OH 43031"),
+    ])
+
+    with patch("database.SessionLocal", return_value=mock_session):
+        reply = gemini_chatbot.call_gemini_chat(
+            user_message="What is the closest pantry near me?",
+            pantry_id=1,
+            user_location={"latitude": 40.0200, "longitude": -82.4450, "accuracy": 40},
+        )
+
+    assert reply is not None
+    assert "Using your shared location" in reply
+    assert "Heath Fire Department" in reply
+    assert "miles away" in reply
+    assert "93 Heath Rd" in reply
+    assert "Hours: Fri 09:30-10:30" in reply
+    assert "Distances are approximate" in reply

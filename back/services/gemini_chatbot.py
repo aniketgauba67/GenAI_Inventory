@@ -2,7 +2,9 @@ import logging
 from pathlib import Path
 import sys
 import json
+import math
 import re
+from urllib.parse import quote_plus
 
 from config import GEMINI_MODEL, get_gemini_api_key
 
@@ -16,6 +18,45 @@ DEFAULT_CHATBOT_SYSTEM_PROMPT = (
     "The precedence is fixed: prefer the latest volunteer submission if it is the same time or newer than the latest warehouse snapshot; "
     "otherwise use the latest warehouse snapshot."
 )
+
+PANTRY_COORDINATES_BY_NAME: dict[str, tuple[float, float]] = {
+    "fpn market at lmhs": (40.0640, -82.4270),
+    "fpn market on brice st": (40.0476, -82.3896),
+    "seventh day adventist": (40.0582, -82.4000),
+    "last call ministries": (40.0604, -82.4049),
+    "st vincent depaul society": (40.0499, -82.3965),
+    "market street pantry": (40.0567, -82.4047),
+    "family of faith church": (40.0805, -82.4124),
+    "salvation army": (40.0586, -82.3976),
+    "second presbyterian church": (40.0596, -82.4033),
+    "newark nazarene church": (40.0665, -82.4042),
+    "christ cornerstone church": (40.0589, -82.4058),
+    "marne church": (40.1045, -82.3724),
+    "wright memorial methodist once a month": (40.0774, -82.4126),
+    "waters edge buckeye lake": (39.9316, -82.4662),
+    "buckeye lake leads": (39.9315, -82.4778),
+    "jacksontown umc": (39.9600, -82.3600),
+    "pataskala leads": (39.9818, -82.6995),
+    "pataskala umc april nov": (39.9943, -82.6745),
+    "kirkersville umc march nov": (39.9598, -82.5940),
+    "alexandria umc march nov": (40.0880, -82.6126),
+    "st alban s fire dept nov march": (40.0890, -82.6090),
+    "christ ev lutheran church easter thanksgiving": (40.0276, -82.4385),
+    "heath fire department thanksgiving easter": (40.0204, -82.4444),
+    "croton church of christ": (40.2383, -82.6884),
+    "johnstown faithcare pantry": (40.1518, -82.6858),
+    "utica leads": (40.2355, -82.4512),
+}
+
+DAY_LABELS = {
+    "mon": "Mon",
+    "tue": "Tue",
+    "wed": "Wed",
+    "thu": "Thu",
+    "fri": "Fri",
+    "sat": "Sat",
+    "sun": "Sun",
+}
 
 
 def _is_pantry_count_question(message: str) -> bool:
@@ -54,6 +95,12 @@ def _normalize_location_text(value: str) -> str:
     return re.sub(r"\s+", " ", re.sub(r"[^a-z0-9\s]", " ", value.lower())).strip()
 
 
+def _pantry_coordinates(name: str | None) -> tuple[float, float] | None:
+    if not name:
+        return None
+    return PANTRY_COORDINATES_BY_NAME.get(_normalize_location_text(name))
+
+
 def _pantry_city(location: str | None) -> str | None:
     if not location:
         return None
@@ -63,11 +110,69 @@ def _pantry_city(location: str | None) -> str | None:
     return None
 
 
+def _format_operating_hours(operating_hours: list[dict] | None, limit: int = 3) -> str:
+    if not operating_hours:
+        return "hours not listed"
+
+    formatted = []
+    for entry in operating_hours[:limit]:
+        day = DAY_LABELS.get(str(entry.get("day", "")).lower(), str(entry.get("day", "")).title())
+        open_time = entry.get("open")
+        close_time = entry.get("close")
+        if day and open_time and close_time:
+            formatted.append(f"{day} {open_time}-{close_time}")
+
+    if not formatted:
+        return "hours not listed"
+
+    if len(operating_hours) > limit:
+        formatted.append("more hours listed")
+    return "; ".join(formatted)
+
+
+def _distance_miles(origin: tuple[float, float], destination: tuple[float, float]) -> float:
+    """Return approximate great-circle distance in miles."""
+    lat1, lon1 = origin
+    lat2, lon2 = destination
+    radius_miles = 3958.8
+
+    phi1 = math.radians(lat1)
+    phi2 = math.radians(lat2)
+    delta_phi = math.radians(lat2 - lat1)
+    delta_lambda = math.radians(lon2 - lon1)
+
+    a = (
+        math.sin(delta_phi / 2) ** 2
+        + math.cos(phi1) * math.cos(phi2) * math.sin(delta_lambda / 2) ** 2
+    )
+    return radius_miles * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+
+def _coerce_user_location(user_location: dict | None) -> tuple[float, float] | None:
+    if not user_location:
+        return None
+    try:
+        latitude = float(user_location.get("latitude"))
+        longitude = float(user_location.get("longitude"))
+    except (TypeError, ValueError):
+        return None
+    if not (-90 <= latitude <= 90 and -180 <= longitude <= 180):
+        return None
+    return (latitude, longitude)
+
+
 def _format_pantry_options(pantries: list[dict], limit: int = 5) -> str:
     lines = []
     for pantry in pantries[:limit]:
         status = "open" if pantry["isOpen"] else "closed"
-        lines.append(f"- {pantry['name']} ({pantry['location']}) is currently marked {status}.")
+        distance = pantry.get("distanceMiles")
+        distance_text = f"{distance:.1f} miles away. " if isinstance(distance, float) else ""
+        hours = _format_operating_hours(pantry.get("operatingHours"))
+        maps_url = f"https://www.google.com/maps/search/?api=1&query={quote_plus(pantry['location'])}"
+        lines.append(
+            f"- {pantry['name']} — {distance_text}{pantry['location']}. "
+            f"Currently marked {status}. Hours: {hours}. [Open in Maps]({maps_url})"
+        )
     extra = len(pantries) - limit
     if extra > 0:
         lines.append(f"- Plus {extra} more matching pantry location(s).")
@@ -94,6 +199,8 @@ def _load_pantry_location_rows() -> list[dict]:
                 "location": pantry.location or "Location not listed",
                 "isOpen": pantry.is_open,
                 "city": _pantry_city(pantry.location),
+                "operatingHours": pantry.operating_hours or [],
+                "coordinates": _pantry_coordinates(pantry.name),
             }
             for pantry in pantries
         ]
@@ -102,7 +209,7 @@ def _load_pantry_location_rows() -> list[dict]:
             session.close()
 
 
-def _answer_nearest_pantry_question(message: str) -> str | None:
+def _answer_nearest_pantry_question(message: str, user_location: dict | None = None) -> str | None:
     """Answer nearest-pantry questions using typed ZIP/city because chat has no GPS."""
     if not _is_nearest_pantry_question(message):
         return None
@@ -115,6 +222,34 @@ def _answer_nearest_pantry_question(message: str) -> str | None:
 
     if not pantries:
         return "I cannot find any pantry locations in the system right now."
+
+    origin = _coerce_user_location(user_location)
+    if origin:
+        with_distance = []
+        for pantry in pantries:
+            coordinates = pantry.get("coordinates")
+            if not coordinates:
+                continue
+            with_distance.append({
+                **pantry,
+                "distanceMiles": _distance_miles(origin, coordinates),
+            })
+        with_distance.sort(key=lambda pantry: pantry["distanceMiles"])
+        if with_distance:
+            nearest = with_distance[0]
+            nearby_options = with_distance[1:4]
+            nearby_text = (
+                "\n\nOther nearby options:\n"
+                f"{_format_pantry_options(nearby_options, limit=3)}"
+                if nearby_options
+                else ""
+            )
+            return (
+                "Using your shared location, the nearest pantry I found is:\n"
+                f"{_format_pantry_options([nearest], limit=1)}"
+                f"{nearby_text}\n\n"
+                "Distances are approximate."
+            )
 
     zip_match = re.search(r"\b\d{5}(?:-\d{4})?\b", message)
     if zip_match:
@@ -288,6 +423,7 @@ def call_gemini_chat(
     history: list[tuple[str, str]] | None = None,
     system_prompt: str = DEFAULT_CHATBOT_SYSTEM_PROMPT,
     pantry_id: int | None = None,
+    user_location: dict | None = None,
     include_db_context: bool = True,
 ) -> str | None:
     """Send one user turn to Gemini and return the assistant text.
@@ -302,7 +438,7 @@ def call_gemini_chat(
         if direct_answer:
             return direct_answer
 
-    nearest_answer = _answer_nearest_pantry_question(user_message)
+    nearest_answer = _answer_nearest_pantry_question(user_message, user_location=user_location)
     if nearest_answer:
         return nearest_answer
 

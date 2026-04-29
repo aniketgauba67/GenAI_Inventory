@@ -4,6 +4,11 @@ type ChatRequestPayload = {
   message?: string;
   history?: Array<["user" | "assistant", string]>;
   pantryId?: string | null;
+  userLocation?: {
+    latitude: number;
+    longitude: number;
+    accuracy?: number | null;
+  } | null;
 };
 
 export async function POST(req: Request) {
@@ -26,6 +31,7 @@ export async function POST(req: Request) {
         message,
         history: payload.history || [],
         pantry_id: payload.pantryId ?? null,
+        user_location: payload.userLocation ?? null,
       }),
       cache: "no-store",
     });

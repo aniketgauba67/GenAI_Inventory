@@ -70,6 +70,26 @@ class TestChatEndpoint:
             })
         assert captured.get("pantry_id") == 5
 
+    def test_user_location_is_forwarded(self, client):
+        captured = {}
+        def fake_chat(**kwargs):
+            captured.update(kwargs)
+            return "ok"
+        with patch("routers.chat.call_gemini_chat", side_effect=fake_chat):
+            client.post("/chat/message", json={
+                "message": "closest pantry near me",
+                "user_location": {
+                    "latitude": 40.02,
+                    "longitude": -82.44,
+                    "accuracy": 25,
+                },
+            })
+        assert captured.get("user_location") == {
+            "latitude": 40.02,
+            "longitude": -82.44,
+            "accuracy": 25.0,
+        }
+
     def test_null_pantry_id_is_accepted(self, client):
         with patch("routers.chat.call_gemini_chat", return_value="ok"):
             resp = client.post("/chat/message", json={
