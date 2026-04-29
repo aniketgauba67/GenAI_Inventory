@@ -1,3 +1,27 @@
+/******************************** AppShell.tsx ***************************************
+ *
+ *  Module: AppShell Component
+ *
+ *  This module renders shared application layout for authenticated frontend
+ *  pages.
+ *
+ *  The module provides:
+ *
+ *  - navigation shell markup.
+ *  - consistent content framing for staff pages.
+ *
+ *  Key Structures Used:
+ *
+ *  - React children, session context, and layout regions.
+ *
+ *  This module ensures:
+ *
+ *  - authenticated pages share one navigation pattern.
+ *  - page content remains organized across routes.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ *****************************************************************************/
 "use client";
 
 import Link from "next/link";

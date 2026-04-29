@@ -1,3 +1,27 @@
+/******************************** SummaryCards.tsx ***************************************
+ *
+ *  Module: SummaryCards Component
+ *
+ *  This module renders inventory status data in a reusable frontend
+ *  component.
+ *
+ *  The module provides:
+ *
+ *  - inventory quantity or status display.
+ *  - shared formatting for customer and staff screens.
+ *
+ *  Key Structures Used:
+ *
+ *  - React props, category labels, ratios, and level values.
+ *
+ *  This module ensures:
+ *
+ *  - inventory data is displayed consistently across views.
+ *  - status details stay easy to scan.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ *****************************************************************************/
 "use client";
 
 type SummaryCardsProps = {

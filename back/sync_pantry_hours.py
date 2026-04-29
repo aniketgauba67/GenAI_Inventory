@@ -1,13 +1,26 @@
-"""Sync seeded pantry operating hours into existing pantry rows without wiping data.
-
-This script updates `pantries.operating_hours` in place using the source-of-truth
-hours from `db/seed_real_pantries.py`. It matches rows by location first and
-falls back to name when needed, so it can repair existing databases that were
-seeded before the hours were corrected.
-
-By default it does not rename pantries, which keeps existing pantry-name logins
-stable. Use `--update-names` only if you also want the seasonal display names
-from the seed data.
+"""******************************* sync_pantry_hours.py ***************************************
+ *
+ *  Module: Sync Pantry Hours
+ *
+ *  This module supports the FastAPI backend for GenAI Inventory.
+ *
+ *  The module provides:
+ *
+ *  - backend helper functions or scripts.
+ *  - shared runtime behavior for API and maintenance workflows.
+ *
+ *  Key Structures Used:
+ *
+ *  - Python modules, environment settings, and database helpers.
+ *
+ *  This module ensures:
+ *
+ *  - backend workflows remain organized by responsibility.
+ *  - scripts can be run for local debugging and maintenance.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ ****************************************************************************
 """
 
 from __future__ import annotations

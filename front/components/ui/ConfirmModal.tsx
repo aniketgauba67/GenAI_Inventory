@@ -1,3 +1,28 @@
+/******************************** ConfirmModal.tsx ***************************************
+ *
+ *  Module: ConfirmModal Component
+ *
+ *  This module provides a reusable styled control for the frontend
+ *  interface.
+ *
+ *  The module provides:
+ *
+ *  - consistent Tailwind styling.
+ *  - typed React props for reuse.
+ *  - accessible markup patterns where applicable.
+ *
+ *  Key Structures Used:
+ *
+ *  - React component props, class maps, and shared UI primitives.
+ *
+ *  This module ensures:
+ *
+ *  - common controls stay visually consistent.
+ *  - pages avoid duplicating low-level UI markup.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ *****************************************************************************/
 "use client";
 
 import { useEffect, useRef } from "react";

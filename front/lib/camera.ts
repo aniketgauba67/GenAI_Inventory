@@ -1,3 +1,26 @@
+/******************************** camera.ts ***************************************
+ *
+ *  Module: Camera
+ *
+ *  This module provides shared frontend helper logic for the application.
+ *
+ *  The module provides:
+ *
+ *  - utility functions imported by pages and components.
+ *  - one place for repeated frontend behavior.
+ *
+ *  Key Structures Used:
+ *
+ *  - TypeScript exports and shared constants.
+ *
+ *  This module ensures:
+ *
+ *  - frontend logic avoids copy-paste drift.
+ *  - pages can rely on typed helper functions.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ *****************************************************************************/
 import { Capacitor } from "@capacitor/core";
 import { Camera, MediaTypeSelection, type CameraPermissionType, type CameraPermissionState } from "@capacitor/camera";
 

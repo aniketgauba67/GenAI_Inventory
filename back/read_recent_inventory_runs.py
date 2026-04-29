@@ -1,7 +1,26 @@
-"""Read back the most recent persisted inventory runs from AWS RDS/Postgres.
-
-Useful for confirming which `warehouse-snapshot` row is currently acting as the denominator
-for volunteer ratio calculations.
+"""******************************* read_recent_inventory_runs.py ***************************************
+ *
+ *  Module: Read Recent Inventory Runs
+ *
+ *  This module supports the FastAPI backend for GenAI Inventory.
+ *
+ *  The module provides:
+ *
+ *  - backend helper functions or scripts.
+ *  - shared runtime behavior for API and maintenance workflows.
+ *
+ *  Key Structures Used:
+ *
+ *  - Python modules, environment settings, and database helpers.
+ *
+ *  This module ensures:
+ *
+ *  - backend workflows remain organized by responsibility.
+ *  - scripts can be run for local debugging and maintenance.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ ****************************************************************************
 """
 
 from __future__ import annotations

@@ -1,3 +1,30 @@
+"""******************************* manager.py ***************************************
+ *
+ *  Module: Manager Upload Router
+ *
+ *  This module accepts warehouse order forms used as pantry baseline
+ *  inventory.
+ *
+ *  The module provides:
+ *
+ *  - order-form image upload and aggregation.
+ *  - baseline inventory update endpoints.
+ *  - inventory run persistence for manager review.
+ *
+ *  Key Structures Used:
+ *
+ *  - FastAPI file uploads, SQLAlchemy sessions, inventory category maps.
+ *
+ *  This module ensures:
+ *
+ *  - manager baselines are normalized to the shared category list.
+ *  - submitted quantities update the pantry inventory reference data.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ ****************************************************************************
+"""
+
 import logging
 from datetime import datetime
 from uuid import uuid4
@@ -27,6 +54,15 @@ router = APIRouter(prefix="/manager", tags=["manager"])
 async def upload_order_form(
     files: list[UploadFile] = File(..., description="Order form image(s)"),
 ):
+    """Extract and aggregate baseline inventory from manager order-form images.
+
+    Parameters:
+        files: One or more order-form image pages uploaded by a manager.
+
+    Returns:
+        A JSON response containing per-file metadata, aggregate inventory totals,
+        and optional per-page inventory detections.
+    """
     if not files:
         log.warning("Order form upload called with no files")
         return {"ok": False, "error": "No files provided"}

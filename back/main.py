@@ -1,3 +1,32 @@
+"""******************************* main.py ***************************************
+ *
+ *  Module: FastAPI Application Entrypoint
+ *
+ *  This module configures middleware, routers, and scheduler lifecycle for
+ *  the backend API.
+ *
+ *  The module provides:
+ *
+ *  - FastAPI application construction.
+ *  - CORS middleware configuration.
+ *  - router registration for upload, auth, review, manager, customer, chat,
+ *  and volunteer inventory routes.
+ *
+ *  Key Structures Used:
+ *
+ *  - FastAPI app instance, router modules, and scheduler lifecycle context.
+ *
+ *  This module ensures:
+ *
+ *  - the API starts consistently from package and local backend
+ *  entrypoints.
+ *  - background scheduler jobs start and stop with the web application.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ ****************************************************************************
+"""
+
 import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -29,6 +58,15 @@ logging.basicConfig(level=logging.INFO)
 
 @asynccontextmanager
 async def lifespan(application: FastAPI):
+    """Start and stop background jobs with the FastAPI lifecycle.
+
+    Parameters:
+        application: The FastAPI application instance managed by the server.
+
+    Returns:
+        An async context manager that starts the scheduler before requests are
+        served and stops it during application shutdown.
+    """
     scheduler.start()
     yield
     scheduler.stop()

@@ -1,7 +1,26 @@
-"""Password hashing utilities for secure credential storage.
-
-This module provides functions to hash and verify passwords using bcrypt.
-Install bcrypt with: pip install bcrypt
+"""******************************* password_utils.py ***************************************
+ *
+ *  Module: Password Utils
+ *
+ *  This module supports database access for the GenAI Inventory backend.
+ *
+ *  The module provides:
+ *
+ *  - SQLAlchemy models, session helpers, or seed utilities.
+ *  - database-facing helpers used by backend routes.
+ *
+ *  Key Structures Used:
+ *
+ *  - SQLAlchemy engines, sessions, models, and pantry records.
+ *
+ *  This module ensures:
+ *
+ *  - database code stays separate from route handlers.
+ *  - backend persistence uses a consistent schema.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ ****************************************************************************
 """
 
 import hashlib

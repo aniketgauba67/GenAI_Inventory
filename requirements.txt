@@ -1,1 +1,15 @@
+# Requirements.
+#
+# This file supports the GenAI Inventory application.
+#
+# The file provides:
+# - checked-in configuration or documentation for the project.
+#
+# Key Structures Used:
+# - repository-level source or configuration files.
+#
+# This file ensures:
+# - contributors can understand the file purpose quickly.
+#
+# Editors: Aniket, Dipankar, Liam, Jin, and Philip.
 -r back/requirements.txt

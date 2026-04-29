@@ -1,3 +1,27 @@
+/******************************** route.ts ***************************************
+ *
+ *  Module: Frontend API Route
+ *
+ *  This module proxies frontend requests to backend services and
+ *  authentication handlers.
+ *
+ *  The module provides:
+ *
+ *  - Next.js route handlers for browser requests.
+ *  - backend API forwarding with consistent response handling.
+ *
+ *  Key Structures Used:
+ *
+ *  - Next.js route modules, request objects, and response payloads.
+ *
+ *  This module ensures:
+ *
+ *  - frontend calls stay behind a stable local API path.
+ *  - backend errors are surfaced in a predictable shape.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ *****************************************************************************/
 import NextAuth, { type NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 

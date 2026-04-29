@@ -1,7 +1,19 @@
-# Development/testing dependencies — never deploy to production
-# Install: pip install -r requirements-dev.txt
-
-# Core test runner
+# Requirements Dev.
+#
+# This file supports the FastAPI backend for GenAI Inventory.
+#
+# The file provides:
+# - backend helper functions or scripts.
+# - shared runtime behavior for API and maintenance workflows.
+#
+# Key Structures Used:
+# - Python modules, environment settings, and database helpers.
+#
+# This file ensures:
+# - backend workflows remain organized by responsibility.
+# - scripts can be run for local debugging and maintenance.
+#
+# Editors: Aniket, Dipankar, Liam, Jin, and Philip.
 pytest>=8.0
 pytest-mock>=3.14          # pytest.mock fixture (wrapper around unittest.mock)
 pytest-asyncio>=0.23       # async test support

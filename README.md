@@ -1,5 +1,22 @@
 # GenAI Inventory
 
+**Module:** Project README
+**Purpose:** Documents the GenAI Inventory workflow, repository structure, and local setup steps.
+
+**The document provides:**
+- a high-level feature summary for the pantry workflow.
+- backend and frontend setup commands.
+- the fixed inventory categories used across the application.
+
+**Key Structures Used:**
+- repository folders for `back`, `front`, and `db`.
+
+**This document ensures:**
+- new contributors can find the main project entry points quickly.
+- setup instructions stay close to the codebase.
+
+**Editors:** Aniket, Dipankar, Liam, Jin, and Philip.
+
 Volunteer inventory workflow:
 - upload shelf photos
 - detect item counts in the fixed 19 categories with Gemini
@@ -41,7 +58,7 @@ The project uses only these 19 categories:
 
 ## Backend Env
 
-Create [back/.env](/Users/aniketgauba/Documents/GitHub/GenAI_Inventory/back/.env):
+Create `back/.env`:
 
 ```env
 DB_HOST=inventory-db.cdkgm4c2klqg.us-east-2.rds.amazonaws.com
@@ -58,10 +75,15 @@ Backend scripts load `back/.env` directly.
 ## Backend Setup
 
 ```bash
-cd back
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+uvicorn back.main:app --reload --port 8000
+```
+
+If you are already inside `back/`, this also works:
+
+```bash
 uvicorn main:app --reload --port 8000
 ```
 
@@ -226,25 +248,25 @@ curl -X POST http://localhost:8000/volunteer/inventory/submit \
 List pantries:
 
 ```bash
-python back/list_pantries.py
+python -m back.list_pantries
 ```
 
 Read the latest stored run:
 
 ```bash
-python back/read_latest_inventory_run.py
+python -m back.read_recent_inventory_runs --limit 1
 ```
 
 Read the most recent 5 runs:
 
 ```bash
-python back/read_recent_inventory_runs.py
+python -m back.read_recent_inventory_runs
 ```
 
 Run the automated backend workflow check:
 
 ```bash
-python back/run_volunteer_workflow_check.py
+python -m back.run_volunteer_workflow_check
 ```
 
 That helper script:
@@ -256,7 +278,7 @@ That helper script:
 Run the active workflow/domain tests:
 
 ```bash
-python -m unittest back/tests/test_inventory_domain.py
+python -m pytest back/tests
 ```
 
 ## Frontend Quality Checks (Day 7)

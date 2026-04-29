@@ -1,7 +1,27 @@
-"""Warehouse import and volunteer submission endpoints for the active pantry workflow.
-
-The working schema stores both warehouse imports and volunteer submissions in the same
-`inventory_runs` table. The `source` field tells the app which kind of row it is reading.
+"""******************************* volunteer_inventory.py ***************************************
+ *
+ *  Module: Backend Router
+ *
+ *  This module defines API endpoints for the GenAI Inventory backend.
+ *
+ *  The module provides:
+ *
+ *  - FastAPI route handlers.
+ *  - request validation and response shaping.
+ *  - service or database calls for one workflow area.
+ *
+ *  Key Structures Used:
+ *
+ *  - FastAPI router objects, Pydantic schemas, and SQLAlchemy helpers.
+ *
+ *  This module ensures:
+ *
+ *  - frontend API calls have stable backend endpoints.
+ *  - route logic remains grouped by workflow.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ ****************************************************************************
 """
 
 from __future__ import annotations

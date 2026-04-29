@@ -1,3 +1,30 @@
+/******************************** page.tsx ***************************************
+ *
+ *  Module: Customer Pantry Directory Page
+ *
+ *  This module renders the customer-facing pantry search, filtering, and
+ *  chatbot experience.
+ *
+ *  The module provides:
+ *
+ *  - pantry search and category filtering.
+ *  - open/closed timing hints.
+ *  - customer chatbot access with optional location context.
+ *
+ *  Key Structures Used:
+ *
+ *  - React state, Next.js client rendering, pantry records, and category
+ *  groups.
+ *
+ *  This module ensures:
+ *
+ *  - customers can scan pantry inventory without seeing unnecessary raw
+ *  lists.
+ *  - pantry cards stay sorted by availability and timing.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ *****************************************************************************/
 "use client";
 
 import Link from "next/link";

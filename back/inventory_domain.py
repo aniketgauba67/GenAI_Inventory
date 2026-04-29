@@ -1,4 +1,31 @@
-"""Shared inventory and pantry helper utilities for the volunteer workflow."""
+"""******************************* inventory_domain.py ***************************************
+ *
+ *  Module: Inventory Domain Utilities
+ *
+ *  This module centralizes category normalization, validation, and
+ *  inventory level calculations.
+ *
+ *  The module provides:
+ *
+ *  - the fixed inventory category list.
+ *  - quantity normalization and validation helpers.
+ *  - ratio, level, and pantry resolution helpers.
+ *
+ *  Key Structures Used:
+ *
+ *  - category maps, ratio dictionaries, level summaries, SQLAlchemy pantry
+ *  queries.
+ *
+ *  This module ensures:
+ *
+ *  - frontend, backend, and AI output stay aligned to the same category
+ *  names.
+ *  - invalid or negative inventory values are rejected early.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ ****************************************************************************
+"""
 
 from __future__ import annotations
 
