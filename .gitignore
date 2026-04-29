@@ -3,6 +3,11 @@ uploads/
 **/.venv/
 __pycache__/
 *.pyc
+.pytest_cache/
+*.tsbuildinfo
+front/android/.gradle/
+front/android/build/
+front/android/**/build/
 .env/
 env
 .env
