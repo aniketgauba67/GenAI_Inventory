@@ -45,12 +45,6 @@ type DashboardLink = {
   description: string;
 };
 
-type OperatingHourSlot = {
-  day: string;
-  open: string;
-  close: string;
-};
-
 type PantryCredential = {
   pantryId: string;
   name: string;
@@ -58,14 +52,12 @@ type PantryCredential = {
   hasCredentials: boolean;
   isOpen: boolean;
   manualOverride: boolean;
-  operatingHours: OperatingHourSlot[];
 };
 
 type PantryManageDraft = {
   name: string;
   location: string;
   newPassword: string;
-  operatingHours: OperatingHourSlot[];
 };
 
 type DashboardClientProps = {
@@ -216,10 +208,10 @@ export default function DashboardClient({
           prev.map((c) =>
             c.pantryId === pantryIdValue
               ? {
-                  ...c,
-                  isOpen: firstToggle.data.isOpen ?? c.isOpen,
-                  manualOverride: firstToggle.data.manualOverride ?? true,
-                }
+                ...c,
+                isOpen: firstToggle.data.isOpen ?? c.isOpen,
+                manualOverride: firstToggle.data.manualOverride ?? true,
+              }
               : c
           )
         );
@@ -240,10 +232,10 @@ export default function DashboardClient({
         prev.map((c) =>
           c.pantryId === pantryIdValue
             ? {
-                ...c,
-                isOpen: secondToggle.data.isOpen ?? c.isOpen,
-                manualOverride: secondToggle.data.manualOverride ?? true,
-              }
+              ...c,
+              isOpen: secondToggle.data.isOpen ?? c.isOpen,
+              manualOverride: secondToggle.data.manualOverride ?? true,
+            }
             : c
         )
       );
@@ -303,12 +295,7 @@ export default function DashboardClient({
         return;
       }
 
-      setCredentials(
-        data.pantries.map((pantry) => ({
-          ...pantry,
-          operatingHours: Array.isArray(pantry.operatingHours) ? pantry.operatingHours : [],
-        }))
-      );
+      setCredentials(data.pantries);
     } catch (error) {
       setCredentialsError(
         error instanceof Error ? error.message : "Failed to load pantry credentials."
@@ -537,82 +524,6 @@ export default function DashboardClient({
     }
   }
 
-  async function saveRowSchedule(pantryIdValue: string) {
-    const operatingHours = rowDrafts[pantryIdValue]?.operatingHours ?? [];
-
-    setSavingRows((prev) => ({ ...prev, [pantryIdValue]: true }));
-    setRowError((prev) => ({ ...prev, [pantryIdValue]: "" }));
-    setRowNotice((prev) => ({ ...prev, [pantryIdValue]: "" }));
-
-    try {
-      const response = await fetch(`${apiBase}/auth/pantry/schedule`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          pantryId: pantryIdValue,
-          operatingHours,
-        }),
-      });
-
-      const data = (await response.json()) as {
-        ok?: boolean;
-        message?: string;
-        error?: string;
-        operatingHours?: OperatingHourSlot[];
-        isOpen?: boolean;
-        manualOverride?: boolean;
-      };
-
-      if (!response.ok || !data.ok) {
-        setRowError((prev) => ({
-          ...prev,
-          [pantryIdValue]: data.error || "Failed to update operating hours.",
-        }));
-        showToast(data.error || "Failed to update operating hours.", "error");
-        return;
-      }
-
-      const nextOperatingHours = Array.isArray(data.operatingHours) ? data.operatingHours : [];
-      setRowDrafts((prev) => ({
-        ...prev,
-        [pantryIdValue]: {
-          name: prev[pantryIdValue]?.name ?? "",
-          location: prev[pantryIdValue]?.location ?? "",
-          newPassword: prev[pantryIdValue]?.newPassword ?? "",
-          operatingHours: cloneOperatingHours(nextOperatingHours),
-        },
-      }));
-      setCredentials((prev) =>
-        prev.map((credential) =>
-          credential.pantryId === pantryIdValue
-            ? {
-                ...credential,
-                operatingHours: nextOperatingHours,
-                isOpen: data.isOpen ?? credential.isOpen,
-                manualOverride: data.manualOverride ?? credential.manualOverride,
-              }
-            : credential
-        )
-      );
-      setRowNotice((prev) => ({
-        ...prev,
-        [pantryIdValue]: data.message || "Operating hours updated.",
-      }));
-      showToast(data.message || "Operating hours updated.", "success");
-    } catch (error) {
-      setRowError((prev) => ({
-        ...prev,
-        [pantryIdValue]:
-          error instanceof Error ? error.message : "Failed to update operating hours.",
-      }));
-      showToast("Failed to update operating hours.", "error");
-    } finally {
-      setSavingRows((prev) => ({ ...prev, [pantryIdValue]: false }));
-    }
-  }
-
   async function deleteRowCredentials(pantryIdValue: string) {
     setSavingRows((prev) => ({ ...prev, [pantryIdValue]: true }));
     setRowError((prev) => ({ ...prev, [pantryIdValue]: "" }));
@@ -800,15 +711,14 @@ export default function DashboardClient({
             onClick={() => void handleStatusChoice(cred.pantryId, choice, cred)}
             disabled={!!togglingRows[cred.pantryId]}
             aria-pressed={current === choice}
-            className={`flex-1 px-3 py-1.5 text-xs font-semibold capitalize transition ${
-              current === choice
+            className={`flex-1 px-3 py-1.5 text-xs font-semibold capitalize transition ${current === choice
                 ? choice === "open"
                   ? "bg-teal-600 text-white dark:bg-teal-500"
                   : choice === "closed"
                     ? "bg-rose-600 text-white dark:bg-rose-500"
                     : "bg-slate-700 text-white dark:bg-slate-200 dark:text-slate-900"
                 : "bg-white text-slate-600 hover:bg-slate-50 dark:bg-zinc-900 dark:text-slate-300 dark:hover:bg-zinc-800"
-            }`}
+              }`}
           >
             {choice.charAt(0).toUpperCase() + choice.slice(1)}
           </button>
@@ -1106,15 +1016,15 @@ export default function DashboardClient({
                 setCreatePantryNotice(null);
                 setCreatePantryError(null);
               }}
-            className="rounded-lg bg-zinc-900 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
-          >
-            {showCreatePantryForm ? "Close" : "Create Pantry Login"}
-          </button>
-          <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
-            Use this only when a pantry needs first-time credentials or a reset.
-          </p>
+              className="rounded-lg bg-zinc-900 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+            >
+              {showCreatePantryForm ? "Close" : "Create Pantry Login"}
+            </button>
+            <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+              Use this only when a pantry needs first-time credentials or a reset.
+            </p>
 
-          {showCreatePantryForm && (
+            {showCreatePantryForm && (
               <div className="mt-3 grid gap-2 sm:grid-cols-3">
                 <input
                   value={newPantryName}
@@ -1246,15 +1156,6 @@ export default function DashboardClient({
                     </p>
                   </div>
 
-                  <div className="mt-3 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 dark:border-zinc-800 dark:bg-zinc-900/70">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500 dark:text-zinc-400">
-                      Hours
-                    </p>
-                    <p className="mt-1 text-xs text-zinc-700 dark:text-zinc-300">
-                      {formatOperatingHours(cred.operatingHours)}
-                    </p>
-                  </div>
-
                   <div className="mt-3 flex flex-col gap-2">
                     <button
                       type="button"
@@ -1265,7 +1166,56 @@ export default function DashboardClient({
                     </button>
 
                     {openRowMenu === cred.pantryId && (
-                      renderManagePanel(cred)
+                      <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-800/60">
+                        <p className="mb-2 text-xs text-zinc-500 dark:text-zinc-400">
+                          Leave any field blank to keep its current value.
+                        </p>
+                        <div className="flex flex-col gap-2">
+                          <input
+                            value={rowDrafts[cred.pantryId]?.name ?? ""}
+                            onChange={(e) =>
+                              updateRowDraftField(cred.pantryId, "name", e.target.value)
+                            }
+                            type="text"
+                            placeholder="New name"
+                            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-zinc-500 dark:focus:ring-zinc-800"
+                          />
+                          <input
+                            value={rowDrafts[cred.pantryId]?.location ?? ""}
+                            onChange={(e) =>
+                              updateRowDraftField(cred.pantryId, "location", e.target.value)
+                            }
+                            type="text"
+                            placeholder="New location"
+                            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-zinc-500 dark:focus:ring-zinc-800"
+                          />
+                          <input
+                            value={rowDrafts[cred.pantryId]?.newPassword ?? ""}
+                            onChange={(e) =>
+                              updateRowDraftField(cred.pantryId, "newPassword", e.target.value)
+                            }
+                            type="password"
+                            placeholder="New password"
+                            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-zinc-500 dark:focus:ring-zinc-800"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => saveRowUpdate(cred.pantryId)}
+                            disabled={savingRows[cred.pantryId]}
+                            className="self-start rounded-lg bg-zinc-900 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-zinc-800 disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+                          >
+                            {savingRows[cred.pantryId] ? "Saving..." : "Update"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDeleteTargetPantryId(cred.pantryId)}
+                            disabled={savingRows[cred.pantryId]}
+                            className="self-start rounded-lg border border-red-300 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-wide text-red-700 transition hover:bg-red-50 disabled:opacity-60 dark:border-red-800 dark:bg-zinc-900 dark:text-red-300 dark:hover:bg-red-950/30"
+                          >
+                            {savingRows[cred.pantryId] ? "Working..." : "Remove Login Credentials"}
+                          </button>
+                        </div>
+                      </div>
                     )}
 
                     {rowError[cred.pantryId] && (
@@ -1298,9 +1248,6 @@ export default function DashboardClient({
                     Open / Closed
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-zinc-600 dark:text-zinc-300">
-                    Hours
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-zinc-600 dark:text-zinc-300">
                     Manage
                   </th>
                 </tr>
@@ -1322,7 +1269,7 @@ export default function DashboardClient({
                 {!loadingCredentials && filteredCredentials.length === 0 && (
                   <tr>
                     <td
-                      colSpan={6}
+                      colSpan={5}
                       className="px-4 py-6"
                     >
                       <EmptyState

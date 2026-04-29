@@ -228,11 +228,10 @@ export default function ManagerViewPage() {
                 type="button"
                 onClick={handleToggleStatus}
                 disabled={togglingStatus}
-                className={`inline-flex min-h-[44px] items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-semibold transition ${
-                  isPantryOpen
+                className={`inline-flex min-h-[44px] items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-semibold transition ${isPantryOpen
                     ? "border-teal-300 bg-teal-50 text-teal-700 hover:bg-teal-100 dark:border-teal-800 dark:bg-teal-950/40 dark:text-teal-300 dark:hover:bg-teal-900/50"
                     : "border-rose-300 bg-rose-50 text-rose-700 hover:bg-rose-100 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300 dark:hover:bg-rose-900/50"
-                }`}
+                  }`}
               >
                 <span className={`h-2 w-2 rounded-full ${isPantryOpen ? "bg-teal-500" : "bg-rose-500"}`} />
                 {togglingStatus ? "..." : isPantryOpen ? "Open" : "Closed"}
@@ -259,67 +258,67 @@ export default function ManagerViewPage() {
       <div className="relative">
         <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-56 bg-[radial-gradient(circle_at_18%_12%,rgba(13,148,136,0.18),transparent_34%),radial-gradient(circle_at_82%_0%,rgba(249,115,22,0.14),transparent_30%)]" />
         <div className="mx-auto max-w-2xl space-y-5">
-        {isDirector && (
+          {isDirector && (
+            <Card className="rounded-3xl border border-slate-200/80 bg-white/90 p-5 shadow-sm backdrop-blur dark:border-slate-800/80 dark:bg-slate-950/60">
+              <SectionHeader
+                title="Choose target pantry"
+                subtitle="Director form uploads need an explicit pantry selection before extraction."
+              />
+              <Select
+                value={targetPantryId}
+                onChange={(e) => setTargetPantryId(e.target.value)}
+              >
+                {pantries.map((p) => (
+                  <option key={p.pantryId} value={p.pantryId}>
+                    {p.pantryId} - {p.name}
+                  </option>
+                ))}
+              </Select>
+              <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">
+                Current form target: {targetPantryId || "Select a pantry"}
+              </p>
+              {pantryLoadError && <Alert tone="error" className="mt-3">{pantryLoadError}</Alert>}
+            </Card>
+          )}
           <Card className="rounded-3xl border border-slate-200/80 bg-white/90 p-5 shadow-sm backdrop-blur dark:border-slate-800/80 dark:bg-slate-950/60">
-            <SectionHeader
-              title="Choose target pantry"
-              subtitle="Director form uploads need an explicit pantry selection before extraction."
-            />
-            <Select
-              value={targetPantryId}
-              onChange={(e) => setTargetPantryId(e.target.value)}
-            >
-              {pantries.map((p) => (
-                <option key={p.pantryId} value={p.pantryId}>
-                  {p.pantryId} - {p.name}
-                </option>
-              ))}
-            </Select>
-            <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">
-              Current form target: {targetPantryId || "Select a pantry"}
-            </p>
-            {pantryLoadError && <Alert tone="error" className="mt-3">{pantryLoadError}</Alert>}
+            <FlowStepper steps={["Upload", "Review", "Save Baseline"]} currentStep={0} />
           </Card>
-        )}
-        <Card className="rounded-3xl border border-slate-200/80 bg-white/90 p-5 shadow-sm backdrop-blur dark:border-slate-800/80 dark:bg-slate-950/60">
-          <FlowStepper steps={["Upload", "Review", "Save Baseline"]} currentStep={0} />
-        </Card>
-        <Card className="rounded-3xl border border-slate-200/80 bg-white/90 p-5 text-base text-zinc-600 shadow-sm backdrop-blur dark:border-slate-800/80 dark:bg-slate-950/60 dark:text-zinc-300">
-          <p className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Manager flow</p>
-          <p className="mt-1 leading-7">
-            Upload warehouse order form pages, review extracted category totals, then save as pantry baseline.
-          </p>
-          <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
-            Active pantry target: {targetPantryId || "Not selected"}
-          </p>
-        </Card>
-        <Card className="rounded-3xl border border-slate-200/80 bg-white/90 p-5 shadow-sm backdrop-blur dark:border-slate-800/80 dark:bg-slate-950/60">
-          <SectionHeader title="Upload order forms" subtitle="You can upload multiple pages in one request." />
-          <UploadDropzone
-            onFiles={handleFiles}
-            isDragging={isDragging}
-            setIsDragging={setIsDragging}
-            disabled={uploading}
-            title="Upload warehouse order form pages"
-            subtitle="You can upload both pages together"
-          />
-          {files.length === 0 && (
-            <EmptyState
-              className="mt-4"
-              title="No form pages selected"
-              description="Upload one or more order-form pages to extract category totals."
+          <Card className="rounded-3xl border border-slate-200/80 bg-white/90 p-5 text-base text-zinc-600 shadow-sm backdrop-blur dark:border-slate-800/80 dark:bg-slate-950/60 dark:text-zinc-300">
+            <p className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Manager flow</p>
+            <p className="mt-1 leading-7">
+              Upload warehouse order form pages, review extracted category totals, then save as pantry baseline.
+            </p>
+            <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+              Active pantry target: {targetPantryId || "Not selected"}
+            </p>
+          </Card>
+          <Card className="rounded-3xl border border-slate-200/80 bg-white/90 p-5 shadow-sm backdrop-blur dark:border-slate-800/80 dark:bg-slate-950/60">
+            <SectionHeader title="Upload order forms" subtitle="You can upload multiple pages in one request." />
+            <UploadDropzone
+              onFiles={handleFiles}
+              isDragging={isDragging}
+              setIsDragging={setIsDragging}
+              disabled={uploading}
+              title="Upload warehouse order form pages"
+              subtitle="You can upload both pages together"
             />
-          )}
-          {files.length > 0 && (
-            <div className="mt-4 space-y-4">
-              <FileList files={files} onRemove={(index) => setFiles((prev) => prev.filter((_, i) => i !== index))} />
-              <Button type="button" onClick={handleExtract} disabled={uploading} block size="lg" className="text-base">
-                {uploading ? "Extracting from form..." : "Extract category totals"}
-              </Button>
-            </div>
-          )}
-        </Card>
-        {error && <Alert tone="error">{error}</Alert>}
+            {files.length === 0 && (
+              <EmptyState
+                className="mt-4"
+                title="No form pages selected"
+                description="Upload one or more order-form pages to extract category totals."
+              />
+            )}
+            {files.length > 0 && (
+              <div className="mt-4 space-y-4">
+                <FileList files={files} onRemove={(index) => setFiles((prev) => prev.filter((_, i) => i !== index))} />
+                <Button type="button" onClick={handleExtract} disabled={uploading} block size="lg" className="text-base">
+                  {uploading ? "Extracting from form..." : "Extract category totals"}
+                </Button>
+              </div>
+            )}
+          </Card>
+          {error && <Alert tone="error">{error}</Alert>}
 
         </div>
       </div>

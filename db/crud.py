@@ -512,4 +512,4 @@ def delete_director_credentials(email: str) -> bool:
 
 if __name__ == "__main__":
     # check all pantries
-    get_pantry_items(7)
+    check_director_credentials("director@example.com", "password123")
