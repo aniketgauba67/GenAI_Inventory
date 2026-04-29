@@ -1,25 +1,12 @@
 import logging
-import sys
-from pathlib import Path
 
 from fastapi import APIRouter, File, Form, UploadFile
 
-ROOT_DIR = Path(__file__).resolve().parents[2]
-DB_DIR = ROOT_DIR / "db"
-if str(DB_DIR) not in sys.path:
-    sys.path.insert(0, str(DB_DIR))
-
-from database import SessionLocal  # noqa: E402
-from models import InventoryItem, Pantry  # noqa: E402
-
-try:
-    from .review import save_inventory_draft
-    from ..inventory_domain import INVENTORY_CATEGORIES, resolve_pantry
-    from ..services.gemini import call_gemini_inventory_images
-except ImportError:
-    from routers.review import save_inventory_draft
-    from inventory_domain import INVENTORY_CATEGORIES, resolve_pantry
-    from services.gemini import call_gemini_inventory_images
+from back.inventory_domain import INVENTORY_CATEGORIES, resolve_pantry
+from back.routers.review import save_inventory_draft
+from back.services.gemini import call_gemini_inventory_images
+from db.database import SessionLocal
+from db.models import InventoryItem, Pantry
 
 log = logging.getLogger(__name__)
 
@@ -88,7 +75,7 @@ async def upload_images(
                 if items:
                     max_quantities = {item.category_name: item.original_quantity for item in items}
                     log.info("Loaded original_quantity for %s categories (pantry %s)", len(items), pantry_id)
-                    print(f"[DEBUG] max_quantities passed to Gemini: {max_quantities}")
+                    log.debug("max_quantities passed to Gemini: %s", max_quantities)
         except Exception:
             log.exception("Could not load max_quantities from DB; proceeding without hint")
         finally:

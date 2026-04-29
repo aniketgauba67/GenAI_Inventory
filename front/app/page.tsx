@@ -13,7 +13,7 @@ import FloatingChat from "../components/chat/FloatingChat";
 import { getApiBase } from "../lib/api";
 import Select from "../components/ui/Select";
 import Skeleton from "../components/ui/Skeleton";
-import { CATEGORY_GROUPS } from "../components/workflow/CategoryGroupEditor";
+import { CATEGORY_GROUPS } from "../lib/inventoryCategories";
 
 type OperatingSlot = { day: string; open: string; close: string };
 

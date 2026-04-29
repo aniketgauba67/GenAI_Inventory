@@ -17,6 +17,12 @@ type FloatingChatProps = {
   pantryId?: string;
 };
 
+type ChatUserLocation = {
+  latitude: number;
+  longitude: number;
+  accuracy?: number | null;
+};
+
 function createMessage(role: ChatRole, text: string): ChatMessage {
   return {
     id: `${role}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
@@ -29,6 +35,38 @@ const INITIAL_ASSISTANT_MESSAGE = createMessage(
   "assistant",
   "Hi there! Ask me any questions about pantry inventory, stock levels, or recent updates.",
 );
+
+function isNearestPantryQuestion(message: string): boolean {
+  const normalized = message.toLowerCase();
+  return (
+    /\bpantr(?:y|ies)\b/.test(normalized) &&
+    (/\b(nearest|closest|nearby)\b/.test(normalized) || normalized.includes("near me"))
+  );
+}
+
+function getCurrentLocation(): Promise<ChatUserLocation | null> {
+  if (typeof navigator === "undefined" || !navigator.geolocation) {
+    return Promise.resolve(null);
+  }
+
+  return new Promise((resolve) => {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        resolve({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracy: position.coords.accuracy,
+        });
+      },
+      () => resolve(null),
+      {
+        enableHighAccuracy: false,
+        maximumAge: 5 * 60 * 1000,
+        timeout: 8000,
+      },
+    );
+  });
+}
 
 function getTypingDelay(currentChar: string): number {
   if (currentChar === "," || currentChar === ";") {
@@ -192,6 +230,7 @@ export default function FloatingChat({ pantryId = "" }: FloatingChatProps) {
     setIsSending(true);
 
     try {
+      const userLocation = isNearestPantryQuestion(trimmed) ? await getCurrentLocation() : null;
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -199,6 +238,7 @@ export default function FloatingChat({ pantryId = "" }: FloatingChatProps) {
           message: trimmed,
           history,
           pantryId: pantryId || null,
+          userLocation,
         }),
       });
 

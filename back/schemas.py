@@ -1,8 +1,6 @@
 from pydantic import BaseModel, Field
-try:
-    from .inventory_domain import INVENTORY_CATEGORIES
-except ImportError:
-    from inventory_domain import INVENTORY_CATEGORIES
+
+from back.inventory_domain import INVENTORY_CATEGORIES
 
 
 class InventoryCount(BaseModel):

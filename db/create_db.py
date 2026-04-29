@@ -1,8 +1,8 @@
 import os
 from dotenv import load_dotenv
 from sqlalchemy import text
-from database import engine, init_db
-from models import InventoryItem, Pantry, InventoryRun, LoginCredentials, DirectorCredentials # noqa: F401
+from db.database import engine, init_db
+from db.models import DirectorCredentials, InventoryItem, InventoryRun, LoginCredentials, Pantry # noqa: F401
 
 load_dotenv()
 

@@ -1,62 +1,32 @@
 from __future__ import annotations
 
-import importlib
-import sys
-from pathlib import Path
-
 from fastapi import APIRouter, HTTPException, status
 
-try:
-    from ..operating_hours import normalize_operating_hours
-    from ..schemas import (
-        AuthenticatedUser,
-        DirectorPasswordUpdateRequest,
-        DirectorPasswordUpdateResponse,
-        PantryCredentialDeleteRequest,
-        PantryCredentialDeleteResponse,
-        LoginRequest,
-        LoginResponse,
-        PantryCreateRequest,
-        PantryCreateResponse,
-        PantryCredentialRegistryResponse,
-        PantryManageUpdateRequest,
-        PantryManageUpdateResponse,
-        PantryPasswordUpdateRequest,
-        PantryPasswordUpdateResponse,
-        PantryScheduleUpdateRequest,
-        PantryScheduleUpdateResponse,
-        PantrySetStatusRequest,
-        PantryToggleStatusRequest,
-        PantryToggleStatusResponse,
-    )
-except ImportError:
-    from operating_hours import normalize_operating_hours
-    from schemas import (
-        AuthenticatedUser,
-        DirectorPasswordUpdateRequest,
-        DirectorPasswordUpdateResponse,
-        PantryCredentialDeleteRequest,
-        PantryCredentialDeleteResponse,
-        LoginRequest,
-        LoginResponse,
-        PantryCreateRequest,
-        PantryCreateResponse,
-        PantryCredentialRegistryResponse,
-        PantryManageUpdateRequest,
-        PantryManageUpdateResponse,
-        PantryPasswordUpdateRequest,
-        PantryPasswordUpdateResponse,
-        PantryScheduleUpdateRequest,
-        PantryScheduleUpdateResponse,
-        PantrySetStatusRequest,
-        PantryToggleStatusRequest,
-        PantryToggleStatusResponse,
-    )
-
-ROOT_DIR = Path(__file__).resolve().parents[2]
-DB_DIR = ROOT_DIR / "db"
-if str(DB_DIR) not in sys.path:
-    sys.path.insert(0, str(DB_DIR))
+from back.operating_hours import normalize_operating_hours
+from back.schemas import (
+    AuthenticatedUser,
+    DirectorPasswordUpdateRequest,
+    DirectorPasswordUpdateResponse,
+    PantryCredentialDeleteRequest,
+    PantryCredentialDeleteResponse,
+    LoginRequest,
+    LoginResponse,
+    PantryCreateRequest,
+    PantryCreateResponse,
+    PantryCredentialRegistryResponse,
+    PantryManageUpdateRequest,
+    PantryManageUpdateResponse,
+    PantryPasswordUpdateRequest,
+    PantryPasswordUpdateResponse,
+    PantryScheduleUpdateRequest,
+    PantryScheduleUpdateResponse,
+    PantrySetStatusRequest,
+    PantryToggleStatusRequest,
+    PantryToggleStatusResponse,
+)
+from db import crud
+from db.database import SessionLocal
+from db.models import Pantry as PantryModel
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -65,7 +35,7 @@ DEFAULT_DIRECTOR_EMAIL = "director@example.com"
 
 
 def _get_crud_module():
-    return importlib.import_module("crud")
+    return crud
 
 
 def _build_director_user(username: str) -> AuthenticatedUser:
@@ -351,8 +321,8 @@ def set_pantry_status(payload: PantrySetStatusRequest) -> PantryToggleStatusResp
 def clear_pantry_override(payload: PantryToggleStatusRequest) -> PantryToggleStatusResponse:
     """Remove manual override and immediately re-evaluate the schedule."""
     from datetime import datetime
-    from zoneinfo import ZoneInfo
-    from scheduler import _is_within_schedule, TIMEZONE
+
+    from back.scheduler import TIMEZONE, _is_within_schedule
 
     pantry_id_raw = payload.pantryId.strip()
     if not pantry_id_raw.isdigit():
@@ -360,8 +330,6 @@ def clear_pantry_override(payload: PantryToggleStatusRequest) -> PantryToggleSta
 
     pantry_id = int(pantry_id_raw)
 
-    from database import SessionLocal
-    from models import Pantry as PantryModel
     db = SessionLocal()
     try:
         pantry = db.query(PantryModel).filter(PantryModel.id == pantry_id).first()

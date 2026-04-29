@@ -1,12 +1,11 @@
 """SQLAlchemy ORM models for pantry, inventory item, and run history tables."""
 
-from datetime import datetime, timedelta
-from unicodedata import category
+from datetime import datetime
 
 from sqlalchemy import CheckConstraint, Column, DateTime, ForeignKey, Index, Integer, String, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.hybrid import hybrid_property
-from database import Base
+from db.database import Base
 from sqlalchemy.dialects.postgresql import JSONB
 
 
