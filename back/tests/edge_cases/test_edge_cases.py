@@ -201,7 +201,7 @@ class TestAPIEdgeCases:
 
     def test_login_extra_fields_are_ignored(self, client):
         from unittest.mock import patch
-        with patch("crud.check_director_credentials", return_value=True):
+        with patch("db.crud.check_director_credentials", return_value=True):
             resp = client.post("/auth/login", json={
                 "username": "director",
                 "password": "pw",

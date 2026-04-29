@@ -1,3 +1,21 @@
+# Continuous Integration Workflow.
+#
+# This file runs the backend and frontend validation steps for pull
+# requests and branch updates.
+#
+# The file provides:
+# - backend dependency installation and pytest execution.
+# - frontend dependency installation, linting, and tests.
+# - a repeatable CI gate for the development branch.
+#
+# Key Structures Used:
+# - GitHub Actions jobs, steps, and branch triggers.
+#
+# This file ensures:
+# - CI uses the same commands expected by local developers.
+# - failed backend or frontend checks stop the workflow early.
+#
+# Editors: Aniket, Dipankar, Liam, Jin, and Philip.
 name: CI
 
 on:

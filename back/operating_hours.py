@@ -1,4 +1,27 @@
-"""Helpers for pantry operating-hours validation and normalization."""
+"""******************************* operating_hours.py ***************************************
+ *
+ *  Module: Operating Hours
+ *
+ *  This module supports the FastAPI backend for GenAI Inventory.
+ *
+ *  The module provides:
+ *
+ *  - backend helper functions or scripts.
+ *  - shared runtime behavior for API and maintenance workflows.
+ *
+ *  Key Structures Used:
+ *
+ *  - Python modules, environment settings, and database helpers.
+ *
+ *  This module ensures:
+ *
+ *  - backend workflows remain organized by responsibility.
+ *  - scripts can be run for local debugging and maintenance.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ ****************************************************************************
+"""
 
 from __future__ import annotations
 
@@ -15,6 +38,14 @@ def _slot_value(slot, key: str) -> str | None:
 
 
 def parse_hhmm(value: str) -> int | None:
+    """Convert a HH:MM time string into minutes after midnight.
+
+    Parameters:
+        value: Time text expected in 24-hour `HH:MM` format.
+
+    Returns:
+        Minute offset after midnight, or `None` when the text is invalid.
+    """
     try:
         hour_text, minute_text = value.split(":")
         hour = int(hour_text)
@@ -28,6 +59,16 @@ def parse_hhmm(value: str) -> int | None:
 
 
 def normalize_operating_hours(operating_hours: list) -> tuple[list[dict[str, str]], str | None]:
+    """Validate and sort pantry operating-hour slots for storage.
+
+    Parameters:
+        operating_hours: List of dict-like or object-like slots with `day`,
+        `open`, and `close` values.
+
+    Returns:
+        A pair of `(normalized_hours, error)`. The error is `None` when every
+        slot is valid, otherwise it contains the validation message.
+    """
     normalized: list[dict[str, str]] = []
 
     for index, slot in enumerate(operating_hours, start=1):

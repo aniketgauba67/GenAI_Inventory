@@ -1,15 +1,45 @@
+"""******************************* gemini.py ***************************************
+ *
+ *  Module: Gemini Inventory Service
+ *
+ *  This module extracts inventory counts from uploaded shelf images with
+ *  Gemini.
+ *
+ *  The module provides:
+ *
+ *  - structured inventory schemas for Gemini responses.
+ *  - shelf-image and order-form prompts.
+ *  - rate-limit-safe Gemini call wrappers.
+ *
+ *  Key Structures Used:
+ *
+ *  - Pydantic inventory model, prompt templates, image byte payloads.
+ *
+ *  This module ensures:
+ *
+ *  - Gemini output is coerced into the fixed category schema.
+ *  - quota and API failures return safe `None` results to callers.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ ****************************************************************************
+"""
+
 import base64
 import logging
 
-from config import GEMINI_MODEL, get_gemini_api_key
-from schemas import InventoryCount
+from back.config import GEMINI_MODEL, get_gemini_api_key
+from back.inventory_domain import INVENTORY_CATEGORIES
+from back.schemas import InventoryCount
 
 log = logging.getLogger(__name__)
+
+CATEGORY_LIST = ", ".join(INVENTORY_CATEGORIES)
 
 INVENTORY_PROMPT = """You are counting food inventory from one or more warehouse or pantry photos. Each image may show a different shelf or area.
 
 Rules:
-- Classify every visible food item across ALL photos into exactly one of these categories: Beverages, Juices, Cereal, Breakfast, Meat, Fish, Poultry, Frozen, Vegetables, Fruits, Nuts, Soup, Grains, Pasta, Snacks, Spices, Sauces, Condiments, Misc Products.
+- Classify every visible food item across ALL photos into exactly one of these categories: {categories}.
 - Examples: chocolate dip and gingerbread houses → Snacks. Cereal boxes → Cereal. Juice bottles → Juices.
 - For each category, output a single TOTAL quantity across ALL provided images: count boxes, bottles, bags, or visible units and estimate how many units there are in the pantry as a whole. Output must be an integer only; no decimals.
 - If multiple photos show different shelves, sum what is visible across them. If two photos overlap on the same shelf, avoid double-counting the same physical items when you can tell they are the same.
@@ -41,7 +71,7 @@ IMPORTANT:
 - If unsure between two digits, prefer the most conservative plausible integer from the handwriting.
 
 Mapping Rules:
-- Map each row's "Product Description" to exactly one of these categories: Beverages, Juices, Cereal, Breakfast, Meat, Fish, Poultry, Frozen, Vegetables, Fruits, Nuts, Soup, Grains, Pasta, Snacks, Spices, Sauces, Condiments, Misc Products.
+- Map each row's "Product Description" to exactly one of these categories: {categories}.
 - Example mappings based on the form:
   - "Smoothies", "Hydration Drink", "Protein Shake" -> Beverages or Juices
   - "Cereals - Ralston" -> Cereal
@@ -57,7 +87,7 @@ Mapping Rules:
 Quantity Rules:
 - Extract the HANDWRITTEN 'Amount Shipped' value.
 - Output exactly one integer per category (sum of this page only).
-- Use 0 for any category not found on the form. No decimals."""
+- Use 0 for any category not found on the form. No decimals.""".format(categories=CATEGORY_LIST)
 
 
 def call_gemini_inventory_images(
@@ -95,6 +125,7 @@ def call_gemini_inventory_images(
                 }
             )
         prompt = INVENTORY_PROMPT.format(
+            categories=CATEGORY_LIST,
             max_quantities_section=_build_max_quantities_section(max_quantities)
         )
         content.append({"type": "text", "text": prompt})
@@ -113,11 +144,30 @@ def call_gemini_inventory_images(
 
 
 def call_gemini_inventory(image_bytes: bytes, mime_type: str) -> dict | None:
+    """Extract shelf inventory counts from one image using Gemini.
+
+    Parameters:
+        image_bytes: Raw bytes for the uploaded shelf image.
+        mime_type: Browser-reported image MIME type.
+
+    Returns:
+        A normalized inventory dictionary when Gemini returns structured data,
+        otherwise `None`.
+    """
     return call_gemini_inventory_images([(image_bytes, mime_type)])
 
 
 def call_gemini_order_form(image_bytes: bytes, mime_type: str) -> dict | None:
-    """Extract baseline inventory from an order form image. Same schema as shelf counts."""
+    """Extract baseline inventory from an order form image.
+
+    Parameters:
+        image_bytes: Raw bytes for the uploaded order form image.
+        mime_type: Browser-reported image MIME type.
+
+    Returns:
+        A normalized inventory dictionary using the same schema as shelf counts,
+        otherwise `None`.
+    """
     api_key = get_gemini_api_key()
     if not api_key:
         log.warning("GEMINI_API_KEY (or GOOGLE_API_KEY) not set; skipping Gemini call")

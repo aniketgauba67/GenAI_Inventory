@@ -1,17 +1,33 @@
-"""Database persistence helpers for the unified inventory run-history table."""
+"""******************************* aws_persistence.py ***************************************
+ *
+ *  Module: Aws Persistence
+ *
+ *  This module supports the FastAPI backend for GenAI Inventory.
+ *
+ *  The module provides:
+ *
+ *  - backend helper functions or scripts.
+ *  - shared runtime behavior for API and maintenance workflows.
+ *
+ *  Key Structures Used:
+ *
+ *  - Python modules, environment settings, and database helpers.
+ *
+ *  This module ensures:
+ *
+ *  - backend workflows remain organized by responsibility.
+ *  - scripts can be run for local debugging and maintenance.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ ****************************************************************************
+"""
 
 from __future__ import annotations
 
 import os
-import sys
 from datetime import datetime
-from pathlib import Path
 from uuid import uuid4
-
-ROOT_DIR = Path(__file__).resolve().parent.parent
-DB_DIR = ROOT_DIR / "db"
-if str(DB_DIR) not in sys.path:
-    sys.path.insert(0, str(DB_DIR))
 
 
 def env_flag(name: str, default: bool = False) -> bool:
@@ -55,8 +71,8 @@ def build_run_record(
 
 def fetch_latest_inventory_snapshot() -> dict | None:
     """Return the most recent stored inventory snapshot, if available."""
-    from database import SessionLocal  # noqa: E402
-    from models import InventoryRun  # noqa: E402
+    from db.database import SessionLocal
+    from db.models import InventoryRun
 
     session = SessionLocal()
     try:
@@ -76,8 +92,8 @@ def persist_inventory_run(run_record: dict) -> str:
     Both warehouse imports and volunteer submits use the same table. The caller must set
     `source` so later reads can distinguish those event types.
     """
-    from database import Base, SessionLocal, engine  # noqa: E402
-    from models import InventoryRun  # noqa: E402
+    from db.database import Base, SessionLocal, engine
+    from db.models import InventoryRun
 
     Base.metadata.create_all(bind=engine, tables=[InventoryRun.__table__])
 

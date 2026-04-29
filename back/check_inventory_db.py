@@ -1,20 +1,36 @@
-"""Non-destructive AWS RDS preflight check for inventory persistence."""
+"""******************************* check_inventory_db.py ***************************************
+ *
+ *  Module: Check Inventory Db
+ *
+ *  This module supports the FastAPI backend for GenAI Inventory.
+ *
+ *  The module provides:
+ *
+ *  - backend helper functions or scripts.
+ *  - shared runtime behavior for API and maintenance workflows.
+ *
+ *  Key Structures Used:
+ *
+ *  - Python modules, environment settings, and database helpers.
+ *
+ *  This module ensures:
+ *
+ *  - backend workflows remain organized by responsibility.
+ *  - scripts can be run for local debugging and maintenance.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ ****************************************************************************
+"""
 
 from __future__ import annotations
 
 import json
-import sys
-from pathlib import Path
 
 from dotenv import load_dotenv
 from sqlalchemy import inspect, text
 
-ROOT_DIR = Path(__file__).resolve().parent.parent
-DB_DIR = ROOT_DIR / "db"
-if str(DB_DIR) not in sys.path:
-    sys.path.insert(0, str(DB_DIR))
-
-from database import engine  # noqa: E402
+from db.database import engine
 
 
 def main() -> None:

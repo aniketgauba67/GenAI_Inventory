@@ -1,4 +1,28 @@
-"""Public customer-facing pantry availability endpoints."""
+"""******************************* customer.py ***************************************
+ *
+ *  Module: Backend Router
+ *
+ *  This module defines API endpoints for the GenAI Inventory backend.
+ *
+ *  The module provides:
+ *
+ *  - FastAPI route handlers.
+ *  - request validation and response shaping.
+ *  - service or database calls for one workflow area.
+ *
+ *  Key Structures Used:
+ *
+ *  - FastAPI router objects, Pydantic schemas, and SQLAlchemy helpers.
+ *
+ *  This module ensures:
+ *
+ *  - frontend API calls have stable backend endpoints.
+ *  - route logic remains grouped by workflow.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ ****************************************************************************
+"""
 
 from __future__ import annotations
 
@@ -6,26 +30,10 @@ from collections import defaultdict
 
 from fastapi import APIRouter, Query
 
-try:
-    from ..customer_inventory_state import resolve_customer_inventory_state
-    from ..inventory_domain import (
-        INVENTORY_CATEGORIES,
-        load_latest_inventory_run,
-    )
-except ImportError:
-    from customer_inventory_state import resolve_customer_inventory_state
-    from inventory_domain import INVENTORY_CATEGORIES, load_latest_inventory_run
-
-import sys
-from pathlib import Path
-
-ROOT_DIR = Path(__file__).resolve().parents[2]
-DB_DIR = ROOT_DIR / "db"
-if str(DB_DIR) not in sys.path:
-    sys.path.insert(0, str(DB_DIR))
-
-from database import SessionLocal  # noqa: E402
-from models import InventoryItem, InventoryRun, Pantry  # noqa: E402
+from back.customer_inventory_state import resolve_customer_inventory_state
+from back.inventory_domain import load_latest_inventory_run
+from db.database import SessionLocal
+from db.models import InventoryItem, InventoryRun, Pantry
 
 router = APIRouter(prefix="/customer", tags=["customer"])
 

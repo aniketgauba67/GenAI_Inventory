@@ -57,7 +57,7 @@ class TestCategoriesEndpoint:
 class TestUploadEndpoint:
 
     def test_upload_single_image_returns_ok(self, client):
-        with patch("routers.upload.call_gemini_inventory_images", return_value=MOCK_INVENTORY):
+        with patch("back.routers.upload.call_gemini_inventory_images", return_value=MOCK_INVENTORY):
             resp = client.post(
                 "/upload",
                 files=[_make_image()],
@@ -69,7 +69,7 @@ class TestUploadEndpoint:
         assert "inventory" in data
 
     def test_upload_multiple_images_aggregates(self, client):
-        with patch("routers.upload.call_gemini_inventory_images", return_value=MOCK_INVENTORY):
+        with patch("back.routers.upload.call_gemini_inventory_images", return_value=MOCK_INVENTORY):
             resp = client.post(
                 "/upload",
                 files=[_make_image("a.jpg"), _make_image("b.jpg")],
@@ -86,7 +86,7 @@ class TestUploadEndpoint:
             assert resp.json()["ok"] is False
 
     def test_upload_non_image_file_is_rejected(self, client):
-        with patch("routers.upload.call_gemini_inventory_images", return_value=None):
+        with patch("back.routers.upload.call_gemini_inventory_images", return_value=None):
             resp = client.post(
                 "/upload",
                 files=[_make_text_file()],
@@ -118,10 +118,10 @@ class TestUploadEndpoint:
         mock_db.query.return_value.filter.return_value.all.return_value = mock_items
 
         with (
-            patch("routers.upload.SessionLocal", return_value=mock_db),
-            patch("routers.upload.resolve_pantry", return_value=mock_pantry),
-            patch("routers.upload.call_gemini_inventory_images", return_value=MOCK_INVENTORY),
-            patch("routers.upload.save_inventory_draft"),
+            patch("back.routers.upload.SessionLocal", return_value=mock_db),
+            patch("back.routers.upload.resolve_pantry", return_value=mock_pantry),
+            patch("back.routers.upload.call_gemini_inventory_images", return_value=MOCK_INVENTORY),
+            patch("back.routers.upload.save_inventory_draft"),
         ):
             resp = client.post(
                 "/upload",
@@ -132,7 +132,7 @@ class TestUploadEndpoint:
         assert resp.json()["ok"] is True
 
     def test_upload_gemini_returns_none_reports_detection_error(self, client):
-        with patch("routers.upload.call_gemini_inventory_images", return_value=None):
+        with patch("back.routers.upload.call_gemini_inventory_images", return_value=None):
             resp = client.post(
                 "/upload",
                 files=[_make_image()],
@@ -150,10 +150,10 @@ class TestUploadEndpoint:
         mock_db.query.return_value.filter.return_value.all.return_value = []
 
         with (
-            patch("routers.upload.SessionLocal", return_value=mock_db),
-            patch("routers.upload.resolve_pantry", return_value=mock_pantry),
-            patch("routers.upload.call_gemini_inventory_images", return_value=MOCK_INVENTORY),
-            patch("routers.upload.save_inventory_draft") as mock_draft,
+            patch("back.routers.upload.SessionLocal", return_value=mock_db),
+            patch("back.routers.upload.resolve_pantry", return_value=mock_pantry),
+            patch("back.routers.upload.call_gemini_inventory_images", return_value=MOCK_INVENTORY),
+            patch("back.routers.upload.save_inventory_draft") as mock_draft,
         ):
             resp = client.post(
                 "/upload",

@@ -1,3 +1,27 @@
+/******************************** page.tsx ***************************************
+ *
+ *  Module: Frontend App Route
+ *
+ *  This module renders a Next.js route for the GenAI Inventory user
+ *  interface.
+ *
+ *  The module provides:
+ *
+ *  - route-level layout or page rendering.
+ *  - connections to shared frontend components and helpers.
+ *
+ *  Key Structures Used:
+ *
+ *  - Next.js App Router files, React components, and route params.
+ *
+ *  This module ensures:
+ *
+ *  - the screen follows the shared application workflow.
+ *  - route code remains close to its user-facing page.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ *****************************************************************************/
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -18,6 +42,7 @@ import EmptyState from "../../../components/ui/EmptyState";
 import Skeleton from "../../../components/ui/Skeleton";
 import { useToast } from "../../../components/ui/Toast";
 import { getApiBase } from "../../../lib/api";
+import { INVENTORY_CATEGORIES } from "../../../lib/inventoryCategories";
 
 type InventoryRecord = Record<string, number>;
 
@@ -33,28 +58,6 @@ type SubmitResponse = {
   levels?: Record<string, string>;
   error?: string;
 };
-
-const orderedCategories = [
-  "Beverages",
-  "Juices",
-  "Cereal",
-  "Breakfast",
-  "Meat",
-  "Fish",
-  "Poultry",
-  "Frozen",
-  "Vegetables",
-  "Fruits",
-  "Nuts",
-  "Soup",
-  "Grains",
-  "Pasta",
-  "Snacks",
-  "Spices",
-  "Sauces",
-  "Condiments",
-  "Misc Products",
-];
 
 export default function ReviewPage() {
   const { showToast } = useToast();
@@ -103,7 +106,7 @@ export default function ReviewPage() {
 
   const rows = useMemo(() => {
     if (!inventory) return [];
-    return orderedCategories.map((category) => ({
+    return INVENTORY_CATEGORIES.map((category) => ({
       category,
       quantity: Number(inventory[category] ?? 0),
     }));
@@ -254,7 +257,7 @@ export default function ReviewPage() {
                 />
                 <SummaryCards levels={submitResult.levels} ratios={submitResult.ratios} />
                 <InventoryTable
-                  categories={orderedCategories}
+                  categories={INVENTORY_CATEGORIES}
                   levels={submitResult.levels}
                   ratios={submitResult.ratios}
                 />

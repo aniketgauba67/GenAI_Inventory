@@ -1,7 +1,27 @@
-"""Warehouse import and volunteer submission endpoints for the active pantry workflow.
-
-The working schema stores both warehouse imports and volunteer submissions in the same
-`inventory_runs` table. The `source` field tells the app which kind of row it is reading.
+"""******************************* volunteer_inventory.py ***************************************
+ *
+ *  Module: Backend Router
+ *
+ *  This module defines API endpoints for the GenAI Inventory backend.
+ *
+ *  The module provides:
+ *
+ *  - FastAPI route handlers.
+ *  - request validation and response shaping.
+ *  - service or database calls for one workflow area.
+ *
+ *  Key Structures Used:
+ *
+ *  - FastAPI router objects, Pydantic schemas, and SQLAlchemy helpers.
+ *
+ *  This module ensures:
+ *
+ *  - frontend API calls have stable backend endpoints.
+ *  - route logic remains grouped by workflow.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ ****************************************************************************
 """
 
 from __future__ import annotations
@@ -12,41 +32,18 @@ from uuid import uuid4
 from fastapi import APIRouter
 from pydantic import BaseModel
 
-try:
-    from ..aws_persistence import persist_inventory_run
-    from ..inventory_domain import (
-        INVENTORY_CATEGORIES,
-        compute_ratios_and_levels,
-        load_latest_inventory_run,
-        normalize_inventory,
-        resolve_pantry,
-        summarize_levels,
-        upsert_pantry_inventory_items,
-        validate_inventory,
-    )
-except ImportError:
-    from aws_persistence import persist_inventory_run
-    from inventory_domain import (
-        INVENTORY_CATEGORIES,
-        compute_ratios_and_levels,
-        load_latest_inventory_run,
-        normalize_inventory,
-        resolve_pantry,
-        summarize_levels,
-        upsert_pantry_inventory_items,
-        validate_inventory,
-    )
-
-import sys
-from pathlib import Path
-
-ROOT_DIR = Path(__file__).resolve().parents[2]
-DB_DIR = ROOT_DIR / "db"
-if str(DB_DIR) not in sys.path:
-    sys.path.insert(0, str(DB_DIR))
-
-from database import Base, SessionLocal  # noqa: E402
-from models import InventoryItem, InventoryRun, Pantry  # noqa: E402
+from back.aws_persistence import persist_inventory_run
+from back.inventory_domain import (
+    compute_ratios_and_levels,
+    load_latest_inventory_run,
+    normalize_inventory,
+    resolve_pantry,
+    summarize_levels,
+    upsert_pantry_inventory_items,
+    validate_inventory,
+)
+from db.database import Base, SessionLocal
+from db.models import InventoryItem, InventoryRun, Pantry
 
 router = APIRouter(tags=["volunteer-inventory"])
 

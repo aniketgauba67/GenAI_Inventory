@@ -1,3 +1,26 @@
+/******************************** capacitor.config.ts ***************************************
+ *
+ *  Module: Capacitor.Config
+ *
+ *  This module configures the Next.js and Capacitor frontend application.
+ *
+ *  The module provides:
+ *
+ *  - tooling or runtime configuration for the frontend.
+ *  - settings consumed by build, lint, or mobile sync commands.
+ *
+ *  Key Structures Used:
+ *
+ *  - configuration objects, plugin settings, or shared declarations.
+ *
+ *  This module ensures:
+ *
+ *  - frontend tooling reads settings from one checked-in location.
+ *  - local and deployment builds use the same defaults.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ *****************************************************************************/
 import type { CapacitorConfig } from "@capacitor/cli";
 
 const serverUrl = process.env.CAPACITOR_SERVER_URL ?? "https://www.inventorymanagement.dev";

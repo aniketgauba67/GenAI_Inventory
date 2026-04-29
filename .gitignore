@@ -1,8 +1,27 @@
+# .
+#
+# This file supports the GenAI Inventory application.
+#
+# The file provides:
+# - checked-in configuration or documentation for the project.
+#
+# Key Structures Used:
+# - repository-level source or configuration files.
+#
+# This file ensures:
+# - contributors can understand the file purpose quickly.
+#
+# Editors: Aniket, Dipankar, Liam, Jin, and Philip.
 uploads/
 .venv/
 **/.venv/
 __pycache__/
 *.pyc
+.pytest_cache/
+*.tsbuildinfo
+front/android/.gradle/
+front/android/build/
+front/android/**/build/
 .env/
 env
 .env

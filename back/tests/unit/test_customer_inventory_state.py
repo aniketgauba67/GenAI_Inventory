@@ -124,6 +124,28 @@ class TestResolveCustomerInventoryState(unittest.TestCase):
         # 50/100 = 0.50 → Mid for all categories
         self.assertTrue(all(v == "Mid" for v in result["levels"].values()))
 
+    def test_newer_partial_volunteer_run_uses_embedded_warehouse_baseline(self):
+        warehouse = _make_run(
+            source="warehouse-snapshot",
+            inventory={"Beverages": 30},
+            created_at=_EARLY,
+        )
+        volunteer = _make_run(
+            source="volunteer-submit",
+            inventory={"Beverages": 0},
+            comparison={"warehouseInventory": {"Beverages": 30}},
+            created_at=_LATE,
+        )
+        result = resolve_customer_inventory_state(
+            volunteer,
+            warehouse,
+            fallback_original_quantities={"Beverages": 5},
+        )
+        self.assertEqual(result["source"], "volunteer-submit")
+        self.assertEqual(result["currentInventory"]["Beverages"], 0)
+        self.assertEqual(result["originalQuantities"]["Beverages"], 30)
+        self.assertEqual(result["levels"]["Beverages"], "Out")
+
     def test_volunteer_run_same_time_as_warehouse_is_used(self):
         same_time = datetime(2024, 6, 1, 12, 0, 0)
         warehouse = _make_run(source="warehouse-snapshot", created_at=same_time,
@@ -133,6 +155,8 @@ class TestResolveCustomerInventoryState(unittest.TestCase):
                               comparison={"warehouseInventory": {cat: 100 for cat in INVENTORY_CATEGORIES}})
         result = resolve_customer_inventory_state(volunteer, warehouse)
         self.assertEqual(result["source"], "volunteer-submit")
+        self.assertEqual(result["currentInventory"]["Beverages"], 80)
+        self.assertEqual(result["originalQuantities"]["Beverages"], 100)
 
     def test_volunteer_run_with_no_warehouse_is_used(self):
         volunteer = _make_run(
@@ -164,6 +188,28 @@ class TestResolveCustomerInventoryState(unittest.TestCase):
         self.assertEqual(result["source"], "warehouse-snapshot")
         # All non-zero baseline categories → High
         self.assertTrue(all(v == "High" for v in result["levels"].values()))
+
+    def test_older_partial_volunteer_run_uses_latest_warehouse_inventory(self):
+        warehouse = _make_run(
+            source="warehouse-snapshot",
+            inventory={"Beverages": 39},
+            created_at=_LATE,
+        )
+        volunteer = _make_run(
+            source="volunteer-submit",
+            inventory={"Beverages": 5},
+            comparison={"warehouseInventory": {"Beverages": 20}},
+            created_at=_EARLY,
+        )
+        result = resolve_customer_inventory_state(
+            volunteer,
+            warehouse,
+            fallback_original_quantities={"Beverages": 10},
+        )
+        self.assertEqual(result["source"], "warehouse-snapshot")
+        self.assertEqual(result["currentInventory"]["Beverages"], 39)
+        self.assertEqual(result["originalQuantities"]["Beverages"], 39)
+        self.assertEqual(result["levels"]["Beverages"], "High")
 
     def test_warehouse_only_gives_all_high(self):
         warehouse = _make_run(

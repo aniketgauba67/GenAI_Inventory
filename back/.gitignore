@@ -1,3 +1,19 @@
+# Backend Module.
+#
+# This file supports the FastAPI backend for GenAI Inventory.
+#
+# The file provides:
+# - backend helper functions or scripts.
+# - shared runtime behavior for API and maintenance workflows.
+#
+# Key Structures Used:
+# - Python modules, environment settings, and database helpers.
+#
+# This file ensures:
+# - backend workflows remain organized by responsibility.
+# - scripts can be run for local debugging and maintenance.
+#
+# Editors: Aniket, Dipankar, Liam, Jin, and Philip.
 uploads/
 .venv/
 __pycache__/

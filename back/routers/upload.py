@@ -1,25 +1,40 @@
+"""******************************* upload.py ***************************************
+ *
+ *  Module: Image Upload Router
+ *
+ *  This module accepts shelf images, sends them to Gemini, and stores
+ *  detected inventory.
+ *
+ *  The module provides:
+ *
+ *  - upload health and category endpoints.
+ *  - image MIME validation and upload metadata.
+ *  - Gemini inventory extraction and draft persistence for review.
+ *
+ *  Key Structures Used:
+ *
+ *  - FastAPI file uploads, Gemini image payloads, pantry inventory database
+ *  records.
+ *
+ *  This module ensures:
+ *
+ *  - non-image uploads are rejected before AI processing.
+ *  - volunteer uploads are tied to a real pantry before review.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ ****************************************************************************
+"""
+
 import logging
-import sys
-from pathlib import Path
 
 from fastapi import APIRouter, File, Form, UploadFile
 
-ROOT_DIR = Path(__file__).resolve().parents[2]
-DB_DIR = ROOT_DIR / "db"
-if str(DB_DIR) not in sys.path:
-    sys.path.insert(0, str(DB_DIR))
-
-from database import SessionLocal  # noqa: E402
-from models import InventoryItem, Pantry  # noqa: E402
-
-try:
-    from .review import save_inventory_draft
-    from ..inventory_domain import INVENTORY_CATEGORIES, resolve_pantry
-    from ..services.gemini import call_gemini_inventory_images
-except ImportError:
-    from routers.review import save_inventory_draft
-    from inventory_domain import INVENTORY_CATEGORIES, resolve_pantry
-    from services.gemini import call_gemini_inventory_images
+from back.inventory_domain import INVENTORY_CATEGORIES, resolve_pantry
+from back.routers.review import save_inventory_draft
+from back.services.gemini import call_gemini_inventory_images
+from db.database import SessionLocal
+from db.models import InventoryItem, Pantry
 
 log = logging.getLogger(__name__)
 
@@ -28,11 +43,27 @@ router = APIRouter(tags=["upload"])
 
 @router.get("/")
 def root():
+    """Return a small health response for the upload router.
+
+    Parameters:
+        None.
+
+    Returns:
+        A JSON object confirming the upload router is reachable.
+    """
     return {"status": "ok"}
 
 
 @router.get("/categories")
 def categories():
+    """Return the fixed inventory categories used by upload and review screens.
+
+    Parameters:
+        None.
+
+    Returns:
+        A JSON object containing the shared inventory category list.
+    """
     return {"categories": INVENTORY_CATEGORIES}
 
 
@@ -41,6 +72,17 @@ async def upload_images(
     files: list[UploadFile] = File(..., description="Image files"),
     pantry_id: str | None = Form(default=None),
 ):
+    """Process uploaded shelf images and persist the detected inventory draft.
+
+    Parameters:
+        files: Image files selected by the volunteer upload workflow.
+        pantry_id: Pantry identifier used to scope database hints and review
+        drafts.
+
+    Returns:
+        A JSON response containing upload metadata and detected inventory, or a
+        user-facing error when validation or detection fails.
+    """
     if not files:
         log.warning("Upload called with no files")
         return {"ok": False, "error": "No files provided"}
@@ -88,7 +130,7 @@ async def upload_images(
                 if items:
                     max_quantities = {item.category_name: item.original_quantity for item in items}
                     log.info("Loaded original_quantity for %s categories (pantry %s)", len(items), pantry_id)
-                    print(f"[DEBUG] max_quantities passed to Gemini: {max_quantities}")
+                    log.debug("max_quantities passed to Gemini: %s", max_quantities)
         except Exception:
             log.exception("Could not load max_quantities from DB; proceeding without hint")
         finally:

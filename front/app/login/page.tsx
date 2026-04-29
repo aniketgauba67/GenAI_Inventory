@@ -1,7 +1,31 @@
+/******************************** page.tsx ***************************************
+ *
+ *  Module: Frontend App Route
+ *
+ *  This module renders a Next.js route for the GenAI Inventory user
+ *  interface.
+ *
+ *  The module provides:
+ *
+ *  - route-level layout or page rendering.
+ *  - connections to shared frontend components and helpers.
+ *
+ *  Key Structures Used:
+ *
+ *  - Next.js App Router files, React components, and route params.
+ *
+ *  This module ensures:
+ *
+ *  - the screen follows the shared application workflow.
+ *  - route code remains close to its user-facing page.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ *****************************************************************************/
 "use client";
 
 import { signIn, useSession } from "next-auth/react";
-import { FormEvent, Suspense, useEffect, useMemo, useState } from "react";
+import { FormEvent, KeyboardEvent, Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
@@ -69,6 +93,7 @@ function LoginForm() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (loading) return;
     setError(null);
     setLoading(true);
 
@@ -87,6 +112,15 @@ function LoginForm() {
       const target = resolveAuthenticatedTarget(callbackUrl, username, inferredRole);
       window.location.href = target;
     }
+  }
+
+  function handleFormKeyDown(e: KeyboardEvent<HTMLFormElement>) {
+    if (e.key !== "Enter" || e.nativeEvent.isComposing || loading) return;
+    const target = e.target as HTMLElement;
+    if (target.tagName !== "INPUT") return;
+
+    e.preventDefault();
+    e.currentTarget.requestSubmit();
   }
 
   if (status === "loading") {
@@ -137,7 +171,7 @@ function LoginForm() {
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+          <form onSubmit={handleSubmit} onKeyDown={handleFormKeyDown} className="flex flex-col gap-5">
             {error && <Alert tone="error">{error}</Alert>}
 
             <div className="flex flex-col gap-2">
@@ -150,6 +184,7 @@ function LoginForm() {
                 autoCapitalize="none"
                 autoCorrect="off"
                 autoComplete="username"
+                enterKeyHint="next"
                 placeholder="e.g. pantry1234"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
@@ -165,6 +200,7 @@ function LoginForm() {
                 id="password"
                 type="password"
                 autoComplete="current-password"
+                enterKeyHint="go"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}

@@ -1,9 +1,38 @@
+/******************************** route.ts ***************************************
+ *
+ *  Module: Frontend API Route
+ *
+ *  This module proxies frontend requests to backend services and
+ *  authentication handlers.
+ *
+ *  The module provides:
+ *
+ *  - Next.js route handlers for browser requests.
+ *  - backend API forwarding with consistent response handling.
+ *
+ *  Key Structures Used:
+ *
+ *  - Next.js route modules, request objects, and response payloads.
+ *
+ *  This module ensures:
+ *
+ *  - frontend calls stay behind a stable local API path.
+ *  - backend errors are surfaced in a predictable shape.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ *****************************************************************************/
 import { NextResponse } from "next/server";
 
 type ChatRequestPayload = {
   message?: string;
   history?: Array<["user" | "assistant", string]>;
   pantryId?: string | null;
+  userLocation?: {
+    latitude: number;
+    longitude: number;
+    accuracy?: number | null;
+  } | null;
 };
 
 export async function POST(req: Request) {
@@ -26,6 +55,7 @@ export async function POST(req: Request) {
         message,
         history: payload.history || [],
         pantry_id: payload.pantryId ?? null,
+        user_location: payload.userLocation ?? null,
       }),
       cache: "no-store",
     });

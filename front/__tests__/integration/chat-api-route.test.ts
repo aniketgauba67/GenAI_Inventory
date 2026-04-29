@@ -95,6 +95,25 @@ describe("POST /api/chat", () => {
     expect(fetchedBody.pantry_id).toBeNull();
   });
 
+  it("forwards userLocation to backend when provided", async () => {
+    const req = makeRequest({
+      message: "closest pantry near me",
+      userLocation: {
+        latitude: 40.02,
+        longitude: -82.44,
+        accuracy: 25,
+      },
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+    const fetchedBody = JSON.parse(mockFetch.mock.calls[0][1].body);
+    expect(fetchedBody.user_location).toEqual({
+      latitude: 40.02,
+      longitude: -82.44,
+      accuracy: 25,
+    });
+  });
+
   it("returns ok:true and reply when backend succeeds", async () => {
     const req = makeRequest({ message: "Hello bot" });
     const res = await POST(req);

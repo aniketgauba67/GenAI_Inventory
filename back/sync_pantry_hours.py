@@ -1,13 +1,26 @@
-"""Sync seeded pantry operating hours into existing pantry rows without wiping data.
-
-This script updates `pantries.operating_hours` in place using the source-of-truth
-hours from `db/seed_real_pantries.py`. It matches rows by location first and
-falls back to name when needed, so it can repair existing databases that were
-seeded before the hours were corrected.
-
-By default it does not rename pantries, which keeps existing pantry-name logins
-stable. Use `--update-names` only if you also want the seasonal display names
-from the seed data.
+"""******************************* sync_pantry_hours.py ***************************************
+ *
+ *  Module: Sync Pantry Hours
+ *
+ *  This module supports the FastAPI backend for GenAI Inventory.
+ *
+ *  The module provides:
+ *
+ *  - backend helper functions or scripts.
+ *  - shared runtime behavior for API and maintenance workflows.
+ *
+ *  Key Structures Used:
+ *
+ *  - Python modules, environment settings, and database helpers.
+ *
+ *  This module ensures:
+ *
+ *  - backend workflows remain organized by responsibility.
+ *  - scripts can be run for local debugging and maintenance.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ ****************************************************************************
 """
 
 from __future__ import annotations
@@ -15,21 +28,15 @@ from __future__ import annotations
 import argparse
 import json
 import re
-import sys
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from dotenv import load_dotenv
 
-ROOT_DIR = Path(__file__).resolve().parent.parent
-DB_DIR = ROOT_DIR / "db"
-if str(DB_DIR) not in sys.path:
-    sys.path.insert(0, str(DB_DIR))
-
-from database import SessionLocal  # noqa: E402
-from models import Pantry  # noqa: E402
-from seed_real_pantries import REAL_PANTRIES  # noqa: E402
+from db.database import SessionLocal
+from db.models import Pantry
+from db.seed_real_pantries import REAL_PANTRIES
 
 TIMEZONE = ZoneInfo("America/New_York")
 DAY_MAP = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]

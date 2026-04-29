@@ -56,8 +56,8 @@ class TestListCustomerPantries:
         mock_db.query.return_value.all.return_value = []
 
         with (
-            patch("routers.customer.SessionLocal", return_value=mock_db),
-            patch("routers.customer.load_latest_inventory_run", return_value=None),
+            patch("back.routers.customer.SessionLocal", return_value=mock_db),
+            patch("back.routers.customer.load_latest_inventory_run", return_value=None),
         ):
             resp = client.get("/customer/pantries")
 
@@ -73,8 +73,8 @@ class TestListCustomerPantries:
         mock_db.query.return_value.all.return_value = []
 
         with (
-            patch("routers.customer.SessionLocal", return_value=mock_db),
-            patch("routers.customer.load_latest_inventory_run", return_value=None),
+            patch("back.routers.customer.SessionLocal", return_value=mock_db),
+            patch("back.routers.customer.load_latest_inventory_run", return_value=None),
         ):
             resp = client.get("/customer/pantries")
 
@@ -92,8 +92,8 @@ class TestListCustomerPantries:
         mock_db.query.return_value.all.return_value = []
 
         with (
-            patch("routers.customer.SessionLocal", return_value=mock_db),
-            patch("routers.customer.load_latest_inventory_run", return_value=None),
+            patch("back.routers.customer.SessionLocal", return_value=mock_db),
+            patch("back.routers.customer.load_latest_inventory_run", return_value=None),
         ):
             resp = client.get("/customer/pantries")
 
@@ -109,8 +109,8 @@ class TestListCustomerPantries:
         mock_db.query.return_value.all.return_value = []
 
         with (
-            patch("routers.customer.SessionLocal", return_value=mock_db),
-            patch("routers.customer.load_latest_inventory_run", return_value=None),
+            patch("back.routers.customer.SessionLocal", return_value=mock_db),
+            patch("back.routers.customer.load_latest_inventory_run", return_value=None),
         ):
             resp = client.get("/customer/pantries")
 
@@ -124,8 +124,8 @@ class TestListCustomerPantries:
         mock_db.query.return_value.all.return_value = []
 
         with (
-            patch("routers.customer.SessionLocal", return_value=mock_db),
-            patch("routers.customer.load_latest_inventory_run", return_value=None),
+            patch("back.routers.customer.SessionLocal", return_value=mock_db),
+            patch("back.routers.customer.load_latest_inventory_run", return_value=None),
         ):
             resp = client.get("/customer/pantries")
 
@@ -138,8 +138,8 @@ class TestListCustomerPantries:
         mock_db.query.return_value.all.return_value = []
 
         with (
-            patch("routers.customer.SessionLocal", return_value=mock_db),
-            patch("routers.customer.load_latest_inventory_run", return_value=None),
+            patch("back.routers.customer.SessionLocal", return_value=mock_db),
+            patch("back.routers.customer.load_latest_inventory_run", return_value=None),
         ):
             resp = client.get("/customer/pantries")
 
@@ -159,8 +159,8 @@ class TestListPantriesByTime:
         mock_db.query.return_value.order_by.return_value.all.return_value = pantries or []
         mock_db.query.return_value.all.return_value = []
         with (
-            patch("routers.customer.SessionLocal", return_value=mock_db),
-            patch("routers.customer.load_latest_inventory_run", return_value=None),
+            patch("back.routers.customer.SessionLocal", return_value=mock_db),
+            patch("back.routers.customer.load_latest_inventory_run", return_value=None),
         ):
             return client.get(f"/customer/pantries-by-time?day={day}&time={time}")
 

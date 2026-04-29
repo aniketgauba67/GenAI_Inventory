@@ -1,3 +1,28 @@
+/******************************** FloatingChat.tsx ***************************************
+ *
+ *  Module: Floating Chat Component
+ *
+ *  This module renders the customer pantry chatbot and location-aware
+ *  question flow.
+ *
+ *  The module provides:
+ *
+ *  - expandable chat panel UI.
+ *  - chat history submission to the API route.
+ *  - browser location capture for nearest-pantry questions.
+ *
+ *  Key Structures Used:
+ *
+ *  - React state, chat message history, geolocation permission responses.
+ *
+ *  This module ensures:
+ *
+ *  - chat interactions remain available across customer pages.
+ *  - location is only used when the browser grants permission.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ *****************************************************************************/
 "use client";
 
 import Image from "next/image";
@@ -17,6 +42,12 @@ type FloatingChatProps = {
   pantryId?: string;
 };
 
+type ChatUserLocation = {
+  latitude: number;
+  longitude: number;
+  accuracy?: number | null;
+};
+
 function createMessage(role: ChatRole, text: string): ChatMessage {
   return {
     id: `${role}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
@@ -29,6 +60,45 @@ const INITIAL_ASSISTANT_MESSAGE = createMessage(
   "assistant",
   "Hi there! Ask me any questions about pantry inventory, stock levels, or recent updates.",
 );
+
+function isNearestPantryQuestion(message: string): boolean {
+  const normalized = message.toLowerCase();
+  const mentionsPantryLikePlace = (
+    /\b(pantr(?:y|ies|ys)|patr(?:y|ies)|food\s+(?:pantry|bank)|fpn|location|site)\b/.test(normalized)
+  );
+  const asksForNearbyPlace = (
+    /\b(nearest|closest|nearby|directions?|maps?|near)\b/.test(normalized) ||
+    normalized.includes("near me") ||
+    normalized.includes("around me") ||
+    normalized.includes("my location")
+  );
+
+  return asksForNearbyPlace && (mentionsPantryLikePlace || normalized.includes("near me"));
+}
+
+function getCurrentLocation(): Promise<ChatUserLocation | null> {
+  if (typeof navigator === "undefined" || !navigator.geolocation) {
+    return Promise.resolve(null);
+  }
+
+  return new Promise((resolve) => {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        resolve({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracy: position.coords.accuracy,
+        });
+      },
+      () => resolve(null),
+      {
+        enableHighAccuracy: false,
+        maximumAge: 5 * 60 * 1000,
+        timeout: 8000,
+      },
+    );
+  });
+}
 
 function getTypingDelay(currentChar: string): number {
   if (currentChar === "," || currentChar === ";") {
@@ -192,6 +262,7 @@ export default function FloatingChat({ pantryId = "" }: FloatingChatProps) {
     setIsSending(true);
 
     try {
+      const userLocation = isNearestPantryQuestion(trimmed) ? await getCurrentLocation() : null;
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -199,6 +270,7 @@ export default function FloatingChat({ pantryId = "" }: FloatingChatProps) {
           message: trimmed,
           history,
           pantryId: pantryId || null,
+          userLocation,
         }),
       });
 

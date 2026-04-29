@@ -8,7 +8,7 @@ from __future__ import annotations
 import unittest
 
 # Import the private helpers directly from the router module
-from routers.customer import _is_within_schedule, _time_to_minutes
+from back.routers.customer import _is_within_schedule, _time_to_minutes
 
 
 class TestTimeToMinutes(unittest.TestCase):

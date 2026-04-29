@@ -12,7 +12,6 @@ This document describes the test suite for GenAI Inventory — a food pantry inv
 | Backend API | pytest + httpx TestClient | `back/tests/api/` | `back/.venv/bin/python -m pytest back/tests/api/` |
 | Backend integration | pytest | `back/tests/integration/` | `back/.venv/bin/python -m pytest back/tests/integration/` |
 | Backend edge cases | pytest | `back/tests/edge_cases/` | `back/.venv/bin/python -m pytest back/tests/edge_cases/` |
-| Backend legacy smoke | pytest / unittest-compatible files | `back/tests/test_*.py` | `back/.venv/bin/python -m pytest back/tests/test_inventory_domain.py` |
 | Frontend unit | Jest | `front/__tests__/unit/` | `npm test -- --testPathPattern=unit` |
 | Frontend component | Jest + RTL | `front/__tests__/component/` | `npm test -- --testPathPattern=component` |
 | Frontend integration | Jest | `front/__tests__/integration/` | `npm test -- --testPathPattern=integration` |
@@ -91,14 +90,12 @@ npm run test:e2e:ui
 ```
 back/
   tests/
-    conftest.py               # sys.path setup — imports back/ and db/ directories
-    test_inventory_domain.py  # Legacy smoke tests for core inventory domain behavior
+    conftest.py               # Shared client and mock DB fixtures
     test_auth_schedule_validation.py
-    test_customer_inventory_state.py
     fixtures/
       data.py                 # make_pantry(), make_run(), VALID_LOGIN_*, etc.
     unit/
-      test_inventory_domain_extended.py # Edge: None inputs, string coercion, boundaries
+      test_inventory_domain_extended.py # Core inventory domain behavior and edge cases
       test_operating_hours_extended.py  # parse_hhmm, normalize_operating_hours
       test_password_utils.py            # bcrypt hash/verify
       test_customer_inventory_state.py  # resolve_customer_inventory_state
@@ -120,8 +117,8 @@ back/
 
 **Gemini AI** (all routes that call it are mocked at module level):
 ```python
-@patch("routers.upload.call_gemini_inventory_images", return_value={...})
-@patch("routers.chat.call_gemini_chat", return_value="reply text")
+@patch("back.routers.upload.call_gemini_inventory_images", return_value={...})
+@patch("back.routers.chat.call_gemini_chat", return_value="reply text")
 ```
 
 **Shared TestClient and mock DB** come from the root backend conftest:
@@ -129,18 +126,18 @@ back/
 # In back/tests/conftest.py
 @pytest.fixture(scope="module")
 def client():
-    return TestClient(main.app, raise_server_exceptions=True)
+    return TestClient(app, raise_server_exceptions=True)
 ```
 
-**Auth router** uses `importlib.import_module("crud")` — patch at module level:
+**Auth router** imports `db.crud` at module level:
 ```python
-@patch("crud.get_pantry_credential_by_id", return_value=mock_cred)
+@patch("db.crud.get_pantry_credential_by_id", return_value=mock_cred)
 ```
 
 **Customer/upload routers** import `SessionLocal` at load time — patch at the router:
 ```python
-@patch("routers.customer.SessionLocal", return_value=mock_session)
-@patch("routers.upload.SessionLocal", return_value=mock_session)
+@patch("back.routers.customer.SessionLocal", return_value=mock_session)
+@patch("back.routers.upload.SessionLocal", return_value=mock_session)
 @patch("routers.volunteer_inventory.SessionLocal", return_value=mock_session)
 ```
 

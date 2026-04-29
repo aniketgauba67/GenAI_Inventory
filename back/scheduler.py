@@ -1,25 +1,37 @@
-"""Background scheduler that syncs pantry is_open with operating_hours.
-
-Runs every 60 seconds via an asyncio background task.
-Pantries with operating_hours=null are left untouched (manual-only mode).
+"""******************************* scheduler.py ***************************************
+ *
+ *  Module: Scheduler
+ *
+ *  This module supports the FastAPI backend for GenAI Inventory.
+ *
+ *  The module provides:
+ *
+ *  - backend helper functions or scripts.
+ *  - shared runtime behavior for API and maintenance workflows.
+ *
+ *  Key Structures Used:
+ *
+ *  - Python modules, environment settings, and database helpers.
+ *
+ *  This module ensures:
+ *
+ *  - backend workflows remain organized by responsibility.
+ *  - scripts can be run for local debugging and maintenance.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ ****************************************************************************
 """
 
 from __future__ import annotations
 
 import asyncio
 import logging
-import sys
 from datetime import datetime
-from pathlib import Path
 from zoneinfo import ZoneInfo
 
-ROOT_DIR = Path(__file__).resolve().parents[1]
-DB_DIR = ROOT_DIR / "db"
-if str(DB_DIR) not in sys.path:
-    sys.path.insert(0, str(DB_DIR))
-
-from database import SessionLocal  # noqa: E402
-from models import Pantry  # noqa: E402
+from db.database import SessionLocal
+from db.models import Pantry
 
 logger = logging.getLogger(__name__)
 

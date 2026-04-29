@@ -1,14 +1,32 @@
-"""Seed the database with real Licking County pantry data from the PDF.
-
-Drops all existing pantries, inventory items, runs, and credentials,
-then inserts 27 real pantry locations with operating hours.
-Each pantry gets a default login password of 'pantry123'.
+"""******************************* seed_real_pantries.py ***************************************
+ *
+ *  Module: Seed Real Pantries
+ *
+ *  This module supports database access for the GenAI Inventory backend.
+ *
+ *  The module provides:
+ *
+ *  - SQLAlchemy models, session helpers, or seed utilities.
+ *  - database-facing helpers used by backend routes.
+ *
+ *  Key Structures Used:
+ *
+ *  - SQLAlchemy engines, sessions, models, and pantry records.
+ *
+ *  This module ensures:
+ *
+ *  - database code stays separate from route handlers.
+ *  - backend persistence uses a consistent schema.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ ****************************************************************************
 """
 
 from sqlalchemy import text
-from database import SessionLocal, engine
-from models import Pantry, InventoryItem, InventoryRun, LoginCredentials
-from password_utils import hash_password
+from db.database import SessionLocal, engine
+from db.models import InventoryItem, InventoryRun, LoginCredentials, Pantry
+from db.password_utils import hash_password
 
 REAL_PANTRIES = [
     # --- Newark, Ohio ---
@@ -222,6 +240,15 @@ DEFAULT_PASSWORD = "pantry123"
 
 
 def seed():
+    """Replace pantry seed data with the curated pantry list and logins.
+
+    Parameters:
+        None.
+
+    Returns:
+        None. The function clears existing pantry data, inserts the curated
+        pantry list, and commits the seeded credentials to the database.
+    """
     db = SessionLocal()
     try:
         print("Deleting existing data...")

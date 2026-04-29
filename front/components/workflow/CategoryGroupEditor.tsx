@@ -1,10 +1,31 @@
-export const CATEGORY_GROUPS: Array<{ title: string; categories: string[] }> = [
-  { title: "Drinks & Breakfast", categories: ["Beverages", "Juices", "Cereal", "Breakfast"] },
-  { title: "Proteins", categories: ["Meat", "Fish", "Poultry", "Frozen"] },
-  { title: "Produce & Soup", categories: ["Vegetables", "Fruits", "Nuts", "Soup"] },
-  { title: "Dry Goods", categories: ["Grains", "Pasta", "Snacks"] },
-  { title: "Flavor & Other", categories: ["Spices", "Sauces", "Condiments", "Misc Products"] },
-];
+/******************************** CategoryGroupEditor.tsx ***************************************
+ *
+ *  Module: Category Group Editor
+ *
+ *  This module renders editable inventory category inputs for review
+ *  workflows.
+ *
+ *  The module provides:
+ *
+ *  - grouped numeric inputs for fixed inventory categories.
+ *  - stable input IDs for labels and tests.
+ *  - change callbacks using the selected category name.
+ *
+ *  Key Structures Used:
+ *
+ *  - category group constants, controlled number inputs, label/input pairs.
+ *
+ *  This module ensures:
+ *
+ *  - review screens share the same category order.
+ *  - missing values render as zero instead of blank state.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ *****************************************************************************/
+import { CATEGORY_GROUPS } from "../../lib/inventoryCategories";
+
+export { CATEGORY_GROUPS };
 
 type CategoryGroupEditorProps = {
   values: Record<string, number>;

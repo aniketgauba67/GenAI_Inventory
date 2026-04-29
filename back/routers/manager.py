@@ -1,33 +1,49 @@
+"""******************************* manager.py ***************************************
+ *
+ *  Module: Manager Upload Router
+ *
+ *  This module accepts warehouse order forms used as pantry baseline
+ *  inventory.
+ *
+ *  The module provides:
+ *
+ *  - order-form image upload and aggregation.
+ *  - baseline inventory update endpoints.
+ *  - inventory run persistence for manager review.
+ *
+ *  Key Structures Used:
+ *
+ *  - FastAPI file uploads, SQLAlchemy sessions, inventory category maps.
+ *
+ *  This module ensures:
+ *
+ *  - manager baselines are normalized to the shared category list.
+ *  - submitted quantities update the pantry inventory reference data.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ ****************************************************************************
+"""
+
 import logging
-import sys
 from datetime import datetime
-from pathlib import Path
 from uuid import uuid4
 
-from fastapi import APIRouter, File, UploadFile, Depends
+from fastapi import APIRouter, Depends, File, UploadFile
 from sqlalchemy.orm import Session
-from database import get_db
-from models import Pantry, InventoryItem, InventoryRun
-from inventory_domain import (
+
+from back.aws_persistence import persist_inventory_run
+from back.inventory_domain import (
     accumulate_inventory_totals,
+    INVENTORY_CATEGORIES,
     load_latest_inventory_run,
     normalize_inventory,
     resolve_pantry,
     upsert_pantry_inventory_items,
 )
-from schemas import INVENTORY_CATEGORIES
-
-ROOT_DIR = Path(__file__).resolve().parents[2]
-DB_DIR = ROOT_DIR / "db"
-if str(DB_DIR) not in sys.path:
-    sys.path.insert(0, str(DB_DIR))
-
-try:
-    from ..services.gemini import call_gemini_order_form
-    from ..aws_persistence import persist_inventory_run
-except ImportError:
-    from services.gemini import call_gemini_order_form
-    from aws_persistence import persist_inventory_run
+from back.services.gemini import call_gemini_order_form
+from db.database import get_db
+from db.models import InventoryItem, InventoryRun, Pantry
 
 log = logging.getLogger(__name__)
 
@@ -38,6 +54,15 @@ router = APIRouter(prefix="/manager", tags=["manager"])
 async def upload_order_form(
     files: list[UploadFile] = File(..., description="Order form image(s)"),
 ):
+    """Extract and aggregate baseline inventory from manager order-form images.
+
+    Parameters:
+        files: One or more order-form image pages uploaded by a manager.
+
+    Returns:
+        A JSON response containing per-file metadata, aggregate inventory totals,
+        and optional per-page inventory detections.
+    """
     if not files:
         log.warning("Order form upload called with no files")
         return {"ok": False, "error": "No files provided"}

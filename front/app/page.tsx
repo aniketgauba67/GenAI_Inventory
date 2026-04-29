@@ -1,3 +1,30 @@
+/******************************** page.tsx ***************************************
+ *
+ *  Module: Customer Pantry Directory Page
+ *
+ *  This module renders the customer-facing pantry search, filtering, and
+ *  chatbot experience.
+ *
+ *  The module provides:
+ *
+ *  - pantry search and category filtering.
+ *  - open/closed timing hints.
+ *  - customer chatbot access with optional location context.
+ *
+ *  Key Structures Used:
+ *
+ *  - React state, Next.js client rendering, pantry records, and category
+ *  groups.
+ *
+ *  This module ensures:
+ *
+ *  - customers can scan pantry inventory without seeing unnecessary raw
+ *  lists.
+ *  - pantry cards stay sorted by availability and timing.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ *****************************************************************************/
 "use client";
 
 import Link from "next/link";
@@ -13,7 +40,7 @@ import FloatingChat from "../components/chat/FloatingChat";
 import { getApiBase } from "../lib/api";
 import Select from "../components/ui/Select";
 import Skeleton from "../components/ui/Skeleton";
-import { CATEGORY_GROUPS } from "../components/workflow/CategoryGroupEditor";
+import { CATEGORY_GROUPS } from "../lib/inventoryCategories";
 
 type OperatingSlot = { day: string; open: string; close: string };
 
@@ -511,32 +538,18 @@ export default function HomePage() {
         <header className="space-y-5 pt-1 sm:pt-2">
           <div className="flex flex-col gap-4 border-b border-slate-200/80 pb-5 dark:border-slate-800/80 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
-              <div className="mb-3 inline-flex items-center gap-3">
-                <div className="relative h-11 w-11 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
-                  <Image
-                    src="/fpn icon-transparent.png"
-                    alt="FPN logo"
-                    fill
-                    className="object-contain p-1 dark:hidden"
-                    sizes="44px"
-                    priority
-                  />
-                  <Image
-                    src="/fpn icon-transparent-dark.png"
-                    alt="FPN logo"
-                    fill
-                    className="hidden object-contain p-1 dark:block"
-                    sizes="44px"
-                    priority
-                  />
-                </div>
-                <span className="text-sm font-semibold tracking-[0.2em] text-slate-500 dark:text-slate-300">
-                  FPN
-                </span>
+              <div className="mb-3 flex items-center gap-3">
+                <img
+                  src="/fpn icon-transparent.png"
+                  alt="FPN Logo"
+                  className={`object-contain dark:hidden ${easyView ? "h-16 w-auto sm:h-20" : "h-12 w-auto sm:h-16"}`}
+                />
+                <img
+                  src="/fpn icon-transparent-dark.png"
+                  alt="FPN Logo"
+                  className={`hidden object-contain dark:inline ${easyView ? "h-16 w-auto sm:h-20" : "h-12 w-auto sm:h-16"}`}
+                />
               </div>
-              <p className={`${easyView ? "text-sm tracking-[0.18em]" : "text-xs tracking-[0.24em]"} font-semibold uppercase text-teal-700 dark:text-teal-300`}>
-                Food Pantry Network
-              </p>
               <h1 className={`mt-3 font-semibold tracking-tight text-slate-950 dark:text-slate-50 ${easyView ? "text-4xl leading-tight sm:text-5xl lg:text-6xl" : "text-3xl sm:text-4xl lg:text-5xl"}`}>
                 Pantry Locations and Stock
               </h1>
