@@ -1,3 +1,28 @@
+/******************************** CategoryGroupEditor.tsx ***************************************
+ *
+ *  Module: Category Group Editor
+ *
+ *  This module renders editable inventory category inputs for review
+ *  workflows.
+ *
+ *  The module provides:
+ *
+ *  - grouped numeric inputs for fixed inventory categories.
+ *  - stable input IDs for labels and tests.
+ *  - change callbacks using the selected category name.
+ *
+ *  Key Structures Used:
+ *
+ *  - category group constants, controlled number inputs, label/input pairs.
+ *
+ *  This module ensures:
+ *
+ *  - review screens share the same category order.
+ *  - missing values render as zero instead of blank state.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ *****************************************************************************/
 import { CATEGORY_GROUPS } from "../../lib/inventoryCategories";
 
 export { CATEGORY_GROUPS };

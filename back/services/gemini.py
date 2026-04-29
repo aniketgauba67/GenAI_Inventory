@@ -1,3 +1,30 @@
+"""******************************* gemini.py ***************************************
+ *
+ *  Module: Gemini Inventory Service
+ *
+ *  This module extracts inventory counts from uploaded shelf images with
+ *  Gemini.
+ *
+ *  The module provides:
+ *
+ *  - structured inventory schemas for Gemini responses.
+ *  - shelf-image and order-form prompts.
+ *  - rate-limit-safe Gemini call wrappers.
+ *
+ *  Key Structures Used:
+ *
+ *  - Pydantic inventory model, prompt templates, image byte payloads.
+ *
+ *  This module ensures:
+ *
+ *  - Gemini output is coerced into the fixed category schema.
+ *  - quota and API failures return safe `None` results to callers.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ ****************************************************************************
+"""
+
 import base64
 import logging
 
@@ -117,11 +144,30 @@ def call_gemini_inventory_images(
 
 
 def call_gemini_inventory(image_bytes: bytes, mime_type: str) -> dict | None:
+    """Extract shelf inventory counts from one image using Gemini.
+
+    Parameters:
+        image_bytes: Raw bytes for the uploaded shelf image.
+        mime_type: Browser-reported image MIME type.
+
+    Returns:
+        A normalized inventory dictionary when Gemini returns structured data,
+        otherwise `None`.
+    """
     return call_gemini_inventory_images([(image_bytes, mime_type)])
 
 
 def call_gemini_order_form(image_bytes: bytes, mime_type: str) -> dict | None:
-    """Extract baseline inventory from an order form image. Same schema as shelf counts."""
+    """Extract baseline inventory from an order form image.
+
+    Parameters:
+        image_bytes: Raw bytes for the uploaded order form image.
+        mime_type: Browser-reported image MIME type.
+
+    Returns:
+        A normalized inventory dictionary using the same schema as shelf counts,
+        otherwise `None`.
+    """
     api_key = get_gemini_api_key()
     if not api_key:
         log.warning("GEMINI_API_KEY (or GOOGLE_API_KEY) not set; skipping Gemini call")

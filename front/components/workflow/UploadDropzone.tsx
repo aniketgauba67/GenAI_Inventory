@@ -1,3 +1,26 @@
+/******************************** UploadDropzone.tsx ***************************************
+ *
+ *  Module: UploadDropzone Component
+ *
+ *  This module supports the upload and inventory review workflow.
+ *
+ *  The module provides:
+ *
+ *  - workflow-specific UI controls.
+ *  - callbacks for upload or review state changes.
+ *
+ *  Key Structures Used:
+ *
+ *  - React props, selected files, category data, and action state.
+ *
+ *  This module ensures:
+ *
+ *  - volunteer and manager workflows use consistent controls.
+ *  - review actions remain visible and predictable.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ *****************************************************************************/
 "use client";
 
 import { useRef, useState, type ChangeEvent, type DragEvent } from "react";

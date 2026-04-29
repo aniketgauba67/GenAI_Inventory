@@ -1,4 +1,27 @@
-"""Database connection and session management using SQLAlchemy"""
+"""******************************* database.py ***************************************
+ *
+ *  Module: Database
+ *
+ *  This module supports database access for the GenAI Inventory backend.
+ *
+ *  The module provides:
+ *
+ *  - SQLAlchemy models, session helpers, or seed utilities.
+ *  - database-facing helpers used by backend routes.
+ *
+ *  Key Structures Used:
+ *
+ *  - SQLAlchemy engines, sessions, models, and pantry records.
+ *
+ *  This module ensures:
+ *
+ *  - database code stays separate from route handlers.
+ *  - backend persistence uses a consistent schema.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ ****************************************************************************
+"""
 
 import os
 from pathlib import Path

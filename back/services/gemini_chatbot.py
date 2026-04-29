@@ -1,3 +1,31 @@
+"""******************************* gemini_chatbot.py ***************************************
+ *
+ *  Module: Gemini Chatbot Service
+ *
+ *  This module answers pantry questions using inventory, hours, and
+ *  optional location context.
+ *
+ *  The module provides:
+ *
+ *  - database-backed pantry context generation.
+ *  - distance-aware nearest-pantry summaries.
+ *  - Gemini prompt construction for customer chat questions.
+ *
+ *  Key Structures Used:
+ *
+ *  - pantry records, inventory levels, operating hours, and user location
+ *  coordinates.
+ *
+ *  This module ensures:
+ *
+ *  - chat answers use current pantry data when available.
+ *  - location questions can rank pantries by distance.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ ****************************************************************************
+"""
+
 import logging
 import json
 import math

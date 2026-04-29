@@ -1,3 +1,28 @@
+/******************************** FloatingChat.tsx ***************************************
+ *
+ *  Module: Floating Chat Component
+ *
+ *  This module renders the customer pantry chatbot and location-aware
+ *  question flow.
+ *
+ *  The module provides:
+ *
+ *  - expandable chat panel UI.
+ *  - chat history submission to the API route.
+ *  - browser location capture for nearest-pantry questions.
+ *
+ *  Key Structures Used:
+ *
+ *  - React state, chat message history, geolocation permission responses.
+ *
+ *  This module ensures:
+ *
+ *  - chat interactions remain available across customer pages.
+ *  - location is only used when the browser grants permission.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ *****************************************************************************/
 "use client";
 
 import Image from "next/image";

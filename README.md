@@ -1,5 +1,22 @@
 # GenAI Inventory
 
+**Module:** Project README
+**Purpose:** Documents the GenAI Inventory workflow, repository structure, and local setup steps.
+
+**The document provides:**
+- a high-level feature summary for the pantry workflow.
+- backend and frontend setup commands.
+- the fixed inventory categories used across the application.
+
+**Key Structures Used:**
+- repository folders for `back`, `front`, and `db`.
+
+**This document ensures:**
+- new contributors can find the main project entry points quickly.
+- setup instructions stay close to the codebase.
+
+**Editors:** Aniket, Dipankar, Liam, Jin, and Philip.
+
 Volunteer inventory workflow:
 - upload shelf photos
 - detect item counts in the fixed 19 categories with Gemini

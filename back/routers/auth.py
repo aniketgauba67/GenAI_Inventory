@@ -1,3 +1,32 @@
+"""******************************* auth.py ***************************************
+ *
+ *  Module: Authentication Router
+ *
+ *  This module handles director login and pantry credential management
+ *  endpoints.
+ *
+ *  The module provides:
+ *
+ *  - director and pantry login responses.
+ *  - pantry creation, metadata, password, and credential maintenance
+ *  routes.
+ *  - manual pantry open/closed status and operating-hours controls.
+ *
+ *  Key Structures Used:
+ *
+ *  - FastAPI router, Pydantic request/response schemas, and database CRUD
+ *  helpers.
+ *
+ *  This module ensures:
+ *
+ *  - credential updates are validated before persistence.
+ *  - director-only workflows can manage pantry access from the frontend.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ ****************************************************************************
+"""
+
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, status
@@ -60,6 +89,15 @@ def _build_pantry_user(pantry_id: int, username: str) -> AuthenticatedUser:
 
 @router.post("/login", response_model=LoginResponse)
 def login(payload: LoginRequest) -> LoginResponse:
+    """Authenticate director or pantry users.
+
+    Parameters:
+        payload: Username and password submitted by the frontend login form.
+
+    Returns:
+        A login response with either the normalized user session identity or a
+        user-facing authentication error.
+    """
     username = payload.username.strip()
     password = payload.password
     if not username or not password:
@@ -97,6 +135,14 @@ def login(payload: LoginRequest) -> LoginResponse:
 def update_director_password(
     payload: DirectorPasswordUpdateRequest,
 ) -> DirectorPasswordUpdateResponse:
+    """Update the configured director account password.
+
+    Parameters:
+        payload: Director email and replacement password.
+
+    Returns:
+        A status response showing whether the director password was updated.
+    """
     email = payload.email.strip().lower()
     new_password = payload.newPassword.strip()
     if not email or not new_password:
@@ -120,12 +166,28 @@ def update_director_password(
 
 @router.get("/pantry-credentials", response_model=PantryCredentialRegistryResponse)
 def list_pantry_credentials() -> PantryCredentialRegistryResponse:
+    """Return pantry credential records for the director dashboard.
+
+    Parameters:
+        None.
+
+    Returns:
+        A registry response containing each pantry and whether credentials exist.
+    """
     pantries = _get_crud_module().get_pantry_credential_registry()
     return PantryCredentialRegistryResponse(ok=True, pantries=pantries)
 
 
 @router.post("/pantry/create", response_model=PantryCreateResponse)
 def create_pantry_with_login(payload: PantryCreateRequest) -> PantryCreateResponse:
+    """Create a pantry record and assign its first login password.
+
+    Parameters:
+        payload: Pantry name, optional location, and initial password.
+
+    Returns:
+        A creation response containing the new pantry identifier and status.
+    """
     name = payload.name.strip()
     location_raw = (payload.location or "").strip()
     new_password = payload.newPassword.strip()
@@ -155,6 +217,14 @@ def create_pantry_with_login(payload: PantryCreateRequest) -> PantryCreateRespon
 
 @router.post("/pantry/manage", response_model=PantryManageUpdateResponse)
 def manage_pantry(payload: PantryManageUpdateRequest) -> PantryManageUpdateResponse:
+    """Update pantry metadata and credentials from the director dashboard.
+
+    Parameters:
+        payload: Pantry ID plus optional name, location, and password updates.
+
+    Returns:
+        A response describing whether the requested pantry update succeeded.
+    """
     pantry_id_raw = payload.pantryId.strip()
     if not pantry_id_raw.isdigit():
         return PantryManageUpdateResponse(ok=False, error="Pantry id must be numeric.")
@@ -193,6 +263,14 @@ def manage_pantry(payload: PantryManageUpdateRequest) -> PantryManageUpdateRespo
 def delete_pantry_credentials(
     payload: PantryCredentialDeleteRequest,
 ) -> PantryCredentialDeleteResponse:
+    """Remove stored login credentials for one pantry account.
+
+    Parameters:
+        payload: Pantry ID whose credentials should be removed.
+
+    Returns:
+        A response explaining whether credentials were deleted or already absent.
+    """
     pantry_id_raw = payload.pantryId.strip()
     if not pantry_id_raw.isdigit():
         return PantryCredentialDeleteResponse(ok=False, error="Pantry id must be numeric.")
@@ -215,6 +293,14 @@ def delete_pantry_credentials(
 def update_pantry_password(
     payload: PantryPasswordUpdateRequest,
 ) -> PantryPasswordUpdateResponse:
+    """Set or replace the login password for one pantry account.
+
+    Parameters:
+        payload: Pantry ID and replacement password.
+
+    Returns:
+        A status response confirming the pantry password update.
+    """
     pantry_id_raw = payload.pantryId.strip()
     new_password = payload.newPassword.strip()
     if not pantry_id_raw or not new_password:
@@ -241,6 +327,15 @@ def update_pantry_password(
 def update_pantry_schedule(
     payload: PantryScheduleUpdateRequest,
 ) -> PantryScheduleUpdateResponse:
+    """Save operating hours for a pantry and refresh its current status.
+
+    Parameters:
+        payload: Pantry ID and weekly operating-hour windows.
+
+    Returns:
+        A response containing the normalized schedule, open/closed status, and
+        any manual override state.
+    """
     pantry_id_raw = payload.pantryId.strip()
     if not pantry_id_raw.isdigit():
         return PantryScheduleUpdateResponse(ok=False, error="Pantry id must be numeric.")
@@ -277,6 +372,14 @@ def update_pantry_schedule(
 
 @router.post("/pantry/toggle-status", response_model=PantryToggleStatusResponse)
 def toggle_pantry_status(payload: PantryToggleStatusRequest) -> PantryToggleStatusResponse:
+    """Flip a pantry's open/closed flag and mark it manually overridden.
+
+    Parameters:
+        payload: Pantry ID whose status should be toggled.
+
+    Returns:
+        A response containing the pantry ID, new status, and override flag.
+    """
     pantry_id_raw = payload.pantryId.strip()
     if not pantry_id_raw.isdigit():
         return PantryToggleStatusResponse(ok=False, error="Pantry id must be numeric.")
@@ -298,6 +401,14 @@ def toggle_pantry_status(payload: PantryToggleStatusRequest) -> PantryToggleStat
 
 @router.post("/pantry/set-status", response_model=PantryToggleStatusResponse)
 def set_pantry_status(payload: PantrySetStatusRequest) -> PantryToggleStatusResponse:
+    """Set a pantry's open/closed flag and mark it manually overridden.
+
+    Parameters:
+        payload: Pantry ID and explicit open/closed value.
+
+    Returns:
+        A response containing the pantry ID, saved status, and override flag.
+    """
     pantry_id_raw = payload.pantryId.strip()
     if not pantry_id_raw.isdigit():
         return PantryToggleStatusResponse(ok=False, error="Pantry id must be numeric.")
@@ -319,7 +430,15 @@ def set_pantry_status(payload: PantrySetStatusRequest) -> PantryToggleStatusResp
 
 @router.post("/pantry/clear-override", response_model=PantryToggleStatusResponse)
 def clear_pantry_override(payload: PantryToggleStatusRequest) -> PantryToggleStatusResponse:
-    """Remove manual override and immediately re-evaluate the schedule."""
+    """Remove manual override and immediately re-evaluate the schedule.
+
+    Parameters:
+        payload: Pantry ID whose manual override should be cleared.
+
+    Returns:
+        A response containing the pantry ID, recalculated status, and override
+        state after schedule evaluation.
+    """
     from datetime import datetime
 
     from back.scheduler import TIMEZONE, _is_within_schedule

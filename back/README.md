@@ -1,5 +1,22 @@
 # Backend (FastAPI)
 
+**Module:** Backend README
+**Purpose:** Documents the FastAPI backend, environment variables, and API startup workflow.
+
+**The document provides:**
+- backend setup commands.
+- Gemini environment variable notes.
+- API startup instructions.
+
+**Key Structures Used:**
+- backend virtualenv, Python requirements, and FastAPI entrypoint.
+
+**This document ensures:**
+- backend contributors can install dependencies locally.
+- API startup notes stay near backend code.
+
+**Editors:** Aniket, Dipankar, Liam, Jin, and Philip.
+
 ## Setup
 
 From the repository root:

@@ -1,3 +1,28 @@
+/******************************** inventoryCategories.ts ***************************************
+ *
+ *  Module: Frontend Inventory Categories
+ *
+ *  This module centralizes category groups used by review and upload
+ *  screens.
+ *
+ *  The module provides:
+ *
+ *  - shared category group labels.
+ *  - the flattened ordered category list.
+ *  - one frontend source of truth for inventory categories.
+ *
+ *  Key Structures Used:
+ *
+ *  - readonly category group arrays and derived category lists.
+ *
+ *  This module ensures:
+ *
+ *  - review pages do not duplicate category definitions.
+ *  - frontend category order stays consistent across workflows.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ *****************************************************************************/
 export const INVENTORY_CATEGORIES = [
   "Beverages",
   "Juices",
