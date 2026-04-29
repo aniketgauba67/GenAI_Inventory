@@ -41,6 +41,117 @@ def _is_global_pantry_question(message: str) -> bool:
     return mentions_pantry and (asks_global or ("how" in words and "many" in words))
 
 
+def _is_nearest_pantry_question(message: str) -> bool:
+    """Return True when the user is asking for a nearby pantry."""
+    normalized = re.sub(r"[^a-z0-9\s]", " ", message.lower())
+    words = set(normalized.split())
+    mentions_pantry = "pantry" in words or "pantries" in words
+    asks_nearest = bool(words & {"nearest", "closest", "nearby"}) or "near me" in normalized
+    return mentions_pantry and asks_nearest
+
+
+def _normalize_location_text(value: str) -> str:
+    return re.sub(r"\s+", " ", re.sub(r"[^a-z0-9\s]", " ", value.lower())).strip()
+
+
+def _pantry_city(location: str | None) -> str | None:
+    if not location:
+        return None
+    parts = [part.strip() for part in location.split(",")]
+    if len(parts) >= 2 and parts[1]:
+        return parts[1]
+    return None
+
+
+def _format_pantry_options(pantries: list[dict], limit: int = 5) -> str:
+    lines = []
+    for pantry in pantries[:limit]:
+        status = "open" if pantry["isOpen"] else "closed"
+        lines.append(f"- {pantry['name']} ({pantry['location']}) is currently marked {status}.")
+    extra = len(pantries) - limit
+    if extra > 0:
+        lines.append(f"- Plus {extra} more matching pantry location(s).")
+    return "\n".join(lines)
+
+
+def _load_pantry_location_rows() -> list[dict]:
+    root_dir = Path(__file__).resolve().parents[2]
+    db_dir = root_dir / "db"
+    if str(db_dir) not in sys.path:
+        sys.path.insert(0, str(db_dir))
+
+    session = None
+    try:
+        from database import SessionLocal  # pyright: ignore[reportMissingImports]
+        from models import Pantry  # pyright: ignore[reportMissingImports]
+
+        session = SessionLocal()
+        pantries = session.query(Pantry).order_by(Pantry.id.asc()).all()
+        return [
+            {
+                "id": pantry.id,
+                "name": pantry.name,
+                "location": pantry.location or "Location not listed",
+                "isOpen": pantry.is_open,
+                "city": _pantry_city(pantry.location),
+            }
+            for pantry in pantries
+        ]
+    finally:
+        if session is not None:
+            session.close()
+
+
+def _answer_nearest_pantry_question(message: str) -> str | None:
+    """Answer nearest-pantry questions using typed ZIP/city because chat has no GPS."""
+    if not _is_nearest_pantry_question(message):
+        return None
+
+    try:
+        pantries = _load_pantry_location_rows()
+    except Exception as e:
+        log.warning("Could not load pantry locations for chatbot: %s", e)
+        return "I cannot load pantry locations right now. Please try again in a moment."
+
+    if not pantries:
+        return "I cannot find any pantry locations in the system right now."
+
+    zip_match = re.search(r"\b\d{5}(?:-\d{4})?\b", message)
+    if zip_match:
+        zip_code = zip_match.group(0)[:5]
+        matches = [pantry for pantry in pantries if zip_code in pantry["location"]]
+        if matches:
+            return (
+                f"I do not have live GPS access in chat, but based on ZIP code {zip_code}, "
+                "these are the closest matching pantry locations I found:\n"
+                f"{_format_pantry_options(matches)}"
+            )
+        return (
+            f"I do not have live GPS access in chat, and I could not match ZIP code {zip_code} "
+            "to a pantry location. Try a nearby city name, such as Newark, Heath, Pataskala, or Johnstown."
+        )
+
+    normalized_message = _normalize_location_text(message)
+    city_matches: list[dict] = []
+    for pantry in pantries:
+        city = pantry.get("city")
+        if city and _normalize_location_text(city) in normalized_message:
+            city_matches.append(pantry)
+
+    if city_matches:
+        city_name = city_matches[0]["city"]
+        return (
+            f"I do not have live GPS access in chat, but based on {city_name}, "
+            "these are the closest matching pantry locations I found:\n"
+            f"{_format_pantry_options(city_matches)}"
+        )
+
+    return (
+        "I can help find the nearest pantry, but I do not have access to your live geographic location in chat. "
+        "Please tell me your ZIP code, city, or address, for example: \"closest pantry near 43055\"."
+    )
+
+
 def _answer_direct_pantry_count() -> str | None:
     """Answer total pantry count deterministically without asking Gemini."""
     root_dir = Path(__file__).resolve().parents[2]
@@ -190,6 +301,10 @@ def call_gemini_chat(
         direct_answer = _answer_direct_pantry_count()
         if direct_answer:
             return direct_answer
+
+    nearest_answer = _answer_nearest_pantry_question(user_message)
+    if nearest_answer:
+        return nearest_answer
 
     model = _build_chat_model()
     if model is None:
