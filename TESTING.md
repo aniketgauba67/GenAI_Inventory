@@ -90,7 +90,7 @@ npm run test:e2e:ui
 ```
 back/
   tests/
-    conftest.py               # sys.path setup — imports back/ and db/ directories
+    conftest.py               # Shared client and mock DB fixtures
     test_auth_schedule_validation.py
     fixtures/
       data.py                 # make_pantry(), make_run(), VALID_LOGIN_*, etc.
@@ -117,8 +117,8 @@ back/
 
 **Gemini AI** (all routes that call it are mocked at module level):
 ```python
-@patch("routers.upload.call_gemini_inventory_images", return_value={...})
-@patch("routers.chat.call_gemini_chat", return_value="reply text")
+@patch("back.routers.upload.call_gemini_inventory_images", return_value={...})
+@patch("back.routers.chat.call_gemini_chat", return_value="reply text")
 ```
 
 **Shared TestClient and mock DB** come from the root backend conftest:
@@ -126,18 +126,18 @@ back/
 # In back/tests/conftest.py
 @pytest.fixture(scope="module")
 def client():
-    return TestClient(main.app, raise_server_exceptions=True)
+    return TestClient(app, raise_server_exceptions=True)
 ```
 
-**Auth router** uses `importlib.import_module("crud")` — patch at module level:
+**Auth router** imports `db.crud` at module level:
 ```python
-@patch("crud.get_pantry_credential_by_id", return_value=mock_cred)
+@patch("db.crud.get_pantry_credential_by_id", return_value=mock_cred)
 ```
 
 **Customer/upload routers** import `SessionLocal` at load time — patch at the router:
 ```python
-@patch("routers.customer.SessionLocal", return_value=mock_session)
-@patch("routers.upload.SessionLocal", return_value=mock_session)
+@patch("back.routers.customer.SessionLocal", return_value=mock_session)
+@patch("back.routers.upload.SessionLocal", return_value=mock_session)
 @patch("routers.volunteer_inventory.SessionLocal", return_value=mock_session)
 ```
 

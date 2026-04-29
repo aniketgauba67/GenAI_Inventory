@@ -12,7 +12,7 @@ pytestmark = pytest.mark.api
 class TestChatEndpoint:
 
     def test_valid_message_returns_reply(self, client):
-        with patch("routers.chat.call_gemini_chat", return_value="Hello from the bot!"):
+        with patch("back.routers.chat.call_gemini_chat", return_value="Hello from the bot!"):
             resp = client.post("/chat/message", json={
                 "message": "What pantries are open today?",
                 "history": [],
@@ -31,7 +31,7 @@ class TestChatEndpoint:
         assert resp.status_code == 422
 
     def test_gemini_returns_none_gives_error(self, client):
-        with patch("routers.chat.call_gemini_chat", return_value=None):
+        with patch("back.routers.chat.call_gemini_chat", return_value=None):
             resp = client.post("/chat/message", json={"message": "hello", "history": []})
         assert resp.status_code == 200
         data = resp.json()
@@ -39,7 +39,7 @@ class TestChatEndpoint:
         assert "unavailable" in data["error"].lower()
 
     def test_gemini_returns_empty_string_gives_error(self, client):
-        with patch("routers.chat.call_gemini_chat", return_value=""):
+        with patch("back.routers.chat.call_gemini_chat", return_value=""):
             resp = client.post("/chat/message", json={"message": "hello"})
         assert resp.status_code == 200
         assert resp.json()["ok"] is False
@@ -50,7 +50,7 @@ class TestChatEndpoint:
             captured.update(kwargs)
             return "response"
         # Send as JSON lists; Pydantic converts list[list] → list[tuple[str,str]]
-        with patch("routers.chat.call_gemini_chat", side_effect=fake_chat):
+        with patch("back.routers.chat.call_gemini_chat", side_effect=fake_chat):
             client.post("/chat/message", json={
                 "message": "follow-up",
                 "history": [["user", "prev msg"], ["assistant", "prev reply"]],
@@ -63,7 +63,7 @@ class TestChatEndpoint:
         def fake_chat(**kwargs):
             captured.update(kwargs)
             return "ok"
-        with patch("routers.chat.call_gemini_chat", side_effect=fake_chat):
+        with patch("back.routers.chat.call_gemini_chat", side_effect=fake_chat):
             client.post("/chat/message", json={
                 "message": "hello",
                 "pantry_id": 5,
@@ -75,7 +75,7 @@ class TestChatEndpoint:
         def fake_chat(**kwargs):
             captured.update(kwargs)
             return "ok"
-        with patch("routers.chat.call_gemini_chat", side_effect=fake_chat):
+        with patch("back.routers.chat.call_gemini_chat", side_effect=fake_chat):
             client.post("/chat/message", json={
                 "message": "closest pantry near me",
                 "user_location": {
@@ -91,7 +91,7 @@ class TestChatEndpoint:
         }
 
     def test_null_pantry_id_is_accepted(self, client):
-        with patch("routers.chat.call_gemini_chat", return_value="ok"):
+        with patch("back.routers.chat.call_gemini_chat", return_value="ok"):
             resp = client.post("/chat/message", json={
                 "message": "hello",
                 "pantry_id": None,
@@ -101,7 +101,7 @@ class TestChatEndpoint:
 
     def test_long_message_is_accepted(self, client):
         long_msg = "What do you have? " * 200
-        with patch("routers.chat.call_gemini_chat", return_value="answer"):
+        with patch("back.routers.chat.call_gemini_chat", return_value="answer"):
             resp = client.post("/chat/message", json={"message": long_msg})
         assert resp.status_code == 200
         assert resp.json()["ok"] is True

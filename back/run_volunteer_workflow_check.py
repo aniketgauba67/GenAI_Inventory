@@ -4,20 +4,14 @@ from __future__ import annotations
 
 import json
 import os
-import sys
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 from dotenv import load_dotenv
 
-ROOT_DIR = Path(__file__).resolve().parent.parent
-DB_DIR = ROOT_DIR / "db"
-if str(DB_DIR) not in sys.path:
-    sys.path.insert(0, str(DB_DIR))
-
-from database import SessionLocal  # noqa: E402
-from models import InventoryRun  # noqa: E402
+from db.database import SessionLocal
+from db.models import InventoryRun
 
 DEFAULT_SUBMISSION = {
     "Beverages": 5,

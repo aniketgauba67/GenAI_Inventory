@@ -61,7 +61,12 @@ Backend scripts load `back/.env` directly.
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-cd back
+uvicorn back.main:app --reload --port 8000
+```
+
+If you are already inside `back/`, this also works:
+
+```bash
 uvicorn main:app --reload --port 8000
 ```
 
@@ -226,25 +231,25 @@ curl -X POST http://localhost:8000/volunteer/inventory/submit \
 List pantries:
 
 ```bash
-python back/list_pantries.py
+python -m back.list_pantries
 ```
 
 Read the latest stored run:
 
 ```bash
-python back/read_recent_inventory_runs.py --limit 1
+python -m back.read_recent_inventory_runs --limit 1
 ```
 
 Read the most recent 5 runs:
 
 ```bash
-python back/read_recent_inventory_runs.py
+python -m back.read_recent_inventory_runs
 ```
 
 Run the automated backend workflow check:
 
 ```bash
-python back/run_volunteer_workflow_check.py
+python -m back.run_volunteer_workflow_check
 ```
 
 That helper script:

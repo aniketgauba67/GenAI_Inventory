@@ -8,7 +8,7 @@ import unittest
 class TestPasswordUtils(unittest.TestCase):
 
     def setUp(self):
-        from password_utils import hash_password, verify_password  # on sys.path via conftest
+        from db.password_utils import hash_password, verify_password
         self.hash_password = hash_password
         self.verify_password = verify_password
 

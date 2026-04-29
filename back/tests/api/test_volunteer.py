@@ -45,11 +45,11 @@ class TestVolunteerInventorySubmit:
         db = _mock_db_with_pantry(pantry)
 
         with (
-            patch("routers.volunteer_inventory.SessionLocal", return_value=db),
-            patch("routers.volunteer_inventory.resolve_pantry", return_value=pantry),
-            patch("routers.volunteer_inventory.load_latest_inventory_run", return_value=warehouse),
-            patch("routers.volunteer_inventory.upsert_pantry_inventory_items"),
-            patch("routers.volunteer_inventory.persist_inventory_run", return_value="new-run-id"),
+            patch("back.routers.volunteer_inventory.SessionLocal", return_value=db),
+            patch("back.routers.volunteer_inventory.resolve_pantry", return_value=pantry),
+            patch("back.routers.volunteer_inventory.load_latest_inventory_run", return_value=warehouse),
+            patch("back.routers.volunteer_inventory.upsert_pantry_inventory_items"),
+            patch("back.routers.volunteer_inventory.persist_inventory_run", return_value="new-run-id"),
         ):
             resp = client.post("/volunteer/inventory/submit", json={
                 "pantryId": "1",
@@ -69,11 +69,11 @@ class TestVolunteerInventorySubmit:
         db = _mock_db_with_pantry(pantry)
 
         with (
-            patch("routers.volunteer_inventory.SessionLocal", return_value=db),
-            patch("routers.volunteer_inventory.resolve_pantry", return_value=pantry),
-            patch("routers.volunteer_inventory.load_latest_inventory_run", return_value=warehouse),
-            patch("routers.volunteer_inventory.upsert_pantry_inventory_items"),
-            patch("routers.volunteer_inventory.persist_inventory_run", return_value="run-x"),
+            patch("back.routers.volunteer_inventory.SessionLocal", return_value=db),
+            patch("back.routers.volunteer_inventory.resolve_pantry", return_value=pantry),
+            patch("back.routers.volunteer_inventory.load_latest_inventory_run", return_value=warehouse),
+            patch("back.routers.volunteer_inventory.upsert_pantry_inventory_items"),
+            patch("back.routers.volunteer_inventory.persist_inventory_run", return_value="run-x"),
         ):
             resp = client.post("/volunteer/inventory/submit", json={
                 "pantryId": "1",
@@ -90,11 +90,11 @@ class TestVolunteerInventorySubmit:
         db = _mock_db_with_pantry(pantry)
 
         with (
-            patch("routers.volunteer_inventory.SessionLocal", return_value=db),
-            patch("routers.volunteer_inventory.resolve_pantry", return_value=pantry),
-            patch("routers.volunteer_inventory.load_latest_inventory_run", return_value=warehouse),
-            patch("routers.volunteer_inventory.upsert_pantry_inventory_items"),
-            patch("routers.volunteer_inventory.persist_inventory_run", return_value="r"),
+            patch("back.routers.volunteer_inventory.SessionLocal", return_value=db),
+            patch("back.routers.volunteer_inventory.resolve_pantry", return_value=pantry),
+            patch("back.routers.volunteer_inventory.load_latest_inventory_run", return_value=warehouse),
+            patch("back.routers.volunteer_inventory.upsert_pantry_inventory_items"),
+            patch("back.routers.volunteer_inventory.persist_inventory_run", return_value="r"),
         ):
             resp = client.post("/volunteer/inventory/submit", json={
                 "pantryId": "1",
@@ -107,9 +107,9 @@ class TestVolunteerInventorySubmit:
     def test_pantry_not_found_returns_error(self, client):
         db = _mock_db_with_pantry(None)
         with (
-            patch("routers.volunteer_inventory.SessionLocal", return_value=db),
-            patch("routers.volunteer_inventory.resolve_pantry", return_value=None),
-            patch("routers.volunteer_inventory.Base.metadata.create_all"),
+            patch("back.routers.volunteer_inventory.SessionLocal", return_value=db),
+            patch("back.routers.volunteer_inventory.resolve_pantry", return_value=None),
+            patch("back.routers.volunteer_inventory.Base.metadata.create_all"),
         ):
             resp = client.post("/volunteer/inventory/submit", json={
                 "pantryId": "999",
@@ -124,10 +124,10 @@ class TestVolunteerInventorySubmit:
         db = _mock_db_with_pantry(pantry)
 
         with (
-            patch("routers.volunteer_inventory.SessionLocal", return_value=db),
-            patch("routers.volunteer_inventory.resolve_pantry", return_value=pantry),
-            patch("routers.volunteer_inventory.load_latest_inventory_run", return_value=None),
-            patch("routers.volunteer_inventory.Base.metadata.create_all"),
+            patch("back.routers.volunteer_inventory.SessionLocal", return_value=db),
+            patch("back.routers.volunteer_inventory.resolve_pantry", return_value=pantry),
+            patch("back.routers.volunteer_inventory.load_latest_inventory_run", return_value=None),
+            patch("back.routers.volunteer_inventory.Base.metadata.create_all"),
         ):
             resp = client.post("/volunteer/inventory/submit", json={
                 "pantryId": "1",
@@ -163,10 +163,10 @@ class TestWarehouseSnapshot:
         db = _mock_db_with_pantry(pantry)
 
         with (
-            patch("routers.volunteer_inventory.SessionLocal", return_value=db),
-            patch("routers.volunteer_inventory.resolve_pantry", return_value=pantry),
-            patch("routers.volunteer_inventory.upsert_pantry_inventory_items"),
-            patch("routers.volunteer_inventory.persist_inventory_run", return_value="snap-id"),
+            patch("back.routers.volunteer_inventory.SessionLocal", return_value=db),
+            patch("back.routers.volunteer_inventory.resolve_pantry", return_value=pantry),
+            patch("back.routers.volunteer_inventory.upsert_pantry_inventory_items"),
+            patch("back.routers.volunteer_inventory.persist_inventory_run", return_value="snap-id"),
         ):
             resp = client.post("/warehouse/inventory/snapshot", json={
                 "pantryId": "1",
@@ -198,8 +198,8 @@ class TestWarehouseSnapshot:
     def test_pantry_not_found_gives_error(self, client):
         db = _mock_db_with_pantry(None)
         with (
-            patch("routers.volunteer_inventory.SessionLocal", return_value=db),
-            patch("routers.volunteer_inventory.resolve_pantry", return_value=None),
+            patch("back.routers.volunteer_inventory.SessionLocal", return_value=db),
+            patch("back.routers.volunteer_inventory.resolve_pantry", return_value=None),
         ):
             resp = client.post("/warehouse/inventory/snapshot", json={
                 "pantryId": "99",

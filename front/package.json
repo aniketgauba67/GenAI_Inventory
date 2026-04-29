@@ -1,5 +1,5 @@
 {
-  "name": "nextjs_boilerplate",
+  "name": "genai-inventory-front",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -7,7 +7,6 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
-    "dev:jin": "/opt/homebrew/bin/node node_modules/.bin/next dev --webpack",
     "test": "jest",
     "test:unit": "jest __tests__/unit",
     "test:component": "jest __tests__/component",

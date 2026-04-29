@@ -15,21 +15,15 @@ from __future__ import annotations
 import argparse
 import json
 import re
-import sys
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from dotenv import load_dotenv
 
-ROOT_DIR = Path(__file__).resolve().parent.parent
-DB_DIR = ROOT_DIR / "db"
-if str(DB_DIR) not in sys.path:
-    sys.path.insert(0, str(DB_DIR))
-
-from database import SessionLocal  # noqa: E402
-from models import Pantry  # noqa: E402
-from seed_real_pantries import REAL_PANTRIES  # noqa: E402
+from db.database import SessionLocal
+from db.models import Pantry
+from db.seed_real_pantries import REAL_PANTRIES
 
 TIMEZONE = ZoneInfo("America/New_York")
 DAY_MAP = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]

@@ -8,18 +8,11 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import sys
 from datetime import datetime
-from pathlib import Path
 from zoneinfo import ZoneInfo
 
-ROOT_DIR = Path(__file__).resolve().parents[1]
-DB_DIR = ROOT_DIR / "db"
-if str(DB_DIR) not in sys.path:
-    sys.path.insert(0, str(DB_DIR))
-
-from database import SessionLocal  # noqa: E402
-from models import Pantry  # noqa: E402
+from db.database import SessionLocal
+from db.models import Pantry
 
 logger = logging.getLogger(__name__)
 

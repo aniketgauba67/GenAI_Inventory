@@ -2,8 +2,9 @@
 
 ## Setup
 
+From the repository root:
+
 ```bash
-cd back
 python -m venv .venv
 source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
@@ -22,21 +23,25 @@ Then run:
 
 ```bash
 export GEMINI_API_KEY=your_key_here
+uvicorn back.main:app --reload --port 8000
+```
+
+If your terminal is already in `back/`, use:
+
+```bash
 uvicorn main:app --reload --port 8000
 ```
 
 `POST /upload` will:
 
-1. Save images to `uploads/`
-2. Send the first image to Gemini with the default prompt: "Briefly describe what you see in this image."
-3. Return `{ "ok": true, "files": [...], "gemini": { "text": "..." } }` when the key is set.
-
-Optional query param: `?prompt=Your custom prompt` to override the prompt.
+1. Validate uploaded image files.
+2. Send shelf photos to Gemini for 19-category inventory extraction.
+3. Return `{ "ok": true, "files": [...], "inventory": { ... } }` when detection succeeds.
 
 ## Run
 
 ```bash
-uvicorn main:app --reload --port 8000
+uvicorn back.main:app --reload --port 8000
 ```
 
 - API: http://localhost:8000

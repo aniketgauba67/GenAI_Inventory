@@ -53,10 +53,10 @@ class TestVolunteerSubmitWorkflow:
 
         # Step 1: Upload images
         with (
-            patch("routers.upload.SessionLocal", return_value=mock_db),
-            patch("routers.upload.resolve_pantry", return_value=pantry),
-            patch("routers.upload.call_gemini_inventory_images", return_value=detected),
-            patch("routers.upload.save_inventory_draft"),
+            patch("back.routers.upload.SessionLocal", return_value=mock_db),
+            patch("back.routers.upload.resolve_pantry", return_value=pantry),
+            patch("back.routers.upload.call_gemini_inventory_images", return_value=detected),
+            patch("back.routers.upload.save_inventory_draft"),
         ):
             upload_resp = client.post(
                 "/upload",
@@ -71,11 +71,11 @@ class TestVolunteerSubmitWorkflow:
         # Step 2: Submit detected inventory
         mock_db2 = MagicMock()
         with (
-            patch("routers.volunteer_inventory.SessionLocal", return_value=mock_db2),
-            patch("routers.volunteer_inventory.resolve_pantry", return_value=pantry),
-            patch("routers.volunteer_inventory.load_latest_inventory_run", return_value=warehouse),
-            patch("routers.volunteer_inventory.upsert_pantry_inventory_items"),
-            patch("routers.volunteer_inventory.persist_inventory_run", return_value="vol-run-1"),
+            patch("back.routers.volunteer_inventory.SessionLocal", return_value=mock_db2),
+            patch("back.routers.volunteer_inventory.resolve_pantry", return_value=pantry),
+            patch("back.routers.volunteer_inventory.load_latest_inventory_run", return_value=warehouse),
+            patch("back.routers.volunteer_inventory.upsert_pantry_inventory_items"),
+            patch("back.routers.volunteer_inventory.persist_inventory_run", return_value="vol-run-1"),
         ):
             submit_resp = client.post("/volunteer/inventory/submit", json={
                 "pantryId": "1",
@@ -97,11 +97,11 @@ class TestVolunteerSubmitWorkflow:
 
         mock_db = MagicMock()
         with (
-            patch("routers.volunteer_inventory.SessionLocal", return_value=mock_db),
-            patch("routers.volunteer_inventory.resolve_pantry", return_value=pantry),
-            patch("routers.volunteer_inventory.load_latest_inventory_run", return_value=warehouse),
-            patch("routers.volunteer_inventory.upsert_pantry_inventory_items"),
-            patch("routers.volunteer_inventory.persist_inventory_run", return_value="r"),
+            patch("back.routers.volunteer_inventory.SessionLocal", return_value=mock_db),
+            patch("back.routers.volunteer_inventory.resolve_pantry", return_value=pantry),
+            patch("back.routers.volunteer_inventory.load_latest_inventory_run", return_value=warehouse),
+            patch("back.routers.volunteer_inventory.upsert_pantry_inventory_items"),
+            patch("back.routers.volunteer_inventory.persist_inventory_run", return_value="r"),
         ):
             resp = client.post("/volunteer/inventory/submit", json={
                 "pantryId": "1",
@@ -129,11 +129,11 @@ class TestManagerWorkflow:
 
         mock_db = MagicMock()
         with (
-            patch("routers.volunteer_inventory.SessionLocal", return_value=mock_db),
-            patch("routers.volunteer_inventory.resolve_pantry", return_value=pantry),
-            patch("routers.volunteer_inventory.load_latest_inventory_run", return_value=warehouse),
-            patch("routers.volunteer_inventory.upsert_pantry_inventory_items"),
-            patch("routers.volunteer_inventory.persist_inventory_run", return_value="r"),
+            patch("back.routers.volunteer_inventory.SessionLocal", return_value=mock_db),
+            patch("back.routers.volunteer_inventory.resolve_pantry", return_value=pantry),
+            patch("back.routers.volunteer_inventory.load_latest_inventory_run", return_value=warehouse),
+            patch("back.routers.volunteer_inventory.upsert_pantry_inventory_items"),
+            patch("back.routers.volunteer_inventory.persist_inventory_run", return_value="r"),
         ):
             resp = client.post("/volunteer/inventory/submit", json={
                 "pantryId": "1",

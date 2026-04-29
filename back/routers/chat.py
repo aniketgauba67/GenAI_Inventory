@@ -3,10 +3,7 @@ from __future__ import annotations
 from pydantic import BaseModel, Field
 from fastapi import APIRouter
 
-try:
-    from ..services.gemini_chatbot import call_gemini_chat
-except ImportError:
-    from services.gemini_chatbot import call_gemini_chat
+from back.services.gemini_chatbot import call_gemini_chat
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 

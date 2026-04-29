@@ -5,18 +5,12 @@ This is a read-only helper for checking the final schema in the actual database,
 
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
 from sqlalchemy import inspect
 
-ROOT_DIR = Path(__file__).resolve().parent.parent
-DB_DIR = ROOT_DIR / "db"
-if str(DB_DIR) not in sys.path:
-    sys.path.insert(0, str(DB_DIR))
-
-from database import engine  # noqa: E402
+from db.database import engine
 
 
 def main() -> None:

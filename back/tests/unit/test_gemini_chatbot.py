@@ -1,16 +1,9 @@
 from __future__ import annotations
 
-import sys
-from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from back.services import gemini_chatbot
-
-ROOT_DIR = Path(__file__).resolve().parents[3]
-DB_DIR = ROOT_DIR / "db"
-if str(DB_DIR) not in sys.path:
-    sys.path.insert(0, str(DB_DIR))
 
 
 def _mock_pantry(pantry_id: int, name: str, location: str, is_open: bool = True):
@@ -35,7 +28,7 @@ def test_pantry_count_question_ignores_selected_pantry_scope():
     mock_session = MagicMock()
     mock_session.query.return_value.count.return_value = 27
 
-    with patch("database.SessionLocal", return_value=mock_session):
+    with patch.object(gemini_chatbot, "SessionLocal", return_value=mock_session):
         reply = gemini_chatbot.call_gemini_chat(
             user_message="How many pantries are there?",
             pantry_id=1,
@@ -94,7 +87,7 @@ def test_nearest_pantry_without_location_asks_for_zip_or_city():
         _mock_pantry(1, "FPN Market", "131 McMillen Dr, Newark, OH 43055"),
     ])
 
-    with patch("database.SessionLocal", return_value=mock_session):
+    with patch.object(gemini_chatbot, "SessionLocal", return_value=mock_session):
         reply = gemini_chatbot.call_gemini_chat(
             user_message="What is the closest pantry near me?",
             pantry_id=1,
@@ -112,7 +105,7 @@ def test_nearest_pantry_by_zip_uses_all_pantry_locations():
         _mock_pantry(2, "Pataskala UMC", "458 South Main St, Pataskala, OH 43062"),
     ])
 
-    with patch("database.SessionLocal", return_value=mock_session):
+    with patch.object(gemini_chatbot, "SessionLocal", return_value=mock_session):
         reply = gemini_chatbot.call_gemini_chat(
             user_message="closest pantry near 43062",
             pantry_id=1,
@@ -130,7 +123,7 @@ def test_nearest_pantry_by_city_uses_all_pantry_locations():
         _mock_pantry(2, "Heath Fire Department", "93 Heath Rd, Heath, OH 43056", is_open=False),
     ])
 
-    with patch("database.SessionLocal", return_value=mock_session):
+    with patch.object(gemini_chatbot, "SessionLocal", return_value=mock_session):
         reply = gemini_chatbot.call_gemini_chat(
             user_message="nearest pantry in Heath",
             pantry_id=1,
@@ -150,7 +143,7 @@ def test_nearest_pantry_with_user_location_returns_distance_and_details():
         _mock_pantry(3, "Johnstown/Faithcare Pantry", "140 Pratt St, Johnstown, OH 43031"),
     ])
 
-    with patch("database.SessionLocal", return_value=mock_session):
+    with patch.object(gemini_chatbot, "SessionLocal", return_value=mock_session):
         reply = gemini_chatbot.call_gemini_chat(
             user_message="What is the closest pantry near me?",
             pantry_id=1,

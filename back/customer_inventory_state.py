@@ -4,10 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-try:
-    from .inventory_domain import INVENTORY_CATEGORIES, compute_level_from_quantities
-except ImportError:
-    from inventory_domain import INVENTORY_CATEGORIES, compute_level_from_quantities
+from back.inventory_domain import INVENTORY_CATEGORIES, compute_level_from_quantities
 
 CUSTOMER_LEVELS = {"High", "Mid", "Low", "Out"}
 

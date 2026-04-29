@@ -17,7 +17,7 @@ pytestmark = pytest.mark.api
 class TestLoginEndpoint:
 
     def test_director_login_success(self, client):
-        with patch("crud.check_director_credentials", return_value=True):
+        with patch("db.crud.check_director_credentials", return_value=True):
             resp = client.post("/auth/login", json={
                 "username": "director",
                 "password": "correct-password",
@@ -29,7 +29,7 @@ class TestLoginEndpoint:
         assert data["user"]["pantryId"] == "director"
 
     def test_director_login_by_email(self, client):
-        with patch("crud.check_director_credentials", return_value=True):
+        with patch("db.crud.check_director_credentials", return_value=True):
             resp = client.post("/auth/login", json={
                 "username": "director@example.com",
                 "password": "pw",
@@ -38,7 +38,7 @@ class TestLoginEndpoint:
         assert resp.json()["ok"] is True
 
     def test_director_login_wrong_password(self, client):
-        with patch("crud.check_director_credentials", return_value=False):
+        with patch("db.crud.check_director_credentials", return_value=False):
             resp = client.post("/auth/login", json={
                 "username": "director",
                 "password": "wrong",
@@ -50,7 +50,7 @@ class TestLoginEndpoint:
 
     def test_pantry_login_by_numeric_id_success(self, client):
         with (
-            patch("crud.check_credentials", return_value=True),
+            patch("db.crud.check_credentials", return_value=True),
         ):
             resp = client.post("/auth/login", json={
                 "username": "1",
@@ -64,8 +64,8 @@ class TestLoginEndpoint:
 
     def test_pantry_login_by_name_success(self, client):
         with (
-            patch("crud.get_pantry_id_by_name", return_value=5),
-            patch("crud.check_credentials", return_value=True),
+            patch("db.crud.get_pantry_id_by_name", return_value=5),
+            patch("db.crud.check_credentials", return_value=True),
         ):
             resp = client.post("/auth/login", json={
                 "username": "FPN Pantry A",
@@ -75,7 +75,7 @@ class TestLoginEndpoint:
         assert resp.json()["ok"] is True
 
     def test_pantry_name_not_found(self, client):
-        with patch("crud.get_pantry_id_by_name", return_value=None):
+        with patch("db.crud.get_pantry_id_by_name", return_value=None):
             resp = client.post("/auth/login", json={
                 "username": "No Such Pantry",
                 "password": "pw",
@@ -87,7 +87,7 @@ class TestLoginEndpoint:
 
     def test_pantry_wrong_password(self, client):
         with (
-            patch("crud.check_credentials", return_value=False),
+            patch("db.crud.check_credentials", return_value=False),
         ):
             resp = client.post("/auth/login", json={
                 "username": "1",
@@ -115,7 +115,7 @@ class TestLoginEndpoint:
 class TestListPantryCredentials:
 
     def test_returns_ok_with_empty_list(self, client):
-        with patch("crud.get_pantry_credential_registry", return_value=[]):
+        with patch("db.crud.get_pantry_credential_registry", return_value=[]):
             resp = client.get("/auth/pantry-credentials")
         assert resp.status_code == 200
         data = resp.json()
@@ -134,7 +134,7 @@ class TestListPantryCredentials:
                 "operatingHours": [],
             }
         ]
-        with patch("crud.get_pantry_credential_registry", return_value=mock_pantries):
+        with patch("db.crud.get_pantry_credential_registry", return_value=mock_pantries):
             resp = client.get("/auth/pantry-credentials")
         assert resp.status_code == 200
         data = resp.json()
@@ -153,8 +153,8 @@ class TestCreatePantry:
         mock_pantry.location = "100 Elm St"
 
         with (
-            patch("crud.add_pantry", return_value=mock_pantry),
-            patch("crud.set_login_credentials", return_value=MagicMock()),
+            patch("db.crud.add_pantry", return_value=mock_pantry),
+            patch("db.crud.set_login_credentials", return_value=MagicMock()),
         ):
             resp = client.post("/auth/pantry/create", json={
                 "name": "New Pantry",
@@ -173,8 +173,8 @@ class TestCreatePantry:
         mock_pantry.location = None
 
         with (
-            patch("crud.add_pantry", return_value=mock_pantry),
-            patch("crud.set_login_credentials"),
+            patch("db.crud.add_pantry", return_value=mock_pantry),
+            patch("db.crud.set_login_credentials"),
         ):
             resp = client.post("/auth/pantry/create", json={
                 "name": "Minimal Pantry",
@@ -199,7 +199,7 @@ class TestManagePantry:
     def test_update_name_success(self, client):
         mock_pantry = MagicMock()
         mock_pantry.id = 1
-        with patch("crud.update_pantry_metadata", return_value=mock_pantry):
+        with patch("db.crud.update_pantry_metadata", return_value=mock_pantry):
             resp = client.post("/auth/pantry/manage", json={
                 "pantryId": "1",
                 "name": "Updated Name",
@@ -222,7 +222,7 @@ class TestManagePantry:
         assert resp.json()["ok"] is False
 
     def test_pantry_not_found_fails(self, client):
-        with patch("crud.update_pantry_metadata", return_value=None):
+        with patch("db.crud.update_pantry_metadata", return_value=None):
             resp = client.post("/auth/pantry/manage", json={
                 "pantryId": "999",
                 "name": "Ghost Pantry",
@@ -236,7 +236,7 @@ class TestManagePantry:
 class TestTogglePantryStatus:
 
     def test_toggle_open_to_closed(self, client):
-        with patch("crud.toggle_pantry_status", return_value={
+        with patch("db.crud.toggle_pantry_status", return_value={
             "pantryId": "1", "isOpen": False, "manualOverride": True,
         }):
             resp = client.post("/auth/pantry/toggle-status", json={"pantryId": "1"})
@@ -247,7 +247,7 @@ class TestTogglePantryStatus:
         assert data["manualOverride"] is True
 
     def test_pantry_not_found_returns_error(self, client):
-        with patch("crud.toggle_pantry_status", return_value=None):
+        with patch("db.crud.toggle_pantry_status", return_value=None):
             resp = client.post("/auth/pantry/toggle-status", json={"pantryId": "999"})
         assert resp.status_code == 200
         assert resp.json()["ok"] is False
@@ -263,7 +263,7 @@ class TestTogglePantryStatus:
 class TestUpdatePantrySchedule:
 
     def test_valid_schedule_saved(self, client):
-        with patch("crud.update_pantry_operating_hours", return_value={
+        with patch("db.crud.update_pantry_operating_hours", return_value={
             "pantryId": "1",
             "operatingHours": [{"day": "mon", "open": "09:00", "close": "17:00"}],
             "isOpen": True,
@@ -293,7 +293,7 @@ class TestUpdatePantrySchedule:
         assert resp.json()["ok"] is False
 
     def test_empty_schedule_clears_hours(self, client):
-        with patch("crud.update_pantry_operating_hours", return_value={
+        with patch("db.crud.update_pantry_operating_hours", return_value={
             "pantryId": "1",
             "operatingHours": [],
             "isOpen": False,
@@ -312,7 +312,7 @@ class TestUpdatePantrySchedule:
 class TestUpdateDirectorPassword:
 
     def test_update_success(self, client):
-        with patch("crud.set_director_credentials"):
+        with patch("db.crud.set_director_credentials"):
             resp = client.post("/auth/director/password", json={
                 "email": "director@example.com",
                 "newPassword": "new-secret-pass",

@@ -1,15 +1,9 @@
 """Tests for pantry operating-hours validation helpers."""
 
-from pathlib import Path
-import sys
 import unittest
 
-BACK_DIR = Path(__file__).resolve().parents[1]
-if str(BACK_DIR) not in sys.path:
-    sys.path.insert(0, str(BACK_DIR))
-
-from operating_hours import normalize_operating_hours
-from schemas import OperatingHourSlot
+from back.operating_hours import normalize_operating_hours
+from back.schemas import OperatingHourSlot
 
 
 class TestAuthScheduleValidation(unittest.TestCase):

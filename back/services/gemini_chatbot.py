@@ -1,12 +1,14 @@
 import logging
-from pathlib import Path
-import sys
 import json
 import math
 import re
 from urllib.parse import quote_plus
 
-from config import GEMINI_MODEL, get_gemini_api_key
+from back.config import GEMINI_MODEL, get_gemini_api_key
+from back.customer_inventory_state import resolve_customer_inventory_state
+from back.inventory_domain import load_latest_inventory_run
+from db.database import SessionLocal
+from db.models import InventoryItem, InventoryRun, Pantry
 
 log = logging.getLogger(__name__)
 
@@ -180,16 +182,8 @@ def _format_pantry_options(pantries: list[dict], limit: int = 5) -> str:
 
 
 def _load_pantry_location_rows() -> list[dict]:
-    root_dir = Path(__file__).resolve().parents[2]
-    db_dir = root_dir / "db"
-    if str(db_dir) not in sys.path:
-        sys.path.insert(0, str(db_dir))
-
     session = None
     try:
-        from database import SessionLocal  # pyright: ignore[reportMissingImports]
-        from models import Pantry  # pyright: ignore[reportMissingImports]
-
         session = SessionLocal()
         pantries = session.query(Pantry).order_by(Pantry.id.asc()).all()
         return [
@@ -289,16 +283,8 @@ def _answer_nearest_pantry_question(message: str, user_location: dict | None = N
 
 def _answer_direct_pantry_count() -> str | None:
     """Answer total pantry count deterministically without asking Gemini."""
-    root_dir = Path(__file__).resolve().parents[2]
-    db_dir = root_dir / "db"
-    if str(db_dir) not in sys.path:
-        sys.path.insert(0, str(db_dir))
-
     session = None
     try:
-        from database import SessionLocal  # pyright: ignore[reportMissingImports]
-        from models import Pantry  # pyright: ignore[reportMissingImports]
-
         session = SessionLocal()
         count = session.query(Pantry).count()
         if count == 1:
@@ -314,22 +300,8 @@ def _answer_direct_pantry_count() -> str | None:
 
 def _fetch_db_chat_context(pantry_id: int | None = None) -> str | None:
     """Fetch a compact, read-only DB snapshot for retrieval-augmented chat answers."""
-    root_dir = Path(__file__).resolve().parents[2]
-    db_dir = root_dir / "db"
-    if str(db_dir) not in sys.path:
-        sys.path.insert(0, str(db_dir))
-
     session = None
     try:
-        from database import SessionLocal  # pyright: ignore[reportMissingImports]
-        from models import InventoryItem, InventoryRun, Pantry  # pyright: ignore[reportMissingImports]
-        try:
-            from ..customer_inventory_state import resolve_customer_inventory_state
-            from ..inventory_domain import load_latest_inventory_run
-        except ImportError:
-            from customer_inventory_state import resolve_customer_inventory_state
-            from inventory_domain import load_latest_inventory_run
-
         session = SessionLocal()
 
         pantry_query = session.query(Pantry).order_by(Pantry.id.asc())

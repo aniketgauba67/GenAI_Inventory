@@ -6,9 +6,9 @@ Each pantry gets a default login password of 'pantry123'.
 """
 
 from sqlalchemy import text
-from database import SessionLocal, engine
-from models import Pantry, InventoryItem, InventoryRun, LoginCredentials
-from password_utils import hash_password
+from db.database import SessionLocal, engine
+from db.models import InventoryItem, InventoryRun, LoginCredentials, Pantry
+from db.password_utils import hash_password
 
 REAL_PANTRIES = [
     # --- Newark, Ohio ---
