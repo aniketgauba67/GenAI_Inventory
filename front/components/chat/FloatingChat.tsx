@@ -63,10 +63,17 @@ const INITIAL_ASSISTANT_MESSAGE = createMessage(
 
 function isNearestPantryQuestion(message: string): boolean {
   const normalized = message.toLowerCase();
-  return (
-    /\bpantr(?:y|ies)\b/.test(normalized) &&
-    (/\b(nearest|closest|nearby)\b/.test(normalized) || normalized.includes("near me"))
+  const mentionsPantryLikePlace = (
+    /\b(pantr(?:y|ies|ys)|patr(?:y|ies)|food\s+(?:pantry|bank)|fpn|location|site)\b/.test(normalized)
   );
+  const asksForNearbyPlace = (
+    /\b(nearest|closest|nearby|directions?|maps?|near)\b/.test(normalized) ||
+    normalized.includes("near me") ||
+    normalized.includes("around me") ||
+    normalized.includes("my location")
+  );
+
+  return asksForNearbyPlace && (mentionsPantryLikePlace || normalized.includes("near me"));
 }
 
 function getCurrentLocation(): Promise<ChatUserLocation | null> {
