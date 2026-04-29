@@ -1,7 +1,6 @@
-"""Extended unit tests for back/inventory_domain.py.
+"""Unit tests for back/inventory_domain.py.
 
-Complements the existing test_inventory_domain.py with additional edge-case and
-boundary coverage. Each test is fully independent — no I/O, no DB.
+Each test is fully independent — no I/O, no DB.
 """
 
 from __future__ import annotations
@@ -19,6 +18,35 @@ from back.inventory_domain import (
     summarize_levels,
     validate_inventory,
 )
+
+
+class TestInventoryCategories(unittest.TestCase):
+
+    def test_inventory_categories_are_fixed_to_expected_order(self):
+        self.assertEqual(
+            INVENTORY_CATEGORIES,
+            [
+                "Beverages",
+                "Juices",
+                "Cereal",
+                "Breakfast",
+                "Meat",
+                "Fish",
+                "Poultry",
+                "Frozen",
+                "Vegetables",
+                "Fruits",
+                "Nuts",
+                "Soup",
+                "Grains",
+                "Pasta",
+                "Snacks",
+                "Spices",
+                "Sauces",
+                "Condiments",
+                "Misc Products",
+            ],
+        )
 
 
 # ── normalize_inventory ──────────────────────────────────────────────────────

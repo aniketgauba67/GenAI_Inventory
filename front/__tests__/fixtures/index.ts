@@ -4,14 +4,11 @@
  * Import from any test file:  import { mockPantry, mockLevels } from "../fixtures";
  */
 
-export const INVENTORY_CATEGORIES = [
-  "Beverages", "Juices", "Cereal", "Breakfast", "Meat", "Fish",
-  "Poultry", "Frozen", "Vegetables", "Fruits", "Nuts", "Soup",
-  "Grains", "Pasta", "Snacks", "Spices", "Sauces", "Condiments",
-  "Misc Products",
-] as const;
+import { INVENTORY_CATEGORIES, type InventoryCategory } from "@/lib/inventoryCategories";
 
-export type Category = (typeof INVENTORY_CATEGORIES)[number];
+export { INVENTORY_CATEGORIES };
+
+export type Category = InventoryCategory;
 export type Level = "High" | "Mid" | "Low" | "Out";
 
 export const makeLevels = (level: Level = "Mid"): Record<string, Level> =>

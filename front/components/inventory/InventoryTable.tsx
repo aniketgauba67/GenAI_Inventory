@@ -5,7 +5,7 @@ import LevelBadge from "./LevelBadge";
 import RatioBar from "./RatioBar";
 
 type InventoryTableProps = {
-  categories: string[];
+  categories: readonly string[];
   ratios: Record<string, number>;
   levels: Record<string, string>;
 };

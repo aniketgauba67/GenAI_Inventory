@@ -6,6 +6,7 @@ for volunteer ratio calculations.
 
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 from pathlib import Path
@@ -19,6 +20,18 @@ if str(DB_DIR) not in sys.path:
 
 from database import SessionLocal  # noqa: E402
 from models import InventoryRun  # noqa: E402
+
+
+def parse_args() -> argparse.Namespace:
+    """Parse command-line options for the inventory run reader."""
+    parser = argparse.ArgumentParser(description="Read recent inventory_runs rows.")
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=5,
+        help="Number of recent runs to print. Use --limit 1 for the latest run.",
+    )
+    return parser.parse_args()
 
 
 def main(limit: int = 5) -> None:
@@ -75,4 +88,5 @@ def main(limit: int = 5) -> None:
 
 
 if __name__ == "__main__":
-    main()
+    args = parse_args()
+    main(limit=max(1, args.limit))

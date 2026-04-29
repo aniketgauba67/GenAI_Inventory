@@ -6,13 +6,7 @@
  */
 
 import { http, HttpResponse } from "msw";
-
-const INVENTORY_CATEGORIES = [
-  "Beverages", "Juices", "Cereal", "Breakfast", "Meat", "Fish",
-  "Poultry", "Frozen", "Vegetables", "Fruits", "Nuts", "Soup",
-  "Grains", "Pasta", "Snacks", "Spices", "Sauces", "Condiments",
-  "Misc Products",
-] as const;
+import { INVENTORY_CATEGORIES } from "@/lib/inventoryCategories";
 
 const makeLevels = (level: "High" | "Mid" | "Low" | "Out" = "Mid") =>
   Object.fromEntries(INVENTORY_CATEGORIES.map((c) => [c, level]));

@@ -41,7 +41,7 @@ The project uses only these 19 categories:
 
 ## Backend Env
 
-Create [back/.env](/Users/aniketgauba/Documents/GitHub/GenAI_Inventory/back/.env):
+Create `back/.env`:
 
 ```env
 DB_HOST=inventory-db.cdkgm4c2klqg.us-east-2.rds.amazonaws.com
@@ -58,10 +58,10 @@ Backend scripts load `back/.env` directly.
 ## Backend Setup
 
 ```bash
-cd back
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+cd back
 uvicorn main:app --reload --port 8000
 ```
 
@@ -232,7 +232,7 @@ python back/list_pantries.py
 Read the latest stored run:
 
 ```bash
-python back/read_latest_inventory_run.py
+python back/read_recent_inventory_runs.py --limit 1
 ```
 
 Read the most recent 5 runs:
@@ -256,7 +256,7 @@ That helper script:
 Run the active workflow/domain tests:
 
 ```bash
-python -m unittest back/tests/test_inventory_domain.py
+python -m pytest back/tests
 ```
 
 ## Frontend Quality Checks (Day 7)
