@@ -46,6 +46,10 @@ beforeEach(() => {
   // Default: successful reply
   mockFetch.mockReturnValue(makeFetchResult({ ok: true, reply: "Mock bot reply" }));
   global.fetch = mockFetch as typeof fetch;
+  Object.defineProperty(navigator, "geolocation", {
+    configurable: true,
+    value: undefined,
+  });
 });
 
 describe("FloatingChat", () => {
@@ -193,5 +197,47 @@ describe("FloatingChat", () => {
     await user.type(screen.getByPlaceholderText(/Type your question/i), "Hi");
     await user.click(screen.getByRole("button", { name: /send/i }));
     await waitFor(() => expect(capturedBody.pantryId).toBe("5"));
+  });
+
+  it("requests browser location for typo nearest-pantry wording", async () => {
+    const getCurrentPosition = jest.fn((success: PositionCallback) => {
+      success({
+        coords: {
+          latitude: 40.02,
+          longitude: -82.445,
+          accuracy: 25,
+          altitude: null,
+          altitudeAccuracy: null,
+          heading: null,
+          speed: null,
+        },
+        timestamp: Date.now(),
+      } as GeolocationPosition);
+    });
+    Object.defineProperty(navigator, "geolocation", {
+      configurable: true,
+      value: { getCurrentPosition },
+    });
+
+    let capturedBody: Record<string, unknown> = {};
+    mockFetch.mockImplementationOnce(async (_url: unknown, options: RequestInit) => {
+      capturedBody = JSON.parse((options?.body as string) ?? "{}");
+      return { ok: true, json: async () => ({ ok: true, reply: "ok" }) };
+    });
+
+    const user = userEvent.setup();
+    render(<FloatingChat />);
+    await user.click(screen.getByRole("button", { name: "Open chat" }));
+    await user.type(screen.getByPlaceholderText(/Type your question/i), "find nearest patry near me");
+    await user.click(screen.getByRole("button", { name: /send/i }));
+
+    await waitFor(() => {
+      expect(getCurrentPosition).toHaveBeenCalled();
+      expect(capturedBody.userLocation).toEqual({
+        latitude: 40.02,
+        longitude: -82.445,
+        accuracy: 25,
+      });
+    });
   });
 });

@@ -94,7 +94,8 @@ def test_nearest_pantry_without_location_asks_for_zip_or_city():
         )
 
     assert reply is not None
-    assert "do not have access to your live geographic location" in reply
+    assert "browser location" in reply
+    assert "not shared" in reply
     assert "ZIP code" in reply
     mock_session.close.assert_called_once()
 
@@ -130,7 +131,7 @@ def test_nearest_pantry_by_city_uses_all_pantry_locations():
         )
 
     assert reply is not None
-    assert "based on Heath" in reply
+    assert "Based on Heath" in reply
     assert "Heath Fire Department" in reply
     assert "closed" in reply
     assert "FPN Market at LMHS" not in reply
@@ -157,3 +158,22 @@ def test_nearest_pantry_with_user_location_returns_distance_and_details():
     assert "93 Heath Rd" in reply
     assert "Hours: Fri 09:30-10:30" in reply
     assert "Distances are approximate" in reply
+
+
+def test_nearest_pantry_typo_with_user_location_still_returns_distance():
+    mock_session = _mock_pantry_session([
+        _mock_pantry(1, "FPN Market at LMHS", "131 McMillen Dr, Newark, OH 43055"),
+        _mock_pantry(2, "Heath Fire Department (Thanksgiving-Easter)", "93 Heath Rd, Heath, OH 43056", is_open=False),
+    ])
+
+    with patch.object(gemini_chatbot, "SessionLocal", return_value=mock_session):
+        reply = gemini_chatbot.call_gemini_chat(
+            user_message="find nearest patry near me",
+            pantry_id=1,
+            user_location={"latitude": 40.0200, "longitude": -82.4450, "accuracy": 40},
+        )
+
+    assert reply is not None
+    assert "Using your shared location" in reply
+    assert "Heath Fire Department" in reply
+    assert "miles away" in reply

@@ -88,11 +88,56 @@ DAY_LABELS = {
     "sun": "Sun",
 }
 
+PANTRY_REFERENCE_WORDS = {
+    "pantry",
+    "pantries",
+    "pantrys",
+    "patry",
+    "patries",
+    "fpn",
+    "location",
+    "locations",
+    "site",
+    "sites",
+}
+
+NEARBY_REFERENCE_WORDS = {
+    "nearest",
+    "closest",
+    "nearby",
+    "near",
+    "directions",
+    "direction",
+    "map",
+    "maps",
+}
+
+
+def _normalized_message_parts(message: str) -> tuple[str, set[str]]:
+    normalized = re.sub(r"[^a-z0-9\s]", " ", message.lower())
+    return normalized, set(normalized.split())
+
+
+def _mentions_pantry_or_place(normalized: str, words: set[str]) -> bool:
+    return (
+        bool(words & PANTRY_REFERENCE_WORDS)
+        or "food pantry" in normalized
+        or "food bank" in normalized
+    )
+
+
+def _asks_for_nearby_place(normalized: str, words: set[str]) -> bool:
+    return (
+        bool(words & NEARBY_REFERENCE_WORDS)
+        or "near me" in normalized
+        or "around me" in normalized
+        or "my location" in normalized
+    )
+
 
 def _is_pantry_count_question(message: str) -> bool:
     """Return True when the user is asking for the total number of pantries."""
-    normalized = re.sub(r"[^a-z0-9\s]", " ", message.lower())
-    words = set(normalized.split())
+    normalized, words = _normalized_message_parts(message)
     mentions_pantry = "pantry" in words or "pantries" in words
     asks_count = (
         "count" in words
@@ -105,8 +150,7 @@ def _is_pantry_count_question(message: str) -> bool:
 
 def _is_global_pantry_question(message: str) -> bool:
     """Detect pantry-list/count questions that should not be scoped to one pantry."""
-    normalized = re.sub(r"[^a-z0-9\s]", " ", message.lower())
-    words = set(normalized.split())
+    normalized, words = _normalized_message_parts(message)
     mentions_pantry = "pantry" in words or "pantries" in words
     asks_global = bool(words & {"all", "list", "show", "available", "total", "count", "number"})
     return mentions_pantry and (asks_global or ("how" in words and "many" in words))
@@ -114,11 +158,10 @@ def _is_global_pantry_question(message: str) -> bool:
 
 def _is_nearest_pantry_question(message: str) -> bool:
     """Return True when the user is asking for a nearby pantry."""
-    normalized = re.sub(r"[^a-z0-9\s]", " ", message.lower())
-    words = set(normalized.split())
-    mentions_pantry = "pantry" in words or "pantries" in words
-    asks_nearest = bool(words & {"nearest", "closest", "nearby"}) or "near me" in normalized
-    return mentions_pantry and asks_nearest
+    normalized, words = _normalized_message_parts(message)
+    mentions_pantry = _mentions_pantry_or_place(normalized, words)
+    asks_nearest = _asks_for_nearby_place(normalized, words)
+    return asks_nearest and (mentions_pantry or "near me" in normalized)
 
 
 def _normalize_location_text(value: str) -> str:
@@ -232,7 +275,7 @@ def _load_pantry_location_rows() -> list[dict]:
 
 
 def _answer_nearest_pantry_question(message: str, user_location: dict | None = None) -> str | None:
-    """Answer nearest-pantry questions using typed ZIP/city because chat has no GPS."""
+    """Answer nearest-pantry questions with browser GPS, ZIP, or city text."""
     if not _is_nearest_pantry_question(message):
         return None
 
@@ -273,18 +316,23 @@ def _answer_nearest_pantry_question(message: str, user_location: dict | None = N
                 "Distances are approximate."
             )
 
+        return (
+            "I received your shared location, but I do not have coordinate data for the pantry locations yet. "
+            "Please try a ZIP code or city, for example: \"closest pantry near 43055\"."
+        )
+
     zip_match = re.search(r"\b\d{5}(?:-\d{4})?\b", message)
     if zip_match:
         zip_code = zip_match.group(0)[:5]
         matches = [pantry for pantry in pantries if zip_code in pantry["location"]]
         if matches:
             return (
-                f"I do not have live GPS access in chat, but based on ZIP code {zip_code}, "
+                f"Based on ZIP code {zip_code}, "
                 "these are the closest matching pantry locations I found:\n"
                 f"{_format_pantry_options(matches)}"
             )
         return (
-            f"I do not have live GPS access in chat, and I could not match ZIP code {zip_code} "
+            f"I could not match ZIP code {zip_code} "
             "to a pantry location. Try a nearby city name, such as Newark, Heath, Pataskala, or Johnstown."
         )
 
@@ -298,14 +346,15 @@ def _answer_nearest_pantry_question(message: str, user_location: dict | None = N
     if city_matches:
         city_name = city_matches[0]["city"]
         return (
-            f"I do not have live GPS access in chat, but based on {city_name}, "
+            f"Based on {city_name}, "
             "these are the closest matching pantry locations I found:\n"
             f"{_format_pantry_options(city_matches)}"
         )
 
     return (
-        "I can help find the nearest pantry, but I do not have access to your live geographic location in chat. "
-        "Please tell me your ZIP code, city, or address, for example: \"closest pantry near 43055\"."
+        "I tried to use your browser location, but it was not shared with the chat. "
+        "Please allow location permission and ask again, or tell me your ZIP code, city, or address, "
+        "for example: \"closest pantry near 43055\"."
     )
 
 
