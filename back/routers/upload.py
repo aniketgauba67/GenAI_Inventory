@@ -88,7 +88,7 @@ async def upload_images(
                 if items:
                     max_quantities = {item.category_name: item.original_quantity for item in items}
                     log.info("Loaded original_quantity for %s categories (pantry %s)", len(items), pantry_id)
-                    print(f"[DEBUG] max_quantities passed to Gemini: {max_quantities}")
+                    log.debug("max_quantities passed to Gemini: %s", max_quantities)
         except Exception:
             log.exception("Could not load max_quantities from DB; proceeding without hint")
         finally:
