@@ -2,6 +2,7 @@ import logging
 from pathlib import Path
 import sys
 import json
+import re
 
 from config import GEMINI_MODEL, get_gemini_api_key
 
@@ -15,6 +16,54 @@ DEFAULT_CHATBOT_SYSTEM_PROMPT = (
     "The precedence is fixed: prefer the latest volunteer submission if it is the same time or newer than the latest warehouse snapshot; "
     "otherwise use the latest warehouse snapshot."
 )
+
+
+def _is_pantry_count_question(message: str) -> bool:
+    """Return True when the user is asking for the total number of pantries."""
+    normalized = re.sub(r"[^a-z0-9\s]", " ", message.lower())
+    words = set(normalized.split())
+    mentions_pantry = "pantry" in words or "pantries" in words
+    asks_count = (
+        "count" in words
+        or "total" in words
+        or "number" in words
+        or ("how" in words and "many" in words)
+    )
+    return mentions_pantry and asks_count
+
+
+def _is_global_pantry_question(message: str) -> bool:
+    """Detect pantry-list/count questions that should not be scoped to one pantry."""
+    normalized = re.sub(r"[^a-z0-9\s]", " ", message.lower())
+    words = set(normalized.split())
+    mentions_pantry = "pantry" in words or "pantries" in words
+    asks_global = bool(words & {"all", "list", "show", "available", "total", "count", "number"})
+    return mentions_pantry and (asks_global or ("how" in words and "many" in words))
+
+
+def _answer_direct_pantry_count() -> str | None:
+    """Answer total pantry count deterministically without asking Gemini."""
+    root_dir = Path(__file__).resolve().parents[2]
+    db_dir = root_dir / "db"
+    if str(db_dir) not in sys.path:
+        sys.path.insert(0, str(db_dir))
+
+    session = None
+    try:
+        from database import SessionLocal  # pyright: ignore[reportMissingImports]
+        from models import Pantry  # pyright: ignore[reportMissingImports]
+
+        session = SessionLocal()
+        count = session.query(Pantry).count()
+        if count == 1:
+            return "There is 1 pantry in the system."
+        return f"There are {count} pantries in the system."
+    except Exception as e:
+        log.warning("Could not load pantry count for chatbot: %s", e)
+        return None
+    finally:
+        if session is not None:
+            session.close()
 
 
 def _fetch_db_chat_context(pantry_id: int | None = None) -> str | None:
@@ -137,6 +186,11 @@ def call_gemini_chat(
     if not user_message.strip():
         return None
 
+    if _is_pantry_count_question(user_message):
+        direct_answer = _answer_direct_pantry_count()
+        if direct_answer:
+            return direct_answer
+
     model = _build_chat_model()
     if model is None:
         return None
@@ -146,7 +200,8 @@ def call_gemini_chat(
 
         messages = [SystemMessage(content=system_prompt)]
         if include_db_context:
-            db_context = _fetch_db_chat_context(pantry_id=pantry_id)
+            context_pantry_id = None if _is_global_pantry_question(user_message) else pantry_id
+            db_context = _fetch_db_chat_context(pantry_id=context_pantry_id)
             if db_context:
                 messages.append(
                     SystemMessage(
