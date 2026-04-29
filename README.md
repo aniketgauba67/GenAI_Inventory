@@ -288,6 +288,4 @@ Manual verification checklist:
    - Focus rings are visible on buttons/inputs.
    - Alerts are announced for status/error messages.
 
-## Important Note
 
-`db/init_db()` is currently destructive because it drops tables before recreating them. Do not use it against shared or production-like data unless you explicitly intend to wipe tables.
