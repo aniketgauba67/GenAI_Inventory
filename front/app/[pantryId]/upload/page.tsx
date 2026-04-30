@@ -93,7 +93,7 @@ export default function UploadPage() {
   }, []);
 
   const handleFiles = useCallback(
-    (newFiles: FileList | null) => {
+    (newFiles: FileList | File[] | null) => {
       if (!newFiles?.length) return;
       const arr = Array.from(newFiles).filter((f) => f.type.startsWith("image/"));
       if (!arr.length) return;

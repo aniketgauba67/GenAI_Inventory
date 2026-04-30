@@ -25,10 +25,10 @@
 
 import { useRef, useState, type ChangeEvent, type DragEvent } from "react";
 import Button from "../ui/Button";
-import { isNative, takePhoto, pickPhotos, filesToFileList } from "../../lib/camera";
+import { isNative, takePhoto, pickPhotos } from "../../lib/camera";
 
 type UploadDropzoneProps = {
-  onFiles: (files: FileList | null) => void;
+  onFiles: (files: FileList | File[] | null) => void;
   disabled?: boolean;
   isDragging?: boolean;
   setIsDragging?: (value: boolean) => void;
@@ -77,7 +77,7 @@ export default function UploadDropzone({
     setCameraLoading(true);
     try {
       const file = await takePhoto();
-      onFiles(filesToFileList([file]));
+      onFiles([file]);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       if (!msg.toLowerCase().includes("cancel")) {
@@ -93,7 +93,7 @@ export default function UploadDropzone({
     setCameraLoading(true);
     try {
       const files = await pickPhotos();
-      if (files.length > 0) onFiles(filesToFileList(files));
+      if (files.length > 0) onFiles(files);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       if (!msg.toLowerCase().includes("cancel")) {
