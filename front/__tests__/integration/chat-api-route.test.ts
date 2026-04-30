@@ -1,15 +1,29 @@
-/**
- * @jest-environment node
+/******************************** chat-api-route.test.ts ***************************************
  *
- * Integration tests for the Next.js /api/chat proxy route.
+ *  @jest-environment node
  *
- * Uses node environment so that the Fetch API globals (Request, Response)
- * are available — they are not polyfilled in jsdom for Next.js route handlers.
+ *  Module: Frontend Integration Chat Api Route Test
  *
- * These tests call the route handler directly (not via HTTP) to verify the
- * request validation, response shaping, and downstream forwarding logic.
- */
-
+ *  This module defines automated frontend checks for frontend integration chat api route test.
+ *
+ *  The module provides:
+ *
+ *  - Jest tests for UI components, API helpers, mocks, or integration paths.
+ *  - assertions for rendering, accessibility, interactions, and error states.
+ *  - regression coverage for customer, volunteer, and manager workflows.
+ *
+ *  Key Structures Used:
+ *
+ *  - Jest, React Testing Library, mock service workers, and shared fixtures.
+ *
+ *  This module ensures:
+ *
+ *  - frontend behavior stays predictable across refactors.
+ *  - user-facing states remain covered by repeatable automated tests.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ *****************************************************************************/
 import { POST } from "@/app/api/chat/route";
 
 // Helper to create a NextRequest-compatible mock

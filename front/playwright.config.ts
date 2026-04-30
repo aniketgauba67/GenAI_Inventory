@@ -1,3 +1,27 @@
+/******************************** playwright.config.ts ***************************************
+ *
+ *  Module: Playwright Configuration
+ *
+ *  This module configures browser-based end-to-end tests.
+ *
+ *  The module provides:
+ *
+ *  - Playwright project settings for desktop and mobile browsers.
+ *  - automatic Next.js dev server startup for e2e execution.
+ *  - retry, trace, screenshot, and video settings for debugging failures.
+ *
+ *  Key Structures Used:
+ *
+ *  - Playwright defineConfig, browser device profiles, and webServer settings.
+ *
+ *  This module ensures:
+ *
+ *  - user workflows are validated in real browser contexts.
+ *  - CI can reproduce frontend e2e behavior from a clean checkout.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ *****************************************************************************/
 import { defineConfig, devices } from "@playwright/test";
 
 /**

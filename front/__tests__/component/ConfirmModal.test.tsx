@@ -1,3 +1,27 @@
+/******************************** ConfirmModal.test.tsx ***************************************
+ *
+ *  Module: Frontend Component Confirm Modal Test
+ *
+ *  This module defines automated frontend checks for frontend component confirm modal test.
+ *
+ *  The module provides:
+ *
+ *  - Jest tests for UI components, API helpers, mocks, or integration paths.
+ *  - assertions for rendering, accessibility, interactions, and error states.
+ *  - regression coverage for customer, volunteer, and manager workflows.
+ *
+ *  Key Structures Used:
+ *
+ *  - Jest, React Testing Library, mock service workers, and shared fixtures.
+ *
+ *  This module ensures:
+ *
+ *  - frontend behavior stays predictable across refactors.
+ *  - user-facing states remain covered by repeatable automated tests.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ *****************************************************************************/
 import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import ConfirmModal from "@/components/ui/ConfirmModal";

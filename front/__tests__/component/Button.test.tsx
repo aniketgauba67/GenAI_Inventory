@@ -1,3 +1,27 @@
+/******************************** Button.test.tsx ***************************************
+ *
+ *  Module: Frontend Component Button Test
+ *
+ *  This module defines automated frontend checks for frontend component button test.
+ *
+ *  The module provides:
+ *
+ *  - Jest tests for UI components, API helpers, mocks, or integration paths.
+ *  - assertions for rendering, accessibility, interactions, and error states.
+ *  - regression coverage for customer, volunteer, and manager workflows.
+ *
+ *  Key Structures Used:
+ *
+ *  - Jest, React Testing Library, mock service workers, and shared fixtures.
+ *
+ *  This module ensures:
+ *
+ *  - frontend behavior stays predictable across refactors.
+ *  - user-facing states remain covered by repeatable automated tests.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ *****************************************************************************/
 import { render, screen, fireEvent } from "@testing-library/react";
 import Button from "@/components/ui/Button";
 

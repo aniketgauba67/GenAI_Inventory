@@ -1,9 +1,27 @@
-/**
- * E2E tests — Login and authentication flows.
+/******************************** login.spec.ts ***************************************
  *
- * Tests the login page, form validation, error states, and role-based redirect.
- */
-
+ *  Module: Frontend E2E Login Test
+ *
+ *  This module defines browser-level checks for frontend e2e login test.
+ *
+ *  The module provides:
+ *
+ *  - Playwright scenarios that exercise real application pages.
+ *  - navigation, form, upload, and customer-view assertions.
+ *  - coverage across desktop and mobile browser profiles.
+ *
+ *  Key Structures Used:
+ *
+ *  - Playwright test fixtures, locators, expectations, and route navigation.
+ *
+ *  This module ensures:
+ *
+ *  - complete user workflows continue working in a browser environment.
+ *  - responsive pages stay testable beyond isolated component checks.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ *****************************************************************************/
 import { test, expect } from "@playwright/test";
 
 test.describe("Login page", () => {

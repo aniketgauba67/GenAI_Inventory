@@ -1,10 +1,27 @@
-/**
- * Component tests for FloatingChat.
+/******************************** FloatingChat.test.tsx ***************************************
  *
- * Uses jest.fn() to mock fetch instead of MSW, avoiding ESM compatibility
- * issues with msw/rettime in jsdom.
- */
-
+ *  Module: Frontend Component Floating Chat Test
+ *
+ *  This module defines automated frontend checks for frontend component floating chat test.
+ *
+ *  The module provides:
+ *
+ *  - Jest tests for UI components, API helpers, mocks, or integration paths.
+ *  - assertions for rendering, accessibility, interactions, and error states.
+ *  - regression coverage for customer, volunteer, and manager workflows.
+ *
+ *  Key Structures Used:
+ *
+ *  - Jest, React Testing Library, mock service workers, and shared fixtures.
+ *
+ *  This module ensures:
+ *
+ *  - frontend behavior stays predictable across refactors.
+ *  - user-facing states remain covered by repeatable automated tests.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ *****************************************************************************/
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import FloatingChat from "@/components/chat/FloatingChat";

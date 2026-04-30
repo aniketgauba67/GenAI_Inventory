@@ -1,5 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+******************************* Info.plist ***************************************
+
+Module: iOS Info Property List
+
+This file supports the iOS shell for the Capacitor mobile app.
+
+The file provides:
+
+- iOS app delegate, view controller, package, or property settings.
+- native project metadata required by Capacitor.
+- mobile packaging support for the inventory frontend.
+
+Key Structures Used:
+
+- Swift application classes, plist entries, and Xcode build settings.
+
+This file ensures:
+
+- the web application can be packaged as an iOS app.
+- native mobile settings stay discoverable for the team.
+
+Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+
+****************************************************************************
+-->
 <plist version="1.0">
 <dict>
     <key>CAPACITOR_DEBUG</key>

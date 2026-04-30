@@ -1,11 +1,27 @@
-/**
- * Unit tests for formatting/helper logic extracted from page.tsx.
+/******************************** formatters.test.ts ***************************************
  *
- * formatRelativeTime is defined inline in page.tsx, so we re-implement the
- * same function here and verify the logic contract.
- */
-
-// Re-implement to test the contract (matches back/app/page.tsx inline function)
+ *  Module: Frontend Unit Formatters Test
+ *
+ *  This module defines automated frontend checks for frontend unit formatters test.
+ *
+ *  The module provides:
+ *
+ *  - Jest tests for UI components, API helpers, mocks, or integration paths.
+ *  - assertions for rendering, accessibility, interactions, and error states.
+ *  - regression coverage for customer, volunteer, and manager workflows.
+ *
+ *  Key Structures Used:
+ *
+ *  - Jest, React Testing Library, mock service workers, and shared fixtures.
+ *
+ *  This module ensures:
+ *
+ *  - frontend behavior stays predictable across refactors.
+ *  - user-facing states remain covered by repeatable automated tests.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ *****************************************************************************/
 function formatRelativeTime(iso: string): string {
   const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60_000);
   if (mins < 2) return "just now";

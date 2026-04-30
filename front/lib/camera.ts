@@ -74,9 +74,3 @@ export async function pickPhotos(): Promise<File[]> {
     result.results.map((photo, index) => resultToFile(photo.webPath, `shelf_${Date.now()}_${index + 1}.jpg`))
   );
 }
-
-export function filesToFileList(files: File[]): FileList {
-  const dt = new DataTransfer();
-  files.forEach((f) => dt.items.add(f));
-  return dt.files;
-}

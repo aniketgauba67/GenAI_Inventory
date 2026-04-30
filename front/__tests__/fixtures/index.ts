@@ -1,9 +1,27 @@
-/**
- * Shared test fixtures for the frontend test suite.
+/******************************** index.ts ***************************************
  *
- * Import from any test file:  import { mockPantry, mockLevels } from "../fixtures";
- */
-
+ *  Module: Frontend Test Fixture Index
+ *
+ *  This module defines automated frontend checks for frontend test fixture index.
+ *
+ *  The module provides:
+ *
+ *  - Jest tests for UI components, API helpers, mocks, or integration paths.
+ *  - assertions for rendering, accessibility, interactions, and error states.
+ *  - regression coverage for customer, volunteer, and manager workflows.
+ *
+ *  Key Structures Used:
+ *
+ *  - Jest, React Testing Library, mock service workers, and shared fixtures.
+ *
+ *  This module ensures:
+ *
+ *  - frontend behavior stays predictable across refactors.
+ *  - user-facing states remain covered by repeatable automated tests.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ *****************************************************************************/
 import { INVENTORY_CATEGORIES, type InventoryCategory } from "@/lib/inventoryCategories";
 
 export { INVENTORY_CATEGORIES };

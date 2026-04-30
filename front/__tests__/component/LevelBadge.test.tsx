@@ -1,3 +1,27 @@
+/******************************** LevelBadge.test.tsx ***************************************
+ *
+ *  Module: Frontend Component Level Badge Test
+ *
+ *  This module defines automated frontend checks for frontend component level badge test.
+ *
+ *  The module provides:
+ *
+ *  - Jest tests for UI components, API helpers, mocks, or integration paths.
+ *  - assertions for rendering, accessibility, interactions, and error states.
+ *  - regression coverage for customer, volunteer, and manager workflows.
+ *
+ *  Key Structures Used:
+ *
+ *  - Jest, React Testing Library, mock service workers, and shared fixtures.
+ *
+ *  This module ensures:
+ *
+ *  - frontend behavior stays predictable across refactors.
+ *  - user-facing states remain covered by repeatable automated tests.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ *****************************************************************************/
 import { render, screen } from "@testing-library/react";
 import LevelBadge from "@/components/inventory/LevelBadge";
 

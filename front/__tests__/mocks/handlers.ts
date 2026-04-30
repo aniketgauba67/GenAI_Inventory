@@ -1,10 +1,27 @@
-/**
- * MSW request handlers — intercept fetch calls during Jest tests.
+/******************************** handlers.ts ***************************************
  *
- * Add new handlers here as new API routes are added to the project.
- * Import { server } from "./server" in tests that need per-test overrides.
- */
-
+ *  Module: Frontend Test Mock Handlers
+ *
+ *  This module defines automated frontend checks for frontend test mock handlers.
+ *
+ *  The module provides:
+ *
+ *  - Jest tests for UI components, API helpers, mocks, or integration paths.
+ *  - assertions for rendering, accessibility, interactions, and error states.
+ *  - regression coverage for customer, volunteer, and manager workflows.
+ *
+ *  Key Structures Used:
+ *
+ *  - Jest, React Testing Library, mock service workers, and shared fixtures.
+ *
+ *  This module ensures:
+ *
+ *  - frontend behavior stays predictable across refactors.
+ *  - user-facing states remain covered by repeatable automated tests.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ *****************************************************************************/
 import { http, HttpResponse } from "msw";
 import { INVENTORY_CATEGORIES } from "@/lib/inventoryCategories";
 

@@ -1,5 +1,28 @@
-"""Tests for pantry operating-hours validation helpers."""
-
+"""******************************* test_auth_schedule_validation.py ***************************************
+ *
+ *  Module: Test Auth Schedule Validation
+ *
+ *  This module defines automated backend checks for test auth schedule validation.
+ *
+ *  The module provides:
+ *
+ *  - pytest cases for API, domain, and workflow behavior.
+ *  - mocked dependencies and fixtures where external services are not needed.
+ *  - regression coverage for inventory, auth, upload, and chatbot flows.
+ *
+ *  Key Structures Used:
+ *
+ *  - pytest fixtures, FastAPI test clients, monkeypatching, and unittest mocks.
+ *
+ *  This module ensures:
+ *
+ *  - backend behavior remains stable as the application evolves.
+ *  - database and service boundaries are tested without unsafe side effects.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ ****************************************************************************
+"""
 import unittest
 
 from back.operating_hours import normalize_operating_hours

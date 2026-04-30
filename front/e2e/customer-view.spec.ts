@@ -1,10 +1,27 @@
-/**
- * E2E tests — Public customer pantry browsing experience.
+/******************************** customer-view.spec.ts ***************************************
  *
- * Requires: local backend at http://localhost:8000 with seed data, or mocked.
- * Run: npx playwright test e2e/customer-view.spec.ts
- */
-
+ *  Module: Frontend E2E Customer View Test
+ *
+ *  This module defines browser-level checks for frontend e2e customer view test.
+ *
+ *  The module provides:
+ *
+ *  - Playwright scenarios that exercise real application pages.
+ *  - navigation, form, upload, and customer-view assertions.
+ *  - coverage across desktop and mobile browser profiles.
+ *
+ *  Key Structures Used:
+ *
+ *  - Playwright test fixtures, locators, expectations, and route navigation.
+ *
+ *  This module ensures:
+ *
+ *  - complete user workflows continue working in a browser environment.
+ *  - responsive pages stay testable beyond isolated component checks.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ *****************************************************************************/
 import { test, expect } from "@playwright/test";
 
 test.describe("Customer home page", () => {

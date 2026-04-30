@@ -1,12 +1,27 @@
-/**
- * E2E tests — Volunteer upload workflow (requires authenticated session).
+/******************************** upload-workflow.spec.ts ***************************************
  *
- * These tests assume credentials are set in environment variables:
- *   PLAYWRIGHT_PANTRY_ID, PLAYWRIGHT_PANTRY_PASSWORD
+ *  Module: Frontend E2E Upload Workflow Test
  *
- * Without credentials, only the redirect behavior tests run.
- */
-
+ *  This module defines browser-level checks for frontend e2e upload workflow test.
+ *
+ *  The module provides:
+ *
+ *  - Playwright scenarios that exercise real application pages.
+ *  - navigation, form, upload, and customer-view assertions.
+ *  - coverage across desktop and mobile browser profiles.
+ *
+ *  Key Structures Used:
+ *
+ *  - Playwright test fixtures, locators, expectations, and route navigation.
+ *
+ *  This module ensures:
+ *
+ *  - complete user workflows continue working in a browser environment.
+ *  - responsive pages stay testable beyond isolated component checks.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ *****************************************************************************/
 import { test, expect } from "@playwright/test";
 
 const PANTRY_ID = process.env.PLAYWRIGHT_PANTRY_ID || "";

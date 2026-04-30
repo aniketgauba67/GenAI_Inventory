@@ -1,21 +1,27 @@
-# Continuous Integration Workflow.
+# ******************************* ci.yml ***************************************
 #
-# This file runs the backend and frontend validation steps for pull
-# requests and branch updates.
+# Module: Continuous Integration Workflow
 #
-# The file provides:
+# This workflow validates backend and frontend changes on GitHub Actions.
+#
+# The workflow provides:
+#
 # - backend dependency installation and pytest execution.
-# - frontend dependency installation, linting, and tests.
+# - frontend dependency installation, linting, tests, build, and e2e checks.
 # - a repeatable CI gate for the development branch.
 #
 # Key Structures Used:
-# - GitHub Actions jobs, steps, and branch triggers.
 #
-# This file ensures:
-# - CI uses the same commands expected by local developers.
+# - GitHub Actions jobs, branch triggers, setup actions, and npm/pytest steps.
+#
+# This workflow ensures:
+#
 # - failed backend or frontend checks stop the workflow early.
+# - branch updates are validated before they are treated as stable.
 #
 # Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+#
+# ****************************************************************************
 name: CI
 
 on:

@@ -1,7 +1,27 @@
-/**
- * Unit tests for front/lib/api.ts — getApiBase() utility.
- */
-
+/******************************** api.test.ts ***************************************
+ *
+ *  Module: Frontend Unit Api Test
+ *
+ *  This module defines automated frontend checks for frontend unit api test.
+ *
+ *  The module provides:
+ *
+ *  - Jest tests for UI components, API helpers, mocks, or integration paths.
+ *  - assertions for rendering, accessibility, interactions, and error states.
+ *  - regression coverage for customer, volunteer, and manager workflows.
+ *
+ *  Key Structures Used:
+ *
+ *  - Jest, React Testing Library, mock service workers, and shared fixtures.
+ *
+ *  This module ensures:
+ *
+ *  - frontend behavior stays predictable across refactors.
+ *  - user-facing states remain covered by repeatable automated tests.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ *****************************************************************************/
 import { getApiBase } from "@/lib/api";
 
 const ORIGINAL_NEXT_PUBLIC = process.env.NEXT_PUBLIC_API_URL;

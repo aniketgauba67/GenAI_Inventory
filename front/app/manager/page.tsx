@@ -162,7 +162,7 @@ export default function ManagerViewPage() {
     }
   }
 
-  function handleFiles(fileList: FileList | null) {
+  function handleFiles(fileList: FileList | File[] | null) {
     if (!fileList?.length) return;
     const images = Array.from(fileList).filter((f) => f.type.startsWith("image/"));
     if (!images.length) return;

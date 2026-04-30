@@ -1,6 +1,25 @@
-"""API test conftest.
-
-The ``client`` and ``mock_db`` fixtures are defined in the root
-``back/tests/conftest.py`` and are available here automatically.
-This file is kept for any api-specific fixtures added in the future.
+"""******************************* conftest.py ***************************************
+ *
+ *  Module: Backend API Conftest Test
+ *
+ *  This module defines automated backend checks for backend api conftest test.
+ *
+ *  The module provides:
+ *
+ *  - pytest cases for API, domain, and workflow behavior.
+ *  - mocked dependencies and fixtures where external services are not needed.
+ *  - regression coverage for inventory, auth, upload, and chatbot flows.
+ *
+ *  Key Structures Used:
+ *
+ *  - pytest fixtures, FastAPI test clients, monkeypatching, and unittest mocks.
+ *
+ *  This module ensures:
+ *
+ *  - backend behavior remains stable as the application evolves.
+ *  - database and service boundaries are tested without unsafe side effects.
+ *
+ *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *
+ ****************************************************************************
 """
