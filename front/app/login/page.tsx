@@ -42,11 +42,9 @@ function resolveAuthenticatedTarget(
   const defaultTarget =
     role === "director"
       ? "/director/dashboard"
-      : role === "manager"
-        ? "/manager"
-        : pantryId
-          ? `/${pantryId}/upload`
-          : "/";
+      : pantryId
+        ? `/${pantryId}/upload`
+        : "/";
 
   if (!rawCallbackUrl || rawCallbackUrl === "/") {
     return defaultTarget;
@@ -65,7 +63,9 @@ function resolveAuthenticatedTarget(
   if (resolved === "/volunteer") {
     return role === "pantry" && pantryId ? `/${pantryId}/upload` : defaultTarget;
   }
-  if (resolved === "/manager") return "/manager";
+  if (resolved === "/manager") {
+    return role === "director" || (role === "pantry" && pantryId) ? "/manager" : defaultTarget;
+  }
   if (resolved === "/director/dashboard") {
     return role === "director" ? "/director/dashboard" : defaultTarget;
   }
@@ -73,6 +73,28 @@ function resolveAuthenticatedTarget(
   return resolved;
 }
 
+function isDirectorPortal(rawCallbackUrl: string | null) {
+  if (!rawCallbackUrl) return false;
+  if (rawCallbackUrl === "/director/dashboard") return true;
+
+  try {
+    const url = new URL(rawCallbackUrl, window.location.origin);
+    return url.origin === window.location.origin && url.pathname === "/director/dashboard";
+  } catch {
+    return false;
+  }
+}
+function isManagerPortal(rawCallbackUrl: string | null) {
+  if (!rawCallbackUrl) return false;
+  if (rawCallbackUrl === "/manager") return true;
+
+  try {
+    const url = new URL(rawCallbackUrl, window.location.origin);
+    return url.origin === window.location.origin && url.pathname === "/manager";
+  } catch {
+    return false;
+  }
+}
 function LoginForm() {
   const searchParams = useSearchParams();
   const { status, data: session } = useSession();
@@ -82,6 +104,8 @@ function LoginForm() {
   const [loading, setLoading] = useState(false);
 
   const callbackUrl = useMemo(() => searchParams.get("callbackUrl"), [searchParams]);
+  const directorPortal = isDirectorPortal(callbackUrl);
+  const managerPortal = isManagerPortal(callbackUrl);
 
   useEffect(() => {
     if (status !== "authenticated") return;
@@ -95,22 +119,25 @@ function LoginForm() {
     e.preventDefault();
     if (loading) return;
     setError(null);
+
+    const normalizedUsername = username.trim();
+
     setLoading(true);
 
     const result = await signIn("credentials", {
       redirect: false,
-      username,
+      username: normalizedUsername,
       password,
     });
 
     setLoading(false);
 
     if (result?.error) {
-      setError("Invalid pantry ID or password. Please try again.");
+      setError("Invalid credentials. Please try again.");
     } else {
-      const inferredRole = username === "director" ? "director" : username === "manager" ? "manager" : "pantry";
-      const target = resolveAuthenticatedTarget(callbackUrl, username, inferredRole);
-      window.location.href = target;
+      // Let the authenticated session drive the redirect so the backend/db is
+      // the source of truth for the user's role.
+      window.location.href = callbackUrl || "/";
     }
   }
 
@@ -148,13 +175,14 @@ function LoginForm() {
   }
 
   return (
-    <div className="flex min-h-[100dvh] flex-col" style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}>
+    <div
+      className={`flex min-h-[100dvh] flex-col ${directorPortal ? "bg-[radial-gradient(circle_at_top,rgba(249,115,22,0.16),transparent_35%),linear-gradient(to_bottom,#fff7ed,#fff)] dark:bg-[radial-gradient(circle_at_top,rgba(249,115,22,0.16),transparent_35%),linear-gradient(to_bottom,#1c1917,#0f172a)]" : ""}`}
+      style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}
+    >
       <div className="flex flex-1 flex-col items-center justify-center px-6 py-12">
         <div className="w-full max-w-sm">
-
-          {/* Brand mark */}
           <div className="mb-10 text-center">
-            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-sky-500 to-sky-700 shadow-xl shadow-sky-500/30">
+            <div className={`mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-3xl shadow-xl ${directorPortal ? "bg-gradient-to-br from-orange-500 to-rose-600 shadow-orange-500/30" : "bg-gradient-to-br from-sky-500 to-sky-700 shadow-sky-500/30"}`}>
               <svg aria-hidden="true" className="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M20 7H4a1 1 0 00-1 1v10a1 1 0 001 1h16a1 1 0 001-1V8a1 1 0 00-1-1z" />
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2" />
@@ -162,12 +190,17 @@ function LoginForm() {
                 <line x1="9.5" y1="14.5" x2="14.5" y2="14.5" strokeLinecap="round" />
               </svg>
             </div>
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
-              Inventory
+            <h1 className={`text-3xl font-bold tracking-tight ${directorPortal ? "text-orange-950 dark:text-orange-50" : "text-slate-900 dark:text-slate-50"}`}>
+              {directorPortal ? "Director Access" : managerPortal ? "Form Upload" : "Shelf Inventory Upload"}
             </h1>
-            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-              Sign in with your pantry credentials
+            <p className={`mt-2 text-sm ${directorPortal ? "text-orange-900/75 dark:text-orange-200/80" : "text-slate-500 dark:text-slate-400"}`}>
+              {directorPortal ? "Sign in with your director email and password." : "Sign in with your pantry credentials."}
             </p>
+            {directorPortal && (
+              <p className="mt-3 inline-flex rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-700 dark:border-orange-900 dark:bg-orange-950/50 dark:text-orange-200">
+                Director portal
+              </p>
+            )}
           </div>
 
           {/* Form */}
@@ -176,7 +209,7 @@ function LoginForm() {
 
             <div className="flex flex-col gap-2">
               <label htmlFor="username" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                Pantry ID
+                {directorPortal ? "Director email" : "Pantry ID"}
               </label>
               <Input
                 id="username"
@@ -185,7 +218,7 @@ function LoginForm() {
                 autoCorrect="off"
                 autoComplete="username"
                 enterKeyHint="next"
-                placeholder="e.g. pantry1234"
+                placeholder={directorPortal ? "director@example.com" : "e.g. pantry1234"}
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
@@ -208,13 +241,20 @@ function LoginForm() {
               />
             </div>
 
-            <Button type="submit" disabled={loading} block variant="primary" size="lg" className="mt-1">
+            <Button
+              type="submit"
+              disabled={loading}
+              block
+              variant={directorPortal ? "secondary" : "primary"}
+              size="lg"
+              className={`mt-1 ${directorPortal ? "border-orange-600 bg-orange-600 text-white hover:bg-orange-700" : ""}`}
+            >
               {loading ? "Signing in…" : "Sign In"}
             </Button>
           </form>
 
           <p className="mt-8 text-center text-xs text-slate-400 dark:text-slate-600">
-            Use the pantry ID and password provided by your coordinator.
+            {directorPortal ? "Use the director email and password provided by your coordinator." : "Use the pantry ID and password provided by your coordinator."}
           </p>
         </div>
       </div>
