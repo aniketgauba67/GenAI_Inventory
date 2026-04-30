@@ -45,6 +45,12 @@ type DashboardLink = {
   description: string;
 };
 
+type OperatingHourSlot = {
+  day: string;
+  open: string;
+  close: string;
+};
+
 type PantryCredential = {
   pantryId: string;
   name: string;
@@ -52,12 +58,14 @@ type PantryCredential = {
   hasCredentials: boolean;
   isOpen: boolean;
   manualOverride: boolean;
+  operatingHours: OperatingHourSlot[];
 };
 
 type PantryManageDraft = {
   name: string;
   location: string;
   newPassword: string;
+  operatingHours: OperatingHourSlot[];
 };
 
 type DashboardClientProps = {
@@ -295,7 +303,12 @@ export default function DashboardClient({
         return;
       }
 
-      setCredentials(data.pantries);
+      setCredentials(
+        data.pantries.map((pantry) => ({
+          ...pantry,
+          operatingHours: Array.isArray(pantry.operatingHours) ? pantry.operatingHours : [],
+        })),
+      );
     } catch (error) {
       setCredentialsError(
         error instanceof Error ? error.message : "Failed to load pantry credentials."
@@ -452,7 +465,8 @@ export default function DashboardClient({
   }
 
   async function saveRowUpdate(pantryIdValue: string) {
-    const draft = rowDrafts[pantryIdValue] ?? { name: "", location: "", newPassword: "" };
+    const draft =
+      rowDrafts[pantryIdValue] ?? buildRowDraftFromCredential(getCurrentCredential(pantryIdValue));
     const payload = {
       pantryId: pantryIdValue,
       name: draft.name,
@@ -519,6 +533,82 @@ export default function DashboardClient({
           error instanceof Error ? error.message : "Failed to update pantry information.",
       }));
       showToast("Failed to update pantry information.", "error");
+    } finally {
+      setSavingRows((prev) => ({ ...prev, [pantryIdValue]: false }));
+    }
+  }
+
+  async function saveRowSchedule(pantryIdValue: string) {
+    const operatingHours = rowDrafts[pantryIdValue]?.operatingHours ?? [];
+
+    setSavingRows((prev) => ({ ...prev, [pantryIdValue]: true }));
+    setRowError((prev) => ({ ...prev, [pantryIdValue]: "" }));
+    setRowNotice((prev) => ({ ...prev, [pantryIdValue]: "" }));
+
+    try {
+      const response = await fetch(`${apiBase}/auth/pantry/schedule`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          pantryId: pantryIdValue,
+          operatingHours,
+        }),
+      });
+
+      const data = (await response.json()) as {
+        ok?: boolean;
+        message?: string;
+        error?: string;
+        operatingHours?: OperatingHourSlot[];
+        isOpen?: boolean;
+        manualOverride?: boolean;
+      };
+
+      if (!response.ok || !data.ok) {
+        setRowError((prev) => ({
+          ...prev,
+          [pantryIdValue]: data.error || "Failed to update operating hours.",
+        }));
+        showToast(data.error || "Failed to update operating hours.", "error");
+        return;
+      }
+
+      const nextOperatingHours = Array.isArray(data.operatingHours) ? data.operatingHours : [];
+      setRowDrafts((prev) => ({
+        ...prev,
+        [pantryIdValue]: {
+          name: prev[pantryIdValue]?.name ?? "",
+          location: prev[pantryIdValue]?.location ?? "",
+          newPassword: prev[pantryIdValue]?.newPassword ?? "",
+          operatingHours: cloneOperatingHours(nextOperatingHours),
+        },
+      }));
+      setCredentials((prev) =>
+        prev.map((credential) =>
+          credential.pantryId === pantryIdValue
+            ? {
+                ...credential,
+                operatingHours: nextOperatingHours,
+                isOpen: data.isOpen ?? credential.isOpen,
+                manualOverride: data.manualOverride ?? credential.manualOverride,
+              }
+            : credential,
+        ),
+      );
+      setRowNotice((prev) => ({
+        ...prev,
+        [pantryIdValue]: data.message || "Operating hours updated.",
+      }));
+      showToast(data.message || "Operating hours updated.", "success");
+    } catch (error) {
+      setRowError((prev) => ({
+        ...prev,
+        [pantryIdValue]:
+          error instanceof Error ? error.message : "Failed to update operating hours.",
+      }));
+      showToast("Failed to update operating hours.", "error");
     } finally {
       setSavingRows((prev) => ({ ...prev, [pantryIdValue]: false }));
     }
