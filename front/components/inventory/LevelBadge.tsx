@@ -32,10 +32,10 @@ type LevelBadgeProps = {
 };
 
 const levelStyles: Record<string, string> = {
-  High: "bg-[#e5f2df] text-[#237b3c]",
-  Mid: "bg-[#fff1c8] text-[#a86f10]",
-  Low: "bg-[#ffe6dd] text-[#b44736]",
-  Out: "bg-[#f8ded9] text-[#a53a34]",
+  High: "tone-emerald bg-[#e5f2df] text-[#237b3c]",
+  Mid: "tone-amber bg-[#fff1c8] text-[#a86f10]",
+  Low: "tone-rose bg-[#ffe6dd] text-[#b44736]",
+  Out: "tone-zinc bg-[#f8ded9] text-[#a53a34]",
 };
 
 const levelLabels: Record<string, { short: string; friendly: string }> = {
