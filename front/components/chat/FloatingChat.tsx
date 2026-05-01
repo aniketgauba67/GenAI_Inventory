@@ -305,7 +305,7 @@ export default function FloatingChat({ pantryId = "" }: FloatingChatProps) {
   return (
     <div className="pointer-events-none fixed bottom-5 right-5 z-50 sm:bottom-6 sm:right-6">
       <div
-        className={`pointer-events-auto origin-bottom-right overflow-hidden rounded-[1.8rem] border border-teal-200/80 bg-white/95 shadow-2xl shadow-teal-900/25 backdrop-blur-md transition-all duration-300 dark:border-teal-900/60 dark:bg-slate-950/92 ${
+        className={`pointer-events-auto origin-bottom-right overflow-hidden rounded-[1.8rem] border border-teal-200/80 bg-white/95 shadow-2xl shadow-teal-900/25 backdrop-blur-md transition-all duration-300 dark:border-slate-800/80 dark:bg-slate-950/96 dark:shadow-[0_24px_60px_rgba(2,6,23,0.65)] ${
           isOpen
             ? "h-[min(72vh,34rem)] w-[min(calc(100vw-1.5rem),23rem)] scale-100"
             : "h-16 w-16 scale-100"
@@ -315,7 +315,7 @@ export default function FloatingChat({ pantryId = "" }: FloatingChatProps) {
           <button
             type="button"
             onClick={() => setIsOpen(true)}
-            className="flex h-full w-full items-center justify-center rounded-full bg-gradient-to-br from-teal-500 to-orange-500 p-2 transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
+            className="flex h-full w-full items-center justify-center rounded-full bg-gradient-to-br from-teal-500 to-orange-500 p-2 transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 dark:from-teal-400 dark:to-cyan-500"
             aria-label="Open chat"
           >
             <Image
@@ -328,12 +328,12 @@ export default function FloatingChat({ pantryId = "" }: FloatingChatProps) {
           </button>
         ) : (
           <div className="flex h-full flex-col">
-            <div className="flex items-center justify-between border-b border-slate-200/80 px-4 py-3 dark:border-slate-800/80">
+            <div className="flex items-center justify-between border-b border-slate-200/80 px-4 py-3 dark:border-slate-800/90 dark:bg-slate-950/70">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-teal-700 dark:text-teal-300">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-teal-700 dark:text-teal-200">
                   Inventory Assistant
                 </p>
-                <p className="text-sm text-slate-600 dark:text-slate-300">Ask anything about current stock.</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400">Ask anything about current stock.</p>
               </div>
               <button
                 type="button"
@@ -354,8 +354,8 @@ export default function FloatingChat({ pantryId = "" }: FloatingChatProps) {
                     <div
                       className={`max-w-[84%] rounded-2xl px-3 py-2 text-sm leading-5 ${
                         isUser
-                          ? "rounded-br-md bg-teal-600 text-white"
-                          : "rounded-bl-md bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-100"
+                          ? "rounded-br-md bg-teal-600 text-white dark:bg-teal-500"
+                          : "rounded-bl-md bg-slate-100 text-slate-800 dark:bg-slate-900 dark:text-slate-100"
                       }`}
                     >
                       <p
@@ -392,7 +392,7 @@ export default function FloatingChat({ pantryId = "" }: FloatingChatProps) {
               })}
               {isSending && (
                 <div className="flex justify-start">
-                  <div className="rounded-2xl rounded-bl-md bg-slate-100 px-3 py-2 text-sm text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                  <div className="rounded-2xl rounded-bl-md bg-slate-100 px-3 py-2 text-sm text-slate-600 dark:bg-slate-900 dark:text-slate-300">
                     Thinking...
                   </div>
                 </div>
@@ -400,7 +400,7 @@ export default function FloatingChat({ pantryId = "" }: FloatingChatProps) {
             </div>
 
             <form
-              className="border-t border-slate-200/80 p-3 dark:border-slate-800/80"
+              className="border-t border-slate-200/80 p-3 dark:border-slate-800/90 dark:bg-slate-950/70"
               onSubmit={(event) => {
                 event.preventDefault();
                 void handleSend();
@@ -419,12 +419,12 @@ export default function FloatingChat({ pantryId = "" }: FloatingChatProps) {
                   }}
                   placeholder="Type your question..."
                   rows={1}
-                  className="h-9 max-h-36 w-full resize-none rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-teal-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                  className="h-9 max-h-36 w-full resize-none rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-teal-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
                 />
                 <button
                   type="submit"
                   disabled={isSending || !input.trim()}
-                  className="rounded-xl bg-teal-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-xl bg-teal-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-teal-500 dark:hover:bg-teal-400"
                 >
                   Send
                 </button>

@@ -505,13 +505,28 @@ export default function HomePage() {
     : sortedFilteredPantries.slice(0, 8);
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#f8f3ea] px-0 pb-10 pt-24 text-[#173d43]">
-      <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[32rem] bg-[linear-gradient(180deg,rgba(230,220,203,0.9),rgba(248,243,234,0))]" />
-      <nav className={`fixed inset-x-0 top-0 z-50 border-b border-[#ddd3c1] bg-[#fffdf8]/95 px-4 py-2.5 shadow-sm backdrop-blur-md sm:px-6 lg:px-8 ${easyView && easyPickerOpen ? "pointer-events-none blur-sm" : ""}`}>
+    <main className="relative min-h-screen overflow-hidden bg-[#f8f3ea] px-0 pb-10 pt-24 text-[#173d43] dark:bg-[#05070c] dark:text-[#d7e4e6]">
+      <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[32rem] bg-[linear-gradient(180deg,rgba(230,220,203,0.9),rgba(248,243,234,0))] dark:bg-[linear-gradient(180deg,rgba(7,16,24,0.98),rgba(5,7,12,0))]" />
+      <nav className={`fixed inset-x-0 top-0 z-50 border-b border-[#ddd3c1] bg-[#fffdf8]/95 px-4 py-2.5 shadow-sm backdrop-blur-md sm:px-6 lg:px-8 dark:border-slate-800/80 dark:bg-slate-950/90 ${easyView && easyPickerOpen ? "pointer-events-none blur-sm" : ""}`}>
         <div className="mx-auto flex w-full max-w-none items-center justify-between gap-3">
-          <Link href="/" className="flex min-w-0 items-center gap-2 text-[#0d6b78]">
-            <Image src="/fpn-icon-transparent.svg" alt="Food Pantry Network" width={296} height={137} className="h-10 w-auto" priority />
-            <span className="hidden text-sm font-black uppercase leading-tight tracking-wide sm:inline">
+          <Link href="/" className="flex min-w-0 items-center gap-2 text-[#0d6b78] dark:text-[#7dd3fc]">
+            <Image
+              src="/fpn-icon-transparent.svg"
+              alt="Food Pantry Network"
+              width={296}
+              height={137}
+              className="h-10 w-auto dark:hidden"
+              priority
+            />
+            <Image
+              src="/fpn icon-transparent-dark.png"
+              alt="Food Pantry Network"
+              width={296}
+              height={137}
+              className="hidden h-10 w-auto dark:block"
+              priority
+            />
+            <span className="hidden text-sm font-black uppercase leading-tight tracking-wide sm:inline dark:text-slate-100">
               Food Pantry<br />Network
             </span>
           </Link>
@@ -521,8 +536,8 @@ export default function HomePage() {
               onClick={() => setEasyView((previous) => !previous)}
               className={`shrink-0 rounded-md border px-4 py-2 text-sm font-black shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#315f66] ${
                 easyView
-                  ? "border-[#315f66] bg-[#315f66] text-white hover:bg-[#244b51]"
-                  : "border-[#cfc4b3] bg-[#fffdf8] text-[#30332b] hover:bg-[#f4eee4]"
+                  ? "border-[#315f66] bg-[#315f66] text-white hover:bg-[#244b51] dark:border-[#155e75] dark:bg-[#155e75] dark:hover:bg-[#0f4c61]"
+                  : "border-[#cfc4b3] bg-[#fffdf8] text-[#30332b] hover:bg-[#f4eee4] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
               }`}
               aria-pressed={easyView}
             >
@@ -537,10 +552,10 @@ export default function HomePage() {
                 : link.loginHref;
               const shouldBlock = isAuthenticated && isDirector && !isDirectorSession;
               const buttonTone = isVolunteer
-                ? "border-[#315f66] bg-[#315f66] text-white hover:bg-[#244b51]"
+                ? "border-[#315f66] bg-[#315f66] text-white hover:bg-[#244b51] dark:border-[#155e75] dark:bg-[#155e75] dark:hover:bg-[#0f4c61]"
                 : isDirector
-                  ? "border-[#9c6848] bg-[#9c6848] text-white hover:bg-[#815439]"
-                  : "border-[#cfc4b3] bg-[#fffdf8] text-[#30332b] hover:bg-[#f4eee4]";
+                  ? "border-[#9c6848] bg-[#9c6848] text-white hover:bg-[#815439] dark:border-[#7c4d2f] dark:bg-[#7c4d2f] dark:hover:bg-[#633f25]"
+                  : "border-[#cfc4b3] bg-[#fffdf8] text-[#30332b] hover:bg-[#f4eee4] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800";
 
               if (shouldBlock) {
                 return (
@@ -580,25 +595,25 @@ export default function HomePage() {
       </nav>
 
       <div className={`mx-auto flex w-full max-w-none flex-col gap-6 px-4 sm:px-6 lg:px-8 ${easyView && easyPickerOpen ? "pointer-events-none blur-sm" : ""}`}>
-        <header className="flex flex-col gap-3 border-b border-[#dfd3bd] pb-5 sm:flex-row sm:items-end sm:justify-between">
+        <header className="flex flex-col gap-3 border-b border-[#dfd3bd] pb-5 sm:flex-row sm:items-end sm:justify-between dark:border-slate-800/80">
           <div>
-            <h1 className={`${easyView ? "text-4xl sm:text-5xl" : "text-3xl sm:text-4xl"} font-black tracking-tight text-[#124750]`}>
+            <h1 className={`${easyView ? "text-4xl sm:text-5xl" : "text-3xl sm:text-4xl"} font-black tracking-tight text-[#124750] dark:text-slate-50`}>
               Pantry Locations
             </h1>
-            <p className={`${easyView ? "text-lg" : "text-base"} mt-2 max-w-2xl font-medium text-[#5f6159]`}>
+            <p className={`${easyView ? "text-lg" : "text-base"} mt-2 max-w-2xl font-medium text-[#5f6159] dark:text-slate-400`}>
               Find a pantry, check hours, and see food availability.
             </p>
           </div>
-          <p className="rounded-full bg-[#fff7e8] px-4 py-2 text-sm font-bold text-[#7f4635] shadow-sm ring-1 ring-[#ead7b8]">
+          <p className="rounded-full bg-[#fff7e8] px-4 py-2 text-sm font-bold text-[#7f4635] shadow-sm ring-1 ring-[#ead7b8] dark:bg-slate-900 dark:text-amber-200 dark:ring-slate-700">
             Neighbors helping neighbors.
           </p>
         </header>
 
-        <section className={`border-y border-[#ddd0bb] bg-[#fffaf1]/70 shadow-[0_14px_34px_rgba(67,53,35,0.08)] backdrop-blur-sm ${easyView ? "px-5 py-6 sm:px-7 sm:py-8" : "px-4 py-5 sm:px-5"}`}>
+        <section className={`border-y border-[#ddd0bb] bg-[#fffaf1]/70 shadow-[0_14px_34px_rgba(67,53,35,0.08)] backdrop-blur-sm dark:border-slate-800 dark:bg-slate-950/80 dark:shadow-[0_20px_40px_rgba(2,6,23,0.35)] ${easyView ? "px-5 py-6 sm:px-7 sm:py-8" : "px-4 py-5 sm:px-5"}`}>
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <h2 className={`${easyView ? "text-3xl" : "text-xl"} font-black text-[#124750]`}>Choose a pantry</h2>
-              <p className={`${easyView ? "text-lg" : "text-sm"} mt-1 font-medium text-[#6c665b]`}>
+              <h2 className={`${easyView ? "text-3xl" : "text-xl"} font-black text-[#124750] dark:text-slate-50`}>Choose a pantry</h2>
+              <p className={`${easyView ? "text-lg" : "text-sm"} mt-1 font-medium text-[#6c665b] dark:text-slate-400`}>
                 Click a pantry card to view details and stock.
               </p>
             </div>
@@ -608,7 +623,7 @@ export default function HomePage() {
                   <Select
                     value={searchDay}
                     onChange={(event) => setSearchDay(event.target.value)}
-                    className={`${easyView ? "min-h-14 text-lg" : "min-h-11"} border-[#cfbd9b] bg-[#fffdf8]`}
+                    className={`${easyView ? "min-h-14 text-lg" : "min-h-11"} border-[#cfbd9b] bg-[#fffdf8] dark:border-slate-700 dark:bg-slate-900`}
                   >
                     <option value="mon">Monday</option>
                     <option value="tue">Tuesday</option>
@@ -622,9 +637,9 @@ export default function HomePage() {
                     type="time"
                     value={searchTime}
                     onChange={(event) => setSearchTime(event.target.value)}
-                    className={`${easyView ? "min-h-14 text-lg" : "min-h-11"} border-[#cfbd9b] bg-[#fffdf8]`}
+                    className={`${easyView ? "min-h-14 text-lg" : "min-h-11"} border-[#cfbd9b] bg-[#fffdf8] dark:border-slate-700 dark:bg-slate-900`}
                   />
-                  <Button type="button" onClick={handleTimeSearch} className="bg-[#0d6b78] text-white hover:bg-[#0a5963]">
+                  <Button type="button" onClick={handleTimeSearch} className="bg-[#0d6b78] text-white hover:bg-[#0a5963] dark:bg-sky-700 dark:hover:bg-sky-600">
                     Search time
                   </Button>
                   <Button type="button" variant="ghost" onClick={handleCancelTimeSearch}>
@@ -641,10 +656,10 @@ export default function HomePage() {
                       setPantryListExpanded(true);
                     }}
                     placeholder="Search pantry by name or address"
-                    className={`${easyView ? "min-h-14 text-lg sm:w-96" : "min-h-11 sm:w-72"} border-[#cfbd9b] bg-[#fffdf8]`}
+                    className={`${easyView ? "min-h-14 text-lg sm:w-96" : "min-h-11 sm:w-72"} border-[#cfbd9b] bg-[#fffdf8] dark:border-slate-700 dark:bg-slate-900`}
                   />
                   {easyView ? (
-                    <Button type="button" onClick={() => setEasyPickerOpen(true)} className="bg-[#0d6b78] text-white hover:bg-[#0a5963]">
+                    <Button type="button" onClick={() => setEasyPickerOpen(true)} className="bg-[#0d6b78] text-white hover:bg-[#0a5963] dark:bg-sky-700 dark:hover:bg-sky-600">
                       Open large list
                     </Button>
                   ) : (
@@ -665,27 +680,27 @@ export default function HomePage() {
           </div>
 
           {error && (
-            <Card className="mt-4 border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            <Card className="mt-4 border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/50 dark:text-red-200">
               {error}
             </Card>
           )}
           {timeSearchError && (
-            <Card className="mt-4 border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            <Card className="mt-4 border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/50 dark:text-red-200">
               {timeSearchError}
             </Card>
           )}
 
-          <div className={`relative mt-4 border-t border-[#ded3c2] bg-[#f3eadb] shadow-inner ${easyView ? "px-2 py-5 sm:px-4" : "px-2 py-3"}`}>
+          <div className={`relative mt-4 border-t border-[#ded3c2] bg-[#f3eadb] shadow-inner dark:border-slate-800 dark:bg-slate-950/60 ${easyView ? "px-2 py-5 sm:px-4" : "px-2 py-3"}`}>
             <div className={`flex overflow-x-auto px-1 pt-2 snap-x snap-mandatory ${easyView ? "gap-5 pb-4" : "gap-3 pb-2"}`}>
               {loading && [0, 1, 2, 3].map((i) => (
-                <div key={i} className="min-h-48 min-w-[13rem] rounded-sm bg-[#fffdf8] p-4 shadow-md">
+                <div key={i} className="min-h-48 min-w-[13rem] rounded-sm bg-[#fffdf8] p-4 shadow-md dark:bg-slate-900">
                   <Skeleton className="h-5 w-32" />
                   <Skeleton className="mt-4 h-4 w-24" />
                   <Skeleton className="mt-2 h-4 w-36" />
                 </div>
               ))}
               {!loading && boardPantries.length === 0 && (
-                <p className="rounded-md border border-dashed border-[#8e6e42] bg-[#fffaf0] px-4 py-6 text-sm font-bold text-[#62513b]">
+                <p className="rounded-md border border-dashed border-[#8e6e42] bg-[#fffaf0] px-4 py-6 text-sm font-bold text-[#62513b] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
                   No pantries match your search.
                 </p>
               )}
@@ -697,35 +712,35 @@ export default function HomePage() {
                     key={pantry.pantryId}
                     type="button"
                     onClick={() => handlePantrySelect(pantry.pantryId)}
-                    className={`relative snap-start overflow-hidden rounded-md border bg-[linear-gradient(180deg,#fffdf8,#fbf5eb)] text-left shadow-[0_10px_24px_rgba(69,52,31,0.13)] transition hover:-translate-y-1 hover:shadow-xl focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#315f66]/25 ${easyView ? "min-h-60 min-w-full px-5 pb-5 pt-8 sm:min-w-[19rem]" : "min-h-48 min-w-full px-4 pb-4 pt-7 sm:min-w-[15rem]"} ${
+                    className={`relative snap-start overflow-hidden rounded-md border bg-[linear-gradient(180deg,#fffdf8,#fbf5eb)] text-left shadow-[0_10px_24px_rgba(69,52,31,0.13)] transition hover:-translate-y-1 hover:shadow-xl focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#315f66]/25 dark:border-slate-800 dark:bg-[linear-gradient(180deg,#0f172a,#020617)] dark:shadow-[0_18px_34px_rgba(2,6,23,0.42)] dark:hover:shadow-[0_22px_40px_rgba(2,6,23,0.52)] ${easyView ? "min-h-60 min-w-full px-5 pb-5 pt-8 sm:min-w-[19rem]" : "min-h-48 min-w-full px-4 pb-4 pt-7 sm:min-w-[15rem]"} ${
                       selected
-                        ? "border-[#315f66] ring-2 ring-[#315f66]/15"
-                        : "border-[#d9cdb8]"
+                        ? "border-[#315f66] ring-2 ring-[#315f66]/15 dark:border-sky-400 dark:ring-sky-400/20"
+                        : "border-[#d9cdb8] dark:border-slate-800"
                     }`}
                   >
                     <span
                       aria-hidden="true"
-                      className={`absolute inset-x-0 top-0 h-2 ${selected ? "bg-[#315f66]" : "bg-[#b7aa95]"}`}
+                      className={`absolute inset-x-0 top-0 h-2 ${selected ? "bg-[#315f66] dark:bg-sky-400" : "bg-[#b7aa95] dark:bg-slate-600"}`}
                     />
                     {selected && (
-                      <span className="absolute left-3 top-4 rounded-full bg-[#edf5f3] px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-[#315f66]">
+                      <span className="absolute left-3 top-4 rounded-full bg-[#edf5f3] px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-[#315f66] dark:bg-slate-900 dark:text-sky-300">
                         Viewing
                       </span>
                     )}
-                    <p className={`${easyView ? "text-2xl" : "text-lg"} text-center font-black leading-tight text-[#26332f]`}>{pantry.name}</p>
-                    <p className={`${easyView ? "text-lg" : "text-sm"} mt-3 text-center font-medium leading-snug text-[#4e514b]`}>
+                    <p className={`${easyView ? "text-2xl" : "text-lg"} text-center font-black leading-tight text-[#26332f] dark:text-slate-50`}>{pantry.name}</p>
+                    <p className={`${easyView ? "text-lg" : "text-sm"} mt-3 text-center font-medium leading-snug text-[#4e514b] dark:text-slate-400`}>
                       {pantry.location || "Address coming soon"}
                     </p>
-                    <div className="mt-4 border-t border-[#eadcca] pt-3">
+                    <div className="mt-4 border-t border-[#eadcca] pt-3 dark:border-slate-800">
                       <div className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 font-black ${easyView ? "text-base" : "text-xs"} ${
                         pantry.isOpen
-                          ? "border-[#bcd3b8] bg-[#edf6ea] text-[#287345]"
-                          : "border-[#e2b7af] bg-[#fbebe8] text-[#9f433b]"
+                          ? "border-[#bcd3b8] bg-[#edf6ea] text-[#287345] dark:border-emerald-900/60 dark:bg-emerald-950/60 dark:text-emerald-200"
+                          : "border-[#e2b7af] bg-[#fbebe8] text-[#9f433b] dark:border-rose-900/60 dark:bg-rose-950/60 dark:text-rose-200"
                       }`}>
-                        <span aria-hidden="true" className={`h-2 w-2 rounded-full ${pantry.isOpen ? "bg-[#287345]" : "bg-[#9f433b]"}`} />
+                        <span aria-hidden="true" className={`h-2 w-2 rounded-full ${pantry.isOpen ? "bg-[#287345] dark:bg-emerald-300" : "bg-[#9f433b] dark:bg-rose-300"}`} />
                         {pantry.isOpen ? "Open now" : "Closed"}
                       </div>
-                      <p className={`${easyView ? "text-lg" : "text-sm"} mt-2 font-medium text-[#4e514b]`}>{timing.hint}</p>
+                      <p className={`${easyView ? "text-lg" : "text-sm"} mt-2 font-medium text-[#4e514b] dark:text-slate-400`}>{timing.hint}</p>
                     </div>
                   </button>
                 );
@@ -735,47 +750,47 @@ export default function HomePage() {
               <button
                 type="button"
                 onClick={() => setPantryListExpanded((expanded) => !expanded)}
-                className="mt-2 rounded-md bg-[#315f66] px-4 py-2 text-sm font-black text-white shadow-sm transition hover:bg-[#244b51]"
+                className="mt-2 rounded-md bg-[#315f66] px-4 py-2 text-sm font-black text-white shadow-sm transition hover:bg-[#244b51] dark:bg-slate-700 dark:hover:bg-slate-600"
               >
                 {pantryListExpanded ? "Show fewer pantries" : "Show all pantries"}
               </button>
             )}
-            <p className="mt-3 text-sm font-bold text-[#5d4b35]">
+            <p className="mt-3 text-sm font-bold text-[#5d4b35] dark:text-slate-400">
               {loading ? "Loading pantries..." : `${pantries.length} pantries - ${sortedFilteredPantries.length} matching`}
             </p>
           </div>
         </section>
 
         <div ref={detailsRef} className="scroll-mt-24">
-        <Card className={`rounded-none border-x-0 border-y border-[#dfd3bd] bg-transparent shadow-none backdrop-blur-0 dark:border-[#dfd3bd] dark:bg-transparent ${easyView ? "p-6 sm:p-8" : "p-3 sm:p-4"}`}>
+        <Card className={`rounded-none border-x-0 border-y border-[#dfd3bd] bg-transparent shadow-none backdrop-blur-0 dark:border-slate-800 dark:bg-slate-950/50 ${easyView ? "p-6 sm:p-8" : "p-3 sm:p-4"}`}>
           {!activePantry && !loading && (
-            <p className="text-sm font-medium text-[#625c52]">No pantry selected.</p>
+            <p className="text-sm font-medium text-[#625c52] dark:text-slate-400">No pantry selected.</p>
           )}
           {activePantry && (
             <>
-              <div className="flex flex-col gap-4 border-b border-[#e3d6be] pb-4 lg:flex-row lg:items-start lg:justify-between">
+              <div className="flex flex-col gap-4 border-b border-[#e3d6be] pb-4 lg:flex-row lg:items-start lg:justify-between dark:border-slate-800">
                 <div>
-                  <h2 className={`${easyView ? "text-4xl" : "text-2xl"} font-black text-[#124750]`}>{activePantry.name}</h2>
-                  <p className={`${easyView ? "text-xl" : "text-base"} mt-1 font-medium text-[#4f5b55]`}>{activePantry.location || "Address not available"}</p>
+                  <h2 className={`${easyView ? "text-4xl" : "text-2xl"} font-black text-[#124750] dark:text-slate-50`}>{activePantry.name}</h2>
+                  <p className={`${easyView ? "text-xl" : "text-base"} mt-1 font-medium text-[#4f5b55] dark:text-slate-400`}>{activePantry.location || "Address not available"}</p>
                   {activePantry.location && (
                     <a
                       href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(activePantry.location)}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={`${easyView ? "text-xl" : "text-base"} mt-1 inline-flex font-black text-[#0d6b78] hover:underline`}
+                      className={`${easyView ? "text-xl" : "text-base"} mt-1 inline-flex font-black text-[#0d6b78] hover:underline dark:text-sky-300`}
                     >
                       Get directions
                     </a>
                   )}
                 </div>
                 <div className={`flex flex-wrap gap-2 font-bold ${easyView ? "text-base" : "text-sm"}`}>
-                  <span className="rounded-md border border-[#dfd3bd] bg-[#f3ead8] px-3 py-1 text-[#4f5148]">
+                  <span className="rounded-md border border-[#dfd3bd] bg-[#f3ead8] px-3 py-1 text-[#4f5148] dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
                     Pantry ID: {activePantry.pantryId}
                   </span>
-                  <span className={`rounded-md border px-3 py-1 ${activePantry.isOpen ? "border-[#9bc597] bg-[#e9f4e6] text-[#237b3c]" : "border-[#e1aaa3] bg-[#f9e3df] text-[#9b332f]"}`}>
+                  <span className={`rounded-md border px-3 py-1 ${activePantry.isOpen ? "border-[#9bc597] bg-[#e9f4e6] text-[#237b3c] dark:border-emerald-900/60 dark:bg-emerald-950/60 dark:text-emerald-200" : "border-[#e1aaa3] bg-[#f9e3df] text-[#9b332f] dark:border-rose-900/60 dark:bg-rose-950/60 dark:text-rose-200"}`}>
                     {activePantry.isOpen ? "Open now" : "Closed"}
                   </span>
-                  <span className="rounded-md border border-[#dfd3bd] bg-[#f3ead8] px-3 py-1 text-[#4f5148]">
+                  <span className="rounded-md border border-[#dfd3bd] bg-[#f3ead8] px-3 py-1 text-[#4f5148] dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
                     {activePantry.lastUpdated
                       ? `Updated: ${formatRelativeTime(activePantry.lastUpdated)}`
                       : "Last updated: Not available"}
@@ -784,14 +799,14 @@ export default function HomePage() {
               </div>
 
               <div className={`mt-4 grid ${easyView ? "gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(22rem,0.75fr)]" : "gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.65fr)]"}`}>
-                <div className={`rounded-md border border-[#e3d6be] bg-[#fffdf8] shadow-sm ${easyView ? "p-5" : "p-3"}`}>
-                  <p className={`${easyView ? "mb-4 text-lg" : "mb-2 text-sm"} font-black text-[#30332b]`}>Hours of operation</p>
+                <div className={`rounded-md border border-[#e3d6be] bg-[#fffdf8] shadow-sm dark:border-slate-800 dark:bg-slate-950/70 dark:shadow-[0_12px_24px_rgba(2,6,23,0.34)] ${easyView ? "p-5" : "p-3"}`}>
+                  <p className={`${easyView ? "mb-4 text-lg" : "mb-2 text-sm"} font-black text-[#30332b] dark:text-slate-50`}>Hours of operation</p>
                   {activePantry.operatingHours && activePantry.operatingHours.length > 0 ? (
                     <div className={`grid ${easyView ? "gap-3" : "gap-1.5"}`}>
                       {groupHoursByDay(activePantry.operatingHours).map(({ day, slots }) => (
                         <div key={day} className={`grid grid-cols-[5rem_1fr] gap-3 ${easyView ? "text-xl" : "text-sm"}`}>
-                          <span className="font-black text-[#30332b]">{DAY_LABELS[day] || day}</span>
-                          <span className="font-medium text-[#4f5b55]">
+                          <span className="font-black text-[#30332b] dark:text-slate-100">{DAY_LABELS[day] || day}</span>
+                          <span className="font-medium text-[#4f5b55] dark:text-slate-400">
                             {slots.map((slot, index) => (
                               <span key={index}>
                                 {index > 0 && ", "}
@@ -803,18 +818,18 @@ export default function HomePage() {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm font-medium text-[#625c52]">Hours coming soon.</p>
+                    <p className="text-sm font-medium text-[#625c52] dark:text-slate-400">Hours coming soon.</p>
                   )}
                 </div>
 
-                <div className={`rounded-md border border-[#e3d6be] bg-[#fffdf8] shadow-sm ${easyView ? "p-5" : "p-3"}`}>
+                <div className={`rounded-md border border-[#e3d6be] bg-[#fffdf8] shadow-sm dark:border-slate-800 dark:bg-slate-950/70 dark:shadow-[0_12px_24px_rgba(2,6,23,0.34)] ${easyView ? "p-5" : "p-3"}`}>
                   <div className="flex items-center justify-between gap-3">
-                    <p className={`${easyView ? "text-lg" : "text-sm"} font-black text-[#30332b]`}>At a glance</p>
+                    <p className={`${easyView ? "text-lg" : "text-sm"} font-black text-[#30332b] dark:text-slate-50`}>At a glance</p>
                     {stockFilter !== "All" && (
                       <button
                         type="button"
                         onClick={() => setStockFilter("All")}
-                        className={`${easyView ? "text-base" : "text-xs"} font-black text-[#315f66] hover:underline`}
+                        className={`${easyView ? "text-base" : "text-xs"} font-black text-[#315f66] hover:underline dark:text-sky-300`}
                       >
                         Clear filter
                       </button>
@@ -832,12 +847,12 @@ export default function HomePage() {
                           aria-pressed={selected}
                           className={`rounded-md border px-3 py-2 text-left shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#315f66] ${
                             selected
-                              ? "border-[#315f66] bg-[#eef4f2]"
-                              : "border-[#e4d8c4] bg-[#fffaf1] hover:border-[#b9aa90] hover:bg-[#f6efe3]"
+                              ? "border-[#315f66] bg-[#eef4f2] dark:border-sky-400 dark:bg-slate-900"
+                              : "border-[#e4d8c4] bg-[#fffaf1] hover:border-[#b9aa90] hover:bg-[#f6efe3] dark:border-slate-800 dark:bg-slate-950/60 dark:hover:border-slate-700 dark:hover:bg-slate-900"
                           }`}
                         >
                           <LevelBadge level={level} size={easyView ? "lg" : "sm"} />
-                          <p className={`${easyView ? "mt-2 text-base" : "mt-1 text-xs"} font-black text-[#4f5b55]`}>
+                          <p className={`${easyView ? "mt-2 text-base" : "mt-1 text-xs"} font-black text-[#4f5b55] dark:text-slate-400`}>
                             {count} categories
                           </p>
                         </button>
@@ -850,8 +865,8 @@ export default function HomePage() {
               <div className="mt-5">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                   <div>
-                    <h3 className={`${easyView ? "text-2xl" : "text-base"} font-black text-[#30332b]`}>Stock status</h3>
-                    <p className={`${easyView ? "text-base" : "text-xs"} mt-1 font-bold text-[#6c665b]`}>
+                    <h3 className={`${easyView ? "text-2xl" : "text-base"} font-black text-[#30332b] dark:text-slate-50`}>Stock status</h3>
+                    <p className={`${easyView ? "text-base" : "text-xs"} mt-1 font-bold text-[#6c665b] dark:text-slate-400`}>
                       {stockFilter === "All"
                         ? "Showing all categories"
                         : `Showing ${stockFilter === "Mid" ? "Medium" : stockFilter} categories`}
@@ -861,7 +876,7 @@ export default function HomePage() {
                     <button
                       type="button"
                       onClick={() => setStockFilter("All")}
-                      className={`${easyView ? "text-base" : "text-xs"} font-black text-[#315f66] hover:underline`}
+                      className={`${easyView ? "text-base" : "text-xs"} font-black text-[#315f66] hover:underline dark:text-sky-300`}
                     >
                       Show all stock
                     </button>
@@ -869,18 +884,18 @@ export default function HomePage() {
                 </div>
                 <div className={`mt-3 grid ${easyView ? "gap-4 sm:grid-cols-2 xl:grid-cols-3" : "gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6"}`}>
                   {filteredCategoryStatusItems.map((item) => (
-                    <div key={item.category} className={`rounded-md border border-[#eadcca] bg-[#fffdf8] shadow-sm ${easyView ? "p-5" : "p-3"}`}>
+                    <div key={item.category} className={`rounded-md border border-[#eadcca] bg-[#fffdf8] shadow-sm dark:border-slate-800 dark:bg-slate-950/70 ${easyView ? "p-5" : "p-3"}`}>
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <p className={`${easyView ? "text-xl" : "text-base"} font-black text-[#30332b]`}>{item.category}</p>
-                          <p className={`${easyView ? "text-base" : "text-xs"} mt-1 font-bold text-[#6c665b]`}>Original: {item.original}</p>
+                          <p className={`${easyView ? "text-xl" : "text-base"} font-black text-[#30332b] dark:text-slate-100`}>{item.category}</p>
+                          <p className={`${easyView ? "text-base" : "text-xs"} mt-1 font-bold text-[#6c665b] dark:text-slate-400`}>Original: {item.original}</p>
                         </div>
                         <LevelBadge level={item.level} size={easyView ? "lg" : "sm"} friendlyText={easyView} />
                       </div>
                     </div>
                   ))}
                   {filteredCategoryStatusItems.length === 0 && (
-                    <p className="rounded-md border border-dashed border-[#d7c8ae] bg-[#fffdf8] p-4 text-sm font-bold text-[#6c665b]">
+                    <p className="rounded-md border border-dashed border-[#d7c8ae] bg-[#fffdf8] p-4 text-sm font-bold text-[#6c665b] dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-400">
                       No categories match this stock filter.
                     </p>
                   )}
@@ -895,21 +910,21 @@ export default function HomePage() {
       {easyView && easyPickerOpen && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 sm:p-6">
           <div
-            className="absolute inset-0 bg-[#3d2c19]/35 backdrop-blur-md"
+            className="absolute inset-0 bg-[#3d2c19]/35 backdrop-blur-md dark:bg-slate-950/80"
             onClick={() => setEasyPickerOpen(false)}
             aria-hidden
           />
-          <Card className="relative z-10 flex h-[min(90vh,52rem)] w-full max-w-[92rem] flex-col overflow-hidden rounded-lg border border-[#ddd0bb] bg-[#fffaf1] p-0 shadow-2xl dark:border-[#ddd0bb] dark:bg-[#fffaf1]">
-            <div className="border-b border-[#dfd3bd] p-5 sm:p-7">
+          <Card className="relative z-10 flex h-[min(90vh,52rem)] w-full max-w-[92rem] flex-col overflow-hidden rounded-lg border border-[#ddd0bb] bg-[#fffaf1] p-0 shadow-2xl dark:border-slate-800 dark:bg-slate-950">
+            <div className="border-b border-[#dfd3bd] p-5 sm:p-7 dark:border-slate-800">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-4xl font-black text-[#124750]">Select a pantry</p>
-                  <p className="mt-2 text-xl font-medium text-[#6c665b]">Choose a note card to update this page.</p>
+                  <p className="text-4xl font-black text-[#124750] dark:text-slate-50">Select a pantry</p>
+                  <p className="mt-2 text-xl font-medium text-[#6c665b] dark:text-slate-400">Choose a note card to update this page.</p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setEasyPickerOpen(false)}
-                  className="rounded-md border-2 border-[#cbbd9f] bg-[#fffdf8] px-5 py-3 text-lg font-black text-[#30332b] hover:bg-[#f3e7cf]"
+                  className="rounded-md border-2 border-[#cbbd9f] bg-[#fffdf8] px-5 py-3 text-lg font-black text-[#30332b] hover:bg-[#f3e7cf] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
                 >
                   Close
                 </button>
@@ -918,15 +933,15 @@ export default function HomePage() {
                 value={easyPickerQuery}
                 onChange={(event) => setEasyPickerQuery(event.target.value)}
                 placeholder="Search pantry by name, id, or address"
-                className="mt-5 min-h-[64px] border-[#cfbd9b] bg-[#fffdf8] text-xl"
+                className="mt-5 min-h-[64px] border-[#cfbd9b] bg-[#fffdf8] text-xl dark:border-slate-700 dark:bg-slate-900"
                 autoFocus
               />
             </div>
-            <div className="flex-1 overflow-y-auto border-t border-[#ded3c2] bg-[#f3eadb] p-6">
+            <div className="flex-1 overflow-y-auto border-t border-[#ded3c2] bg-[#f3eadb] p-6 dark:border-slate-800 dark:bg-slate-950/70">
               {loading && (
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {[0, 1, 2, 3, 4, 5].map((i) => (
-                    <div key={i} className="min-h-44 rounded-sm bg-[#fffdf8] p-4 shadow-md">
+                    <div key={i} className="min-h-44 rounded-sm bg-[#fffdf8] p-4 shadow-md dark:bg-slate-900">
                       <Skeleton className="h-5 w-44" />
                       <Skeleton className="mt-3 h-4 w-28" />
                       <Skeleton className="mt-2 h-4 w-36" />
@@ -935,7 +950,7 @@ export default function HomePage() {
                 </div>
               )}
               {!loading && easyPickerPantries.length === 0 && (
-                <p className="rounded-md border border-dashed border-[#8e6e42] bg-[#fffaf0] px-4 py-6 text-base font-bold text-[#62513b]">
+                <p className="rounded-md border border-dashed border-[#8e6e42] bg-[#fffaf0] px-4 py-6 text-base font-bold text-[#62513b] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
                   No pantry matches your search.
                 </p>
               )}
@@ -951,33 +966,33 @@ export default function HomePage() {
                         setEasyPickerOpen(false);
                         handlePantrySelect(pantry.pantryId);
                       }}
-                      className={`relative min-h-72 overflow-hidden rounded-md border bg-[linear-gradient(180deg,#fffdf8,#fbf5eb)] px-6 pb-6 pt-11 text-left shadow-lg transition hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#0d6b78]/30 ${
+                      className={`relative min-h-72 overflow-hidden rounded-md border bg-[linear-gradient(180deg,#fffdf8,#fbf5eb)] px-6 pb-6 pt-11 text-left shadow-lg transition hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#0d6b78]/30 dark:border-slate-800 dark:bg-[linear-gradient(180deg,#0f172a,#020617)] dark:text-slate-100 ${
                         selected
-                          ? "border-[#315f66] ring-2 ring-[#315f66]/15"
-                          : "border-[#d9cdb8]"
+                          ? "border-[#315f66] ring-2 ring-[#315f66]/15 dark:border-sky-400 dark:ring-sky-400/20"
+                          : "border-[#d9cdb8] dark:border-slate-800"
                       }`}
                     >
                       <span
                         aria-hidden="true"
-                        className={`absolute inset-x-0 top-0 h-2.5 ${selected ? "bg-[#315f66]" : "bg-[#b7aa95]"}`}
+                        className={`absolute inset-x-0 top-0 h-2.5 ${selected ? "bg-[#315f66] dark:bg-sky-400" : "bg-[#b7aa95] dark:bg-slate-600"}`}
                       />
                       {selected && (
-                        <span className="absolute left-4 top-5 rounded-full bg-[#edf5f3] px-3 py-1 text-xs font-black uppercase tracking-wide text-[#315f66]">
+                        <span className="absolute left-4 top-5 rounded-full bg-[#edf5f3] px-3 py-1 text-xs font-black uppercase tracking-wide text-[#315f66] dark:bg-slate-900 dark:text-sky-300">
                           Viewing
                         </span>
                       )}
-                      <p className="text-center text-2xl font-black leading-tight text-[#26332f]">{pantry.name}</p>
-                      <p className="mt-4 text-center text-lg font-medium leading-snug text-[#4e514b]">{pantry.location || "Address coming soon"}</p>
-                      <div className="mt-5 border-t border-[#eadcca] pt-4">
+                      <p className="text-center text-2xl font-black leading-tight text-[#26332f] dark:text-slate-50">{pantry.name}</p>
+                      <p className="mt-4 text-center text-lg font-medium leading-snug text-[#4e514b] dark:text-slate-400">{pantry.location || "Address coming soon"}</p>
+                      <div className="mt-5 border-t border-[#eadcca] pt-4 dark:border-slate-800">
                         <div className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-lg font-black ${
                           pantry.isOpen
-                            ? "border-[#bcd3b8] bg-[#edf6ea] text-[#287345]"
-                            : "border-[#e2b7af] bg-[#fbebe8] text-[#9f433b]"
+                            ? "border-[#bcd3b8] bg-[#edf6ea] text-[#287345] dark:border-emerald-900/60 dark:bg-emerald-950/60 dark:text-emerald-200"
+                            : "border-[#e2b7af] bg-[#fbebe8] text-[#9f433b] dark:border-rose-900/60 dark:bg-rose-950/60 dark:text-rose-200"
                         }`}>
-                          <span aria-hidden="true" className={`h-3 w-3 rounded-full ${pantry.isOpen ? "bg-[#287345]" : "bg-[#9f433b]"}`} />
+                          <span aria-hidden="true" className={`h-3 w-3 rounded-full ${pantry.isOpen ? "bg-[#287345] dark:bg-emerald-300" : "bg-[#9f433b] dark:bg-rose-300"}`} />
                           {pantry.isOpen ? "Open now" : "Closed"}
                         </div>
-                        <p className="mt-2 text-lg font-medium text-[#4e514b]">{timing.hint}</p>
+                        <p className="mt-2 text-lg font-medium text-[#4e514b] dark:text-slate-400">{timing.hint}</p>
                       </div>
                     </button>
                   );

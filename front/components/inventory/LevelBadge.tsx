@@ -32,10 +32,10 @@ type LevelBadgeProps = {
 };
 
 const levelStyles: Record<string, string> = {
-  High: "tone-emerald bg-[#e5f2df] text-[#237b3c]",
-  Mid: "tone-amber bg-[#fff1c8] text-[#a86f10]",
-  Low: "tone-rose bg-[#ffe6dd] text-[#b44736]",
-  Out: "tone-zinc bg-[#f8ded9] text-[#a53a34]",
+  High: "tone-emerald bg-[#e5f2df] text-[#237b3c] dark:bg-emerald-950/70 dark:text-emerald-200",
+  Mid: "tone-amber bg-[#fff1c8] text-[#a86f10] dark:bg-amber-950/70 dark:text-amber-200",
+  Low: "tone-rose bg-[#ffe6dd] text-[#b44736] dark:bg-rose-950/70 dark:text-rose-200",
+  Out: "tone-zinc bg-[#f8ded9] text-[#a53a34] dark:bg-slate-800 dark:text-slate-200",
 };
 
 const levelLabels: Record<string, { short: string; friendly: string }> = {
@@ -51,7 +51,7 @@ export default function LevelBadge({
   friendlyText = false,
   className = "",
 }: LevelBadgeProps) {
-  const style = levelStyles[level] ?? "bg-zinc-200 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-200";
+  const style = levelStyles[level] ?? "bg-zinc-200 text-zinc-800 dark:bg-slate-800 dark:text-slate-200";
   const labelSet = levelLabels[level] ?? levelLabels.Out;
   const sizeClass =
     size === "lg"

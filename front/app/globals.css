@@ -40,8 +40,8 @@ html {
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #05070c;
+    --foreground: #f1f5f9;
   }
 }
 
@@ -55,6 +55,17 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans), "Inter", "Segoe UI", sans-serif;
   transition: color 0.3s ease;
+}
+
+@media (prefers-color-scheme: dark) {
+  html,
+  body {
+    background:
+      radial-gradient(circle at 12% -8%, rgba(45, 212, 191, 0.14), transparent 28%),
+      radial-gradient(circle at 88% 12%, rgba(59, 130, 246, 0.12), transparent 26%),
+      radial-gradient(circle at 55% 100%, rgba(15, 23, 42, 0.94), rgba(2, 6, 23, 0.99) 70%),
+      var(--background);
+  }
 }
 
 * {
