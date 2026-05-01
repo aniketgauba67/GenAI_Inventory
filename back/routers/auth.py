@@ -100,6 +100,7 @@ def login(payload: LoginRequest) -> LoginResponse:
     """
     username = payload.username.strip()
     password = payload.password
+    portal = (payload.portal or "").strip().lower()
     if not username or not password:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -109,6 +110,8 @@ def login(payload: LoginRequest) -> LoginResponse:
     if username.lower() in DIRECTOR_IDENTIFIERS:
         is_valid = _get_crud_module().check_director_credentials(DEFAULT_DIRECTOR_EMAIL, password)
         if is_valid:
+            if portal in {"manager", "volunteer"}:
+                return LoginResponse(ok=False, error="Use pantry credentials for this portal.")
             return LoginResponse(ok=True, user=_build_director_user(DEFAULT_DIRECTOR_EMAIL))
         return LoginResponse(
             ok=False,
@@ -126,6 +129,8 @@ def login(payload: LoginRequest) -> LoginResponse:
 
     is_valid = _get_crud_module().check_credentials(pantry_id, password)
     if is_valid:
+        if portal == "director":
+            return LoginResponse(ok=False, error="Use director credentials for this portal.")
         return LoginResponse(ok=True, user=_build_pantry_user(pantry_id, username))
 
     return LoginResponse(ok=False, error="Invalid pantry credentials.")
