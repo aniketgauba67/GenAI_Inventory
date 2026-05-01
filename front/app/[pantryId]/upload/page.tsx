@@ -294,7 +294,7 @@ export default function UploadPage() {
 
   return (
     <AppShell
-      title="Volunteer Upload"
+      title="Shelf Images Upload"
       subtitle={`Pantry ${pantryId} · Upload shelf photos for detection`}
       rightAction={
         <div className="flex items-center gap-2">

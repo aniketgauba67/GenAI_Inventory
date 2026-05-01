@@ -214,7 +214,7 @@ export default function ManagerViewPage() {
 
   return (
     <AppShell
-      title="Manager Upload"
+      title="Form Upload"
       subtitle="Upload warehouse order forms and set pantry baseline"
       links={[
         { label: "Home", href: "/" },
@@ -284,7 +284,7 @@ export default function ManagerViewPage() {
             <FlowStepper steps={["Upload", "Review", "Save Baseline"]} currentStep={0} />
           </Card>
           <Card className="rounded-3xl border border-slate-200/80 bg-white/90 p-5 text-base text-zinc-600 shadow-sm backdrop-blur dark:border-slate-800/80 dark:bg-slate-950/60 dark:text-zinc-300">
-            <p className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Manager flow</p>
+            <p className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Form upload flow</p>
             <p className="mt-1 leading-7">
               Upload warehouse order form pages, review extracted category totals, then save as pantry baseline.
             </p>

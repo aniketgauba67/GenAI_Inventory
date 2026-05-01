@@ -211,10 +211,10 @@ function formatRelativeTime(iso: string): string {
 }
 
 const accessLinks = [
-  { label: "Volunteer", loginHref: "/login?callbackUrl=/volunteer", directHref: "/volunteer" },
-  { label: "Manager", loginHref: "/login?callbackUrl=/manager", directHref: "/manager" },
+  { label: "Upload Images", loginHref: "/login?callbackUrl=/volunteer", directHref: "/volunteer" },
+  { label: "Upload Forms", loginHref: "/login?callbackUrl=/manager", directHref: "/manager" },
   {
-    label: "Director",
+    label: "Manager",
     loginHref: "/login?callbackUrl=/director/dashboard",
     directHref: "/director/dashboard",
   },
@@ -510,7 +510,7 @@ export default function HomePage() {
       <nav className={`fixed inset-x-0 top-0 z-50 border-b border-[#ddd3c1] bg-[#fffdf8]/95 px-4 py-2.5 shadow-sm backdrop-blur-md sm:px-6 lg:px-8 ${easyView && easyPickerOpen ? "pointer-events-none blur-sm" : ""}`}>
         <div className="mx-auto flex w-full max-w-none items-center justify-between gap-3">
           <Link href="/" className="flex min-w-0 items-center gap-2 text-[#0d6b78]">
-            <Image src="/fpn icon-transparent.png" alt="Food Pantry Network" width={48} height={48} className="h-10 w-auto" />
+            <Image src="/fpn-icon-transparent.svg" alt="Food Pantry Network" width={296} height={137} className="h-10 w-auto" priority />
             <span className="hidden text-sm font-black uppercase leading-tight tracking-wide sm:inline">
               Food Pantry<br />Network
             </span>
@@ -676,7 +676,7 @@ export default function HomePage() {
           )}
 
           <div className={`relative mt-4 border-t border-[#ded3c2] bg-[#f3eadb] shadow-inner ${easyView ? "px-2 py-5 sm:px-4" : "px-2 py-3"}`}>
-            <div className={`flex overflow-x-auto px-1 pt-2 ${easyView ? "gap-5 pb-4" : "gap-3 pb-2"}`}>
+            <div className={`flex overflow-x-auto px-1 pt-2 snap-x snap-mandatory ${easyView ? "gap-5 pb-4" : "gap-3 pb-2"}`}>
               {loading && [0, 1, 2, 3].map((i) => (
                 <div key={i} className="min-h-48 min-w-[13rem] rounded-sm bg-[#fffdf8] p-4 shadow-md">
                   <Skeleton className="h-5 w-32" />
@@ -697,7 +697,7 @@ export default function HomePage() {
                     key={pantry.pantryId}
                     type="button"
                     onClick={() => handlePantrySelect(pantry.pantryId)}
-                    className={`relative overflow-hidden rounded-md border bg-[linear-gradient(180deg,#fffdf8,#fbf5eb)] text-left shadow-[0_10px_24px_rgba(69,52,31,0.13)] transition hover:-translate-y-1 hover:shadow-xl focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#315f66]/25 ${easyView ? "min-h-60 min-w-[19rem] px-5 pb-5 pt-8" : "min-h-48 min-w-[15rem] px-4 pb-4 pt-7"} ${
+                    className={`relative snap-start overflow-hidden rounded-md border bg-[linear-gradient(180deg,#fffdf8,#fbf5eb)] text-left shadow-[0_10px_24px_rgba(69,52,31,0.13)] transition hover:-translate-y-1 hover:shadow-xl focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#315f66]/25 ${easyView ? "min-h-60 min-w-full px-5 pb-5 pt-8 sm:min-w-[19rem]" : "min-h-48 min-w-full px-4 pb-4 pt-7 sm:min-w-[15rem]"} ${
                       selected
                         ? "border-[#315f66] ring-2 ring-[#315f66]/15"
                         : "border-[#d9cdb8]"

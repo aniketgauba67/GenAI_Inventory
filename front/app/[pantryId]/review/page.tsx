@@ -163,7 +163,7 @@ export default function ReviewPage() {
 
   return (
     <AppShell
-      title="Volunteer Review"
+      title="Shelf Images Review"
       subtitle={`Pantry ${effectivePantryId} · Review and submit detected counts`}
       rightAction={
         <Button variant="ghost" size="sm" onClick={() => signOut({ callbackUrl: "/" })}>
