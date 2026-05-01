@@ -24,7 +24,7 @@
  *****************************************************************************/
 "use client";
 
-import { signIn, useSession } from "next-auth/react";
+import { signIn, signOut, useSession } from "next-auth/react";
 import { FormEvent, KeyboardEvent, Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Input from "../../components/ui/Input";
@@ -64,7 +64,7 @@ function resolveAuthenticatedTarget(
     return role === "pantry" && pantryId ? `/${pantryId}/upload` : defaultTarget;
   }
   if (resolved === "/manager") {
-    return role === "director" || (role === "pantry" && pantryId) ? "/manager" : defaultTarget;
+    return role === "pantry" && pantryId ? "/manager" : defaultTarget;
   }
   if (resolved === "/director/dashboard") {
     return role === "director" ? "/director/dashboard" : defaultTarget;
@@ -95,6 +95,19 @@ function isManagerPortal(rawCallbackUrl: string | null) {
     return false;
   }
 }
+
+function isVolunteerPortal(rawCallbackUrl: string | null) {
+  if (!rawCallbackUrl) return false;
+  if (rawCallbackUrl === "/volunteer") return true;
+
+  try {
+    const url = new URL(rawCallbackUrl, window.location.origin);
+    return url.origin === window.location.origin && url.pathname === "/volunteer";
+  } catch {
+    return false;
+  }
+}
+
 function LoginForm() {
   const searchParams = useSearchParams();
   const { status, data: session } = useSession();
@@ -106,14 +119,30 @@ function LoginForm() {
   const callbackUrl = useMemo(() => searchParams.get("callbackUrl"), [searchParams]);
   const directorPortal = isDirectorPortal(callbackUrl);
   const managerPortal = isManagerPortal(callbackUrl);
+  const volunteerPortal = isVolunteerPortal(callbackUrl);
 
   useEffect(() => {
     if (status !== "authenticated") return;
     const sessionPantryId = (session?.user as { pantryId?: string } | undefined)?.pantryId;
     const sessionRole = (session?.user as { role?: string } | undefined)?.role;
+
+    if (directorPortal && sessionRole !== "director") {
+      void signOut({ redirect: false }).then(() => {
+        setError("Director credentials are required for this portal.");
+      });
+      return;
+    }
+
+    if ((volunteerPortal || managerPortal) && sessionRole !== "pantry") {
+      void signOut({ redirect: false }).then(() => {
+        setError("Volunteer/manager credentials are required for this portal.");
+      });
+      return;
+    }
+
     const target = resolveAuthenticatedTarget(callbackUrl, sessionPantryId, sessionRole);
     window.location.replace(target);
-  }, [callbackUrl, session, status]);
+  }, [callbackUrl, directorPortal, managerPortal, session, status, volunteerPortal]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -121,6 +150,13 @@ function LoginForm() {
     setError(null);
 
     const normalizedUsername = username.trim();
+    const requestedPortal = directorPortal
+      ? "director"
+      : managerPortal
+        ? "manager"
+        : volunteerPortal
+          ? "volunteer"
+          : "";
 
     setLoading(true);
 
@@ -128,16 +164,13 @@ function LoginForm() {
       redirect: false,
       username: normalizedUsername,
       password,
+      portal: requestedPortal,
     });
 
     setLoading(false);
 
     if (result?.error) {
       setError("Invalid credentials. Please try again.");
-    } else {
-      // Let the authenticated session drive the redirect so the backend/db is
-      // the source of truth for the user's role.
-      window.location.href = callbackUrl || "/";
     }
   }
 
