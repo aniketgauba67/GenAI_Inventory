@@ -80,17 +80,17 @@ test.describe("Login page", () => {
 });
 
 test.describe("Login redirect behavior", () => {
-  test("director portal renders distinct copy", async ({ page }) => {
+  test("manager portal renders distinct copy", async ({ page }) => {
     await page.goto("/login?callbackUrl=/director/dashboard");
 
-    await expect(page.getByRole("heading", { name: /director access/i })).toBeVisible();
-    await expect(page.getByText(/director portal/i)).toBeVisible();
-    await expect(page.getByLabel(/director email/i)).toBeVisible();
+    await expect(page.getByRole("heading", { name: /manager access/i })).toBeVisible();
+    await expect(page.getByText(/manager portal/i)).toBeVisible();
+    await expect(page.getByLabel(/manager email/i)).toBeVisible();
   });
 
-  test("director can sign in with email credentials", async ({ page }) => {
+  test("manager can sign in with email credentials", async ({ page }) => {
     await page.goto("/login?callbackUrl=/director/dashboard");
-    await page.getByLabel(/director email/i).fill("director@example.com");
+    await page.getByLabel(/manager email/i).fill("director@example.com");
     await page.getByLabel(/password/i).fill("director-secret-123");
     await page.getByRole("button", { name: /sign in/i }).click();
 

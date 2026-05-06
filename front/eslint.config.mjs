@@ -38,10 +38,12 @@ const eslintConfig = defineConfig([
     "android/.gradle/**",
     "android/build/**",
     "android/**/build/**",
+    "test-results/**",
+    "playwright-report/**",
+    "blob-report/**",
     "jest.config.js",
     "next-env.d.ts",
-    "**/* 2.*",
-    "**/* 3.*",
+    "**/* [0-9].*",
   ]),
 ]);
 

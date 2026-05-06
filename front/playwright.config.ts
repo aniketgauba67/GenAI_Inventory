@@ -22,9 +22,11 @@
  *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
  *
  *****************************************************************************/
+import path from "node:path";
 import { defineConfig, devices } from "@playwright/test";
 
-const localSlowMo = Number(process.env.PLAYWRIGHT_SLOW_MO_MS ?? "350");
+const frontDir = __dirname;
+const localSlowMo = Number(process.env.PLAYWRIGHT_SLOW_MO_MS ?? "3500");
 
 /**
  * Playwright configuration for end-to-end tests.
@@ -36,13 +38,13 @@ const localSlowMo = Number(process.env.PLAYWRIGHT_SLOW_MO_MS ?? "350");
  */
 
 export default defineConfig({
-  testDir: "./e2e",
+  testDir: path.join(frontDir, "e2e"),
   testMatch: "**/*.spec.ts",
 
   // Limit parallelism to avoid race conditions on a single local machine
   workers: process.env.CI ? 2 : 1,
   retries: process.env.CI ? 2 : 0,
-  timeout: 30_000,
+  timeout: process.env.CI ? 30_000 : 120_000,
 
   // Shared settings for all projects (browsers)
   use: {
@@ -71,6 +73,7 @@ export default defineConfig({
   // Start the Next.js development server before running tests
   webServer: {
     command: "npm run dev",
+    cwd: frontDir,
     url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
     timeout: 60_000,

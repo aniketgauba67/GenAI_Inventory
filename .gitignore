@@ -15,14 +15,16 @@
 uploads/
 .DS_Store
 .coverage
-**/* 2.*
-**/* 3.*
+**/* [0-9].*
 .venv/
 **/.venv/
 __pycache__/
 *.pyc
 .pytest_cache/
 *.tsbuildinfo
+front/test-results/
+front/playwright-report/
+front/blob-report/
 front/android/.gradle/
 front/android/build/
 front/android/**/build/
