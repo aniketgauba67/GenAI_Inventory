@@ -40,6 +40,8 @@ const eslintConfig = defineConfig([
     "android/**/build/**",
     "jest.config.js",
     "next-env.d.ts",
+    "**/* 2.*",
+    "**/* 3.*",
   ]),
 ]);
 

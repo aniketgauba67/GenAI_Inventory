@@ -33,6 +33,9 @@ const createJestConfig = nextJest({
 const config = {
   coverageProvider: "v8",
 
+  // Disable watchman because local macOS watcher discovery can hang before tests start.
+  watchman: false,
+
   // Use jsdom for browser-like environment in component tests
   testEnvironment: "jsdom",
 

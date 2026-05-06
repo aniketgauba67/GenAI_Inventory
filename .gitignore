@@ -13,6 +13,10 @@
 #
 # Editors: Aniket, Dipankar, Liam, Jin, and Philip.
 uploads/
+.DS_Store
+.coverage
+**/* 2.*
+**/* 3.*
 .venv/
 **/.venv/
 __pycache__/

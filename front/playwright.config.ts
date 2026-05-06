@@ -24,6 +24,8 @@
  *****************************************************************************/
 import { defineConfig, devices } from "@playwright/test";
 
+const localSlowMo = Number(process.env.PLAYWRIGHT_SLOW_MO_MS ?? "350");
+
 /**
  * Playwright configuration for end-to-end tests.
  *
@@ -46,6 +48,10 @@ export default defineConfig({
   use: {
     // Dev server URL — the tests assume the Next.js app is running here
     baseURL: "http://localhost:3000",
+    headless: Boolean(process.env.CI),
+    launchOptions: {
+      slowMo: process.env.CI ? 0 : localSlowMo,
+    },
     trace: "on-first-retry",
     screenshot: "only-on-failure",
     video: "retain-on-failure",

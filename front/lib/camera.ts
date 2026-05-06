@@ -26,6 +26,13 @@ import { Camera, MediaTypeSelection, type CameraPermissionType, type CameraPermi
 
 export const isNative = (): boolean => Capacitor.isNativePlatform();
 
+const NATIVE_IMAGE_OPTIONS = {
+  quality: 75,
+  targetWidth: 1600,
+  targetHeight: 1600,
+  correctOrientation: true,
+};
+
 function isAllowed(state: CameraPermissionState): boolean {
   return state === "granted" || state === "limited";
 }
@@ -55,7 +62,7 @@ export async function takePhoto(): Promise<File> {
   await ensurePermission("camera");
 
   const photo = await Camera.takePhoto({
-    quality: 90,
+    ...NATIVE_IMAGE_OPTIONS,
   });
 
   return resultToFile(photo.webPath, `shelf_${Date.now()}.jpg`);
@@ -67,7 +74,7 @@ export async function pickPhotos(): Promise<File[]> {
   const result = await Camera.chooseFromGallery({
     mediaType: MediaTypeSelection.Photo,
     allowMultipleSelection: true,
-    quality: 90,
+    ...NATIVE_IMAGE_OPTIONS,
   });
 
   return Promise.all(
