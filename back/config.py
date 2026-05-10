@@ -38,7 +38,7 @@ CORS_ORIGINS = (
     else ["http://localhost:3000", "http://localhost:3001"]
 )
 
-GEMINI_MODEL = "gemini-2.5-flash"
+GEMINI_MODEL = "gemini-3.1-pro-preview"
 
 
 def get_gemini_api_key() -> str | None:
