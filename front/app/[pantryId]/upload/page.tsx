@@ -277,7 +277,7 @@ export default function UploadPage() {
     } catch (e) {
       const message =
         e instanceof Error && e.name === "AbortError"
-          ? "Inventory detection timed out. Try one clear photo at a time."
+          ? "Inventory detection timed out. Try fewer clear photos or retake blurry images."
           : e instanceof Error
             ? e.message
             : "Network error";

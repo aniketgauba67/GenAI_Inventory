@@ -57,6 +57,7 @@ class LoginRequest(BaseModel):
 
     username: str = Field(min_length=1, description="Pantry identifier or director username")
     password: str = Field(min_length=1, description="Raw password supplied by the user")
+    portal: str | None = Field(default=None, description="Requested login portal (volunteer, manager, director)")
 
 
 class AuthenticatedUser(BaseModel):

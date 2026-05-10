@@ -38,6 +38,7 @@ const authOptions: NextAuthOptions = {
       credentials: {
         username: { label: "Pantry ID", type: "text", placeholder: "pantry1234" },
         password: { label: "Password", type: "password" },
+        portal: { label: "Portal", type: "text" },
       },
       async authorize(credentials) {
         if (!credentials?.username || !credentials?.password) return null;
@@ -51,6 +52,7 @@ const authOptions: NextAuthOptions = {
             body: JSON.stringify({
               username: credentials.username,
               password: credentials.password,
+              portal: credentials.portal,
             }),
             cache: "no-store",
           });

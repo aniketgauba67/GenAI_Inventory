@@ -25,13 +25,13 @@
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 const API_BASE =
   process.env.API_URL ||
   process.env.NEXT_PUBLIC_API_URL ||
   "http://localhost:8000";
-const UPLOAD_PROXY_TIMEOUT_MS = 55000;
+const UPLOAD_PROXY_TIMEOUT_MS = 110000;
 
 export async function POST(request: Request) {
   const controller = new AbortController();
@@ -56,7 +56,7 @@ export async function POST(request: Request) {
   } catch (error) {
     const message =
       error instanceof Error && error.name === "AbortError"
-        ? "Inventory detection timed out. Try one clear photo at a time."
+        ? "Inventory detection timed out. Try fewer clear photos or retake blurry images."
         : error instanceof Error
           ? error.message
           : "Network error while uploading files.";

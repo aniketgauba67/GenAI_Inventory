@@ -13,12 +13,18 @@
 #
 # Editors: Aniket, Dipankar, Liam, Jin, and Philip.
 uploads/
+.DS_Store
+.coverage
+**/* [0-9].*
 .venv/
 **/.venv/
 __pycache__/
 *.pyc
 .pytest_cache/
 *.tsbuildinfo
+front/test-results/
+front/playwright-report/
+front/blob-report/
 front/android/.gradle/
 front/android/build/
 front/android/**/build/
