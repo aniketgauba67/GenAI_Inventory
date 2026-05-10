@@ -19,7 +19,7 @@
  *  - the screen follows the shared application workflow.
  *  - route code remains close to its user-facing page.
  *
- *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *  Editors: Aniket, Dipanker, Liam, Jin, and Philip.
  *
  *****************************************************************************/
 import type { Metadata } from "next";

@@ -22,7 +22,7 @@
  *  names.
  *  - invalid or negative inventory values are rejected early.
  *
- *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *  Editors: Aniket, Dipanker, Liam, Jin, and Philip.
  *
  ****************************************************************************
 """

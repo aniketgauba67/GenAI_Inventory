@@ -19,7 +19,7 @@
  *  - frontend API calls have stable backend endpoints.
  *  - route logic remains grouped by workflow.
  *
- *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *  Editors: Aniket, Dipanker, Liam, Jin, and Philip.
  *
  ****************************************************************************
 """

@@ -18,7 +18,7 @@
  *  - frontend logic avoids copy-paste drift.
  *  - pages can rely on typed helper functions.
  *
- *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *  Editors: Aniket, Dipanker, Liam, Jin, and Philip.
  *
  *****************************************************************************/
 /**

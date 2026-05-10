@@ -15,7 +15,7 @@
 - frontend contributors can run and validate the app locally.
 - mobile shell notes stay visible near frontend code.
 
-**Editors:** Aniket, Dipankar, Liam, Jin, and Philip.
+**Editors:** Aniket, Dipanker, Liam, Jin, and Philip.
 
 Next.js frontend for the pantry inventory workflow.
 

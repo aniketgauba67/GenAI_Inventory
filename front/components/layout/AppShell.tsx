@@ -19,7 +19,7 @@
  *  - authenticated pages share one navigation pattern.
  *  - page content remains organized across routes.
  *
- *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *  Editors: Aniket, Dipanker, Liam, Jin, and Philip.
  *
  *****************************************************************************/
 "use client";

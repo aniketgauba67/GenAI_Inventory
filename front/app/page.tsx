@@ -22,7 +22,7 @@
  *  lists.
  *  - pantry cards stay sorted by availability and timing.
  *
- *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *  Editors: Aniket, Dipanker, Liam, Jin, and Philip.
  *
  *****************************************************************************/
 "use client";

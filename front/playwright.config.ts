@@ -19,7 +19,7 @@
  *  - user workflows are validated in real browser contexts.
  *  - CI can reproduce frontend e2e behavior from a clean checkout.
  *
- *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *  Editors: Aniket, Dipanker, Liam, Jin, and Philip.
  *
  *****************************************************************************/
 import { defineConfig, devices } from "@playwright/test";

@@ -22,7 +22,7 @@
  *  entrypoints.
  *  - background scheduler jobs start and stop with the web application.
  *
- *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *  Editors: Aniket, Dipanker, Liam, Jin, and Philip.
  *
  ****************************************************************************
 """

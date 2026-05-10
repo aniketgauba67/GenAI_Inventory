@@ -18,7 +18,7 @@
  *  - database code stays separate from route handlers.
  *  - backend persistence uses a consistent schema.
  *
- *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *  Editors: Aniket, Dipanker, Liam, Jin, and Philip.
  *
  ****************************************************************************
 """

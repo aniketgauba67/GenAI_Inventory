@@ -18,7 +18,7 @@
  *  - frontend tooling reads settings from one checked-in location.
  *  - local and deployment builds use the same defaults.
  *
- *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *  Editors: Aniket, Dipanker, Liam, Jin, and Philip.
  *
  *****************************************************************************/
 declare module "*.css";

@@ -19,7 +19,7 @@
  *  - unit and component tests run consistently locally and in GitHub Actions.
  *  - frontend tests share the same project aliases as production code.
  *
- *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *  Editors: Aniket, Dipanker, Liam, Jin, and Philip.
  *
  *****************************************************************************/
 const nextJest = require("next/jest");

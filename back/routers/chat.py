@@ -20,7 +20,7 @@
  *  - invalid coordinates are rejected before service calls.
  *  - chat responses return a consistent success or error shape.
  *
- *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *  Editors: Aniket, Dipanker, Liam, Jin, and Philip.
  *
  ****************************************************************************
 """

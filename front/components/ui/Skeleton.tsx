@@ -20,7 +20,7 @@
  *  - common controls stay visually consistent.
  *  - pages avoid duplicating low-level UI markup.
  *
- *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *  Editors: Aniket, Dipanker, Liam, Jin, and Philip.
  *
  *****************************************************************************/
 type SkeletonProps = {

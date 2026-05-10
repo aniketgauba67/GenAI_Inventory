@@ -19,7 +19,7 @@
  *  - routers stay focused on HTTP concerns.
  *  - integration behavior is reusable and testable.
  *
- *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *  Editors: Aniket, Dipanker, Liam, Jin, and Philip.
  *
  ****************************************************************************
 """

@@ -19,7 +19,7 @@
  *  - inventory data is displayed consistently across views.
  *  - status details stay easy to scan.
  *
- *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *  Editors: Aniket, Dipanker, Liam, Jin, and Philip.
  *
  *****************************************************************************/
 "use client";

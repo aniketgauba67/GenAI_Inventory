@@ -21,7 +21,7 @@
  *  - non-image uploads are rejected before AI processing.
  *  - volunteer uploads are tied to a real pantry before review.
  *
- *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *  Editors: Aniket, Dipanker, Liam, Jin, and Philip.
  *
  ****************************************************************************
 """

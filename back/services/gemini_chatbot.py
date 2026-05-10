@@ -21,7 +21,7 @@
  *  - chat answers use current pantry data when available.
  *  - location questions can rank pantries by distance.
  *
- *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *  Editors: Aniket, Dipanker, Liam, Jin, and Philip.
  *
  ****************************************************************************
 """

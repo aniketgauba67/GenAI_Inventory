@@ -18,7 +18,7 @@
  *  - volunteer and manager workflows use consistent controls.
  *  - review actions remain visible and predictable.
  *
- *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *  Editors: Aniket, Dipanker, Liam, Jin, and Philip.
  *
  *****************************************************************************/
 "use client";

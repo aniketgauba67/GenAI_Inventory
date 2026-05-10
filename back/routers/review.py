@@ -18,7 +18,7 @@
  *  - review pages can fetch the latest detection result after upload.
  *  - director sessions cannot submit inventory without selecting a pantry.
  *
- *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *  Editors: Aniket, Dipanker, Liam, Jin, and Philip.
  *
  ****************************************************************************
 """

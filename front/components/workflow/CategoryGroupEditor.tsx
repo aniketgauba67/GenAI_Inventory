@@ -20,7 +20,7 @@
  *  - review screens share the same category order.
  *  - missing values render as zero instead of blank state.
  *
- *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *  Editors: Aniket, Dipanker, Liam, Jin, and Philip.
  *
  *****************************************************************************/
 import { CATEGORY_GROUPS } from "../../lib/inventoryCategories";

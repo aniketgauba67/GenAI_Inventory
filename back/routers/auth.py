@@ -22,7 +22,7 @@
  *  - credential updates are validated before persistence.
  *  - director-only workflows can manage pantry access from the frontend.
  *
- *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *  Editors: Aniket, Dipanker, Liam, Jin, and Philip.
  *
  ****************************************************************************
 """

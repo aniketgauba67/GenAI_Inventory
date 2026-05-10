@@ -15,7 +15,7 @@
 - new contributors can find the main project entry points quickly.
 - setup instructions stay close to the codebase.
 
-**Editors:** Aniket, Dipankar, Liam, Jin, and Philip.
+**Editors:** Aniket, Dipanker, Liam, Jin, and Philip.
 
 Volunteer inventory workflow:
 - upload shelf photos

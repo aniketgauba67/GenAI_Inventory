@@ -18,7 +18,7 @@
  *  - backend workflows remain organized by responsibility.
  *  - scripts can be run for local debugging and maintenance.
  *
- *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *  Editors: Aniket, Dipanker, Liam, Jin, and Philip.
  *
  ****************************************************************************
 """

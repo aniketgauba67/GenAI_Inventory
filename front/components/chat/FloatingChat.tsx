@@ -20,7 +20,7 @@
  *  - chat interactions remain available across customer pages.
  *  - location is only used when the browser grants permission.
  *
- *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *  Editors: Aniket, Dipanker, Liam, Jin, and Philip.
  *
  *****************************************************************************/
 "use client";

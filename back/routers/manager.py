@@ -20,7 +20,7 @@
  *  - manager baselines are normalized to the shared category list.
  *  - submitted quantities update the pantry inventory reference data.
  *
- *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *  Editors: Aniket, Dipanker, Liam, Jin, and Philip.
  *
  ****************************************************************************
 """

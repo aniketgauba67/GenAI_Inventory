@@ -15,7 +15,7 @@
 - backend contributors can install dependencies locally.
 - API startup notes stay near backend code.
 
-**Editors:** Aniket, Dipankar, Liam, Jin, and Philip.
+**Editors:** Aniket, Dipanker, Liam, Jin, and Philip.
 
 ## Setup
 

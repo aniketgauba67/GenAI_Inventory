@@ -19,7 +19,7 @@
  *  - backend behavior remains stable as the application evolves.
  *  - database and service boundaries are tested without unsafe side effects.
  *
- *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *  Editors: Aniket, Dipanker, Liam, Jin, and Philip.
  *
  ****************************************************************************
 """

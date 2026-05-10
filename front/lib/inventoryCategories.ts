@@ -20,7 +20,7 @@
  *  - review pages do not duplicate category definitions.
  *  - frontend category order stays consistent across workflows.
  *
- *  Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+ *  Editors: Aniket, Dipanker, Liam, Jin, and Philip.
  *
  *****************************************************************************/
 export const INVENTORY_CATEGORIES = [
