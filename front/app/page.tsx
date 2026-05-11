@@ -222,12 +222,57 @@ const accessLinks = [
 
 const EASY_VIEW_STORAGE_KEY = "customerHomeEasyView";
 const LEVEL_FILTERS = ["High", "Mid", "Low", "Out"] as const;
+const PANTRY_FETCH_TIMEOUT_MS = 12_000;
+const PANTRY_RETRY_TIMEOUT_MS = 18_000;
+const PANTRY_RETRY_DELAY_MS = 800;
 type LevelFilter = "All" | (typeof LEVEL_FILTERS)[number];
 
 function pickRandomPantryId(pantries: PantryRecord[]): string {
   if (pantries.length === 0) return "";
   const randomIndex = Math.floor(Math.random() * pantries.length);
   return pantries[randomIndex].pantryId;
+}
+
+function wait(ms: number) {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
+}
+
+function isAbortError(error: unknown): boolean {
+  return error instanceof Error && error.name === "AbortError";
+}
+
+async function fetchJsonWithTimeout<T>(url: string, timeoutMs: number): Promise<{ response: Response; data: T }> {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url, { cache: "no-store", signal: controller.signal });
+    const data = (await response.json()) as T;
+    return { response, data };
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+}
+
+async function fetchPantryDirectory(apiBase: string) {
+  const url = `${apiBase}/customer/pantries`;
+  try {
+    return await fetchJsonWithTimeout<{
+      ok?: boolean;
+      pantries?: PantryRecord[];
+      error?: string;
+    }>(url, PANTRY_FETCH_TIMEOUT_MS);
+  } catch (error) {
+    if (!isAbortError(error)) throw error;
+    await wait(PANTRY_RETRY_DELAY_MS);
+    return fetchJsonWithTimeout<{
+      ok?: boolean;
+      pantries?: PantryRecord[];
+      error?: string;
+    }>(url, PANTRY_RETRY_TIMEOUT_MS);
+  }
 }
 
 export default function HomePage() {
@@ -237,6 +282,7 @@ export default function HomePage() {
   const [selectedPantryId, setSelectedPantryId] = useState("");
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [easyView, setEasyView] = useState(false);
   const [easyPickerOpen, setEasyPickerOpen] = useState(false);
@@ -260,15 +306,14 @@ export default function HomePage() {
   async function loadPantriesByTime(day: string, time: string) {
     setTimeSearchError(null);
     try {
-      const response = await fetch(
-        `${apiBase}/customer/pantries-by-time?day=${encodeURIComponent(day)}&time=${encodeURIComponent(time)}`,
-        { cache: "no-store" },
-      );
-      const data = (await response.json()) as {
+      const { response, data } = await fetchJsonWithTimeout<{
         ok?: boolean;
         pantries?: PantryRecord[];
         error?: string;
-      };
+      }>(
+        `${apiBase}/customer/pantries-by-time?day=${encodeURIComponent(day)}&time=${encodeURIComponent(time)}`,
+        PANTRY_FETCH_TIMEOUT_MS,
+      );
 
       if (!response.ok || !data.ok || !Array.isArray(data.pantries)) {
         setTimeSearchError(data.error || "Could not load pantries by time.");
@@ -276,7 +321,13 @@ export default function HomePage() {
       }
       return data.pantries;
     } catch (err) {
-      setTimeSearchError(err instanceof Error ? err.message : "Could not load pantries by time.");
+      setTimeSearchError(
+        isAbortError(err)
+          ? "The pantry server is taking longer than expected to respond. Please try again."
+          : err instanceof Error
+            ? err.message
+            : "Could not load pantries by time.",
+      );
       return [] as PantryRecord[];
     }
   }
@@ -329,12 +380,7 @@ export default function HomePage() {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch(`${apiBase}/customer/pantries`, { cache: "no-store" });
-        const data = (await response.json()) as {
-          ok?: boolean;
-          pantries?: PantryRecord[];
-          error?: string;
-        };
+        const { response, data } = await fetchPantryDirectory(apiBase);
 
         if (!response.ok || !data.ok || !Array.isArray(data.pantries)) {
           if (!ignore) {
@@ -356,7 +402,12 @@ export default function HomePage() {
         }
       } catch (loadError) {
         if (!ignore) {
-          setError(loadError instanceof Error ? loadError.message : "Could not load pantry availability.");
+          const message = isAbortError(loadError)
+            ? "The pantry server is taking longer than expected to respond. Please try again."
+            : loadError instanceof Error
+              ? loadError.message
+              : "Could not load pantry availability.";
+          setError(message);
           setPantries([]);
           setTimeFilteredPantries([]);
           setUseTimeSearch(false);
@@ -374,7 +425,7 @@ export default function HomePage() {
     return () => {
       ignore = true;
     };
-  }, [apiBase]);
+  }, [apiBase, loadAttempt]);
 
   const sourcePantries = useMemo(
     () => (easyView || !useTimeSearch ? pantries : timeFilteredPantries),
@@ -680,8 +731,11 @@ export default function HomePage() {
           </div>
 
           {error && (
-            <Card className="mt-4 border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/50 dark:text-red-200">
-              {error}
+            <Card className="mt-4 flex flex-col gap-3 border border-red-200 bg-red-50 p-4 text-sm text-red-700 sm:flex-row sm:items-center sm:justify-between dark:border-red-900/60 dark:bg-red-950/50 dark:text-red-200">
+              <span>{error}</span>
+              <Button type="button" size="sm" onClick={() => setLoadAttempt((attempt) => attempt + 1)}>
+                Try again
+              </Button>
             </Card>
           )}
           {timeSearchError && (
