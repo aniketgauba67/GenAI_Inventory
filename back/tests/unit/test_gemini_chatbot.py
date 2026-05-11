@@ -107,6 +107,28 @@ def test_inventory_question_keeps_selected_pantry_context():
     assert captured["pantry_id"] == 1
 
 
+def test_unscoped_inventory_question_uses_all_pantry_context():
+    captured = {}
+    mock_model = MagicMock()
+    mock_model.invoke.return_value = SimpleNamespace(content="All pantry inventory answer.")
+
+    def fake_context(*, pantry_id=None):
+        captured["pantry_id"] = pantry_id
+        return '{"pantries": []}'
+
+    with (
+        patch.object(gemini_chatbot, "_build_chat_model", return_value=mock_model),
+        patch.object(gemini_chatbot, "_fetch_db_chat_context", side_effect=fake_context),
+    ):
+        reply = gemini_chatbot.call_gemini_chat(
+            user_message="What items are low?",
+            pantry_id=1,
+        )
+
+    assert reply == "All pantry inventory answer."
+    assert captured["pantry_id"] is None
+
+
 def test_nearest_pantry_without_location_asks_for_zip_or_city():
     mock_session = _mock_pantry_session([
         _mock_pantry(1, "FPN Market", "131 McMillen Dr, Newark, OH 43055"),

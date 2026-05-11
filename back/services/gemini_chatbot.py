@@ -44,6 +44,8 @@ DEFAULT_CHATBOT_SYSTEM_PROMPT = (
     "You are a helpful assistant to answer user questions regarding pantry and inventory operations. "
     "Be concise, practical, and ask clarifying questions when details are missing. "
     "For current inventory questions, use the resolved pantry inventory in the database context as the source of truth. "
+    "When the database snapshot includes multiple pantries, answer across all of them unless the user explicitly asks "
+    "about this pantry, the selected pantry, or the current pantry. "
     "Do not ask the user to choose between volunteer and warehouse data. "
     "The precedence is fixed: prefer the latest volunteer submission if it is the same time or newer than the latest warehouse snapshot; "
     "otherwise use the latest warehouse snapshot."
@@ -112,6 +114,14 @@ NEARBY_REFERENCE_WORDS = {
     "maps",
 }
 
+SELECTED_PANTRY_SCOPE_WORDS = {
+    "active",
+    "chosen",
+    "current",
+    "selected",
+    "this",
+}
+
 
 def _normalized_message_parts(message: str) -> tuple[str, set[str]]:
     normalized = re.sub(r"[^a-z0-9\s]", " ", message.lower())
@@ -138,7 +148,7 @@ def _asks_for_nearby_place(normalized: str, words: set[str]) -> bool:
 def _is_pantry_count_question(message: str) -> bool:
     """Return True when the user is asking for the total number of pantries."""
     normalized, words = _normalized_message_parts(message)
-    mentions_pantry = "pantry" in words or "pantries" in words
+    mentions_pantry = _mentions_pantry_or_place(normalized, words)
     asks_count = (
         "count" in words
         or "total" in words
@@ -148,12 +158,19 @@ def _is_pantry_count_question(message: str) -> bool:
     return mentions_pantry and asks_count
 
 
-def _is_global_pantry_question(message: str) -> bool:
-    """Detect pantry-list/count questions that should not be scoped to one pantry."""
+def _is_selected_pantry_question(message: str) -> bool:
+    """Detect when the user explicitly wants the UI-selected pantry only."""
     normalized, words = _normalized_message_parts(message)
-    mentions_pantry = "pantry" in words or "pantries" in words
-    asks_global = bool(words & {"all", "list", "show", "available", "total", "count", "number"})
-    return mentions_pantry and (asks_global or ("how" in words and "many" in words))
+    mentions_pantry = _mentions_pantry_or_place(normalized, words)
+    mentions_selected_scope = bool(words & SELECTED_PANTRY_SCOPE_WORDS)
+    selected_phrases = (
+        "this pantry" in normalized
+        or "current pantry" in normalized
+        or "selected pantry" in normalized
+        or "chosen pantry" in normalized
+        or "active pantry" in normalized
+    )
+    return mentions_pantry and (mentions_selected_scope or selected_phrases)
 
 
 def _is_nearest_pantry_question(message: str) -> bool:
@@ -500,7 +517,7 @@ def call_gemini_chat(
 
         messages = [SystemMessage(content=system_prompt)]
         if include_db_context:
-            context_pantry_id = None if _is_global_pantry_question(user_message) else pantry_id
+            context_pantry_id = pantry_id if pantry_id is not None and _is_selected_pantry_question(user_message) else None
             db_context = _fetch_db_chat_context(pantry_id=context_pantry_id)
             if db_context:
                 messages.append(
