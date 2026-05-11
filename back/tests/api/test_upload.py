@@ -98,6 +98,25 @@ class TestUploadEndpoint:
         assert data["ok"] is True
         assert data["count"] == 2
 
+    def test_upload_multiple_images_retries_individually_when_batch_detection_fails(self, client):
+        first_image_inventory = {cat: 1 for cat in INVENTORY_CATEGORIES}
+        second_image_inventory = {cat: 2 for cat in INVENTORY_CATEGORIES}
+
+        with patch(
+            "back.routers.upload.call_gemini_inventory_images",
+            side_effect=[None, first_image_inventory, second_image_inventory],
+        ) as mock_gemini:
+            resp = client.post(
+                "/upload",
+                files=[_make_image("a.jpg"), _make_image("b.jpg")],
+            )
+
+        data = resp.json()
+        assert data["ok"] is True
+        assert data["count"] == 2
+        assert data["inventory"][INVENTORY_CATEGORIES[0]] == 3
+        assert mock_gemini.call_count == 3
+
     def test_upload_no_files_returns_error(self, client):
         resp = client.post("/upload", data={})
         assert resp.status_code in (200, 422)

@@ -82,6 +82,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.get("/health")
+def health_check():
+    """Return a lightweight health response that does not touch the database."""
+    return {"ok": True}
+
 app.include_router(upload_router)
 app.include_router(auth_router)
 app.include_router(review_router)

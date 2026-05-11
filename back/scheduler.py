@@ -37,6 +37,7 @@ logger = logging.getLogger(__name__)
 
 TIMEZONE = ZoneInfo("America/New_York")
 INTERVAL_SECONDS = 60
+INITIAL_DELAY_SECONDS = 5
 
 DAY_MAP = {0: "mon", 1: "tue", 2: "wed", 3: "thu", 4: "fri", 5: "sat", 6: "sun"}
 
@@ -92,11 +93,11 @@ def sync_open_status() -> int:
 
 
 async def _loop() -> None:
-    """Infinite loop that calls sync_open_status every INTERVAL_SECONDS."""
-    sync_open_status()
+    """Run pantry status syncs without blocking the FastAPI event loop."""
+    await asyncio.sleep(INITIAL_DELAY_SECONDS)
     while True:
+        await asyncio.to_thread(sync_open_status)
         await asyncio.sleep(INTERVAL_SECONDS)
-        sync_open_status()
 
 
 _task: asyncio.Task | None = None

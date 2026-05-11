@@ -40,6 +40,70 @@ import EmptyState from "../../../components/ui/EmptyState";
 import { getApiBase } from "../../../lib/api";
 
 const UPLOAD_TIMEOUT_MS = 90000;
+const MAX_UPLOAD_IMAGE_EDGE = 1280;
+const UPLOAD_IMAGE_QUALITY = 0.68;
+
+function isCompressibleImage(file: File): boolean {
+  return file.type.startsWith("image/") && !file.type.includes("svg") && !file.type.includes("gif");
+}
+
+function replaceImageExtension(name: string): string {
+  return name.replace(/\.[^/.]+$/, "") || "shelf";
+}
+
+function loadImageFromObjectUrl(url: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const image = new window.Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("Could not prepare image for upload."));
+    image.src = url;
+  });
+}
+
+async function prepareImageForUpload(file: File): Promise<File> {
+  if (
+    typeof window === "undefined" ||
+    typeof document === "undefined" ||
+    !isCompressibleImage(file)
+  ) {
+    return file;
+  }
+
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    const image = await loadImageFromObjectUrl(objectUrl);
+    const width = image.naturalWidth || image.width;
+    const height = image.naturalHeight || image.height;
+    if (!width || !height) return file;
+
+    const maxEdge = Math.max(width, height);
+    const scale = Math.min(1, MAX_UPLOAD_IMAGE_EDGE / maxEdge);
+    if (scale === 1 && file.size <= 650_000 && file.type === "image/jpeg") {
+      return file;
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(width * scale));
+    canvas.height = Math.max(1, Math.round(height * scale));
+    const context = canvas.getContext("2d");
+    if (!context) return file;
+
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, "image/jpeg", UPLOAD_IMAGE_QUALITY)
+    );
+    if (!blob) return file;
+
+    return new File([blob], `${replaceImageExtension(file.name)}.jpg`, {
+      type: "image/jpeg",
+      lastModified: Date.now(),
+    });
+  } catch {
+    return file;
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
 
 export default function UploadPage() {
   const { showToast } = useToast();
@@ -66,6 +130,7 @@ export default function UploadPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [preparingImages, setPreparingImages] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [targetPantryId, setTargetPantryId] = useState("");
   const [pantries, setPantries] = useState<Array<{ pantryId: string; name: string }>>([]);
@@ -93,13 +158,20 @@ export default function UploadPage() {
   }, []);
 
   const handleFiles = useCallback(
-    (newFiles: FileList | File[] | null) => {
+    async (newFiles: FileList | File[] | null) => {
       if (!newFiles?.length) return;
       const arr = Array.from(newFiles).filter((f) => f.type.startsWith("image/"));
       if (!arr.length) return;
 
-      setFiles((prev: File[]) => [...prev, ...arr]);
-      setPreviews((prev: string[]) => [...prev, ...arr.map((f) => URL.createObjectURL(f))]);
+      setPreparingImages(true);
+      setUploadResult(null);
+      try {
+        const prepared = await Promise.all(arr.map(prepareImageForUpload));
+        setFiles((prev: File[]) => [...prev, ...prepared]);
+        setPreviews((prev: string[]) => [...prev, ...prepared.map((f) => URL.createObjectURL(f))]);
+      } finally {
+        setPreparingImages(false);
+      }
     },
     []
   );
@@ -365,6 +437,9 @@ export default function UploadPage() {
         <Card className="rounded-3xl border border-slate-200/80 bg-white/90 p-5 shadow-sm backdrop-blur dark:border-slate-800/80 dark:bg-slate-950/60">
           <FlowStepper steps={["Upload", "Review", "Submit"]} currentStep={0} status={uploading ? "uploading" : undefined} />
         </Card>
+        {preparingImages && (
+          <Alert tone="info" className="text-base">Preparing photos for upload...</Alert>
+        )}
         {uploading && (
           <Alert tone="info" className="text-base">Processing images and detecting inventory. This can take up to a minute.</Alert>
         )}
@@ -383,7 +458,7 @@ export default function UploadPage() {
             onFiles={handleFiles}
             isDragging={isDragging}
             setIsDragging={setIsDragging}
-            disabled={uploading}
+            disabled={uploading || preparingImages}
             title="Upload pantry shelf photos"
             subtitle="Add one or more photos in PNG, JPG, or WEBP format"
           />
@@ -434,7 +509,7 @@ export default function UploadPage() {
             <Button
               type="button"
               onClick={handleSendToBackend}
-              disabled={uploading || files.length === 0}
+              disabled={uploading || preparingImages || files.length === 0}
               block
               variant="secondary"
               size="lg"
@@ -446,7 +521,7 @@ export default function UploadPage() {
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
                 </svg>
               )}
-              {uploading ? "Detecting inventory..." : "Detect inventory"}
+              {preparingImages ? "Preparing photos..." : uploading ? "Detecting inventory..." : "Detect inventory"}
             </Button>
             {uploadResult && (
               <div className="mt-3 space-y-1">

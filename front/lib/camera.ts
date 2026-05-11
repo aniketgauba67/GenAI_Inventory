@@ -22,15 +22,22 @@
  *
  *****************************************************************************/
 import { Capacitor } from "@capacitor/core";
-import { Camera, MediaTypeSelection, type CameraPermissionType, type CameraPermissionState } from "@capacitor/camera";
+import {
+  Camera,
+  MediaTypeSelection,
+  type CameraPermissionType,
+  type CameraPermissionState,
+  type MediaResult,
+} from "@capacitor/camera";
 
 export const isNative = (): boolean => Capacitor.isNativePlatform();
 
 const NATIVE_IMAGE_OPTIONS = {
-  quality: 75,
-  targetWidth: 1600,
-  targetHeight: 1600,
+  quality: 60,
+  targetWidth: 1280,
+  targetHeight: 1280,
   correctOrientation: true,
+  includeMetadata: true,
 };
 
 function isAllowed(state: CameraPermissionState): boolean {
@@ -50,12 +57,39 @@ async function ensurePermission(permission: CameraPermissionType) {
   }
 }
 
-async function resultToFile(webPath: string | undefined, fallbackName: string): Promise<File> {
+function uniqueSuffix(): string {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}_${Math.random().toString(36).slice(2)}`;
+}
+
+function mimeFromFormat(format: string | undefined): string {
+  const normalized = (format || "").toLowerCase();
+  if (normalized === "png") return "image/png";
+  if (normalized === "webp") return "image/webp";
+  if (normalized === "jpg" || normalized === "jpeg") return "image/jpeg";
+  return "image/jpeg";
+}
+
+function extensionFromMime(mime: string): string {
+  if (mime === "image/png") return "png";
+  if (mime === "image/webp") return "webp";
+  return "jpg";
+}
+
+async function resultToFile(result: MediaResult, fallbackPrefix: string): Promise<File> {
+  const webPath = result.webPath || (result.uri ? Capacitor.convertFileSrc(result.uri) : undefined);
   if (!webPath) throw new Error("No image path returned by camera.");
 
   const response = await fetch(webPath);
+  if (!response.ok) throw new Error("Could not read selected image from device storage.");
   const blob = await response.blob();
-  return new File([blob], fallbackName, { type: blob.type || "image/jpeg" });
+  const mime = blob.type || mimeFromFormat(result.metadata?.format);
+  return new File([blob], `${fallbackPrefix}_${uniqueSuffix()}.${extensionFromMime(mime)}`, {
+    type: mime,
+    lastModified: Date.now(),
+  });
 }
 
 export async function takePhoto(): Promise<File> {
@@ -65,7 +99,7 @@ export async function takePhoto(): Promise<File> {
     ...NATIVE_IMAGE_OPTIONS,
   });
 
-  return resultToFile(photo.webPath, `shelf_${Date.now()}.jpg`);
+  return resultToFile(photo, "shelf");
 }
 
 export async function pickPhotos(): Promise<File[]> {
@@ -78,6 +112,6 @@ export async function pickPhotos(): Promise<File[]> {
   });
 
   return Promise.all(
-    result.results.map((photo, index) => resultToFile(photo.webPath, `shelf_${Date.now()}_${index + 1}.jpg`))
+    result.results.map((photo, index) => resultToFile(photo, `shelf_${index + 1}`))
   );
 }

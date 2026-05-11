@@ -28,7 +28,7 @@ import Button from "../ui/Button";
 import { isNative, takePhoto, pickPhotos } from "../../lib/camera";
 
 type UploadDropzoneProps = {
-  onFiles: (files: FileList | File[] | null) => void;
+  onFiles: (files: FileList | File[] | null) => void | Promise<void>;
   disabled?: boolean;
   isDragging?: boolean;
   setIsDragging?: (value: boolean) => void;
@@ -55,7 +55,7 @@ export default function UploadDropzone({
   function handleDrop(e: DragEvent<HTMLDivElement>) {
     e.preventDefault();
     setIsDragging?.(false);
-    if (!disabled) onFiles(e.dataTransfer.files);
+    if (!disabled) void onFiles(e.dataTransfer.files);
   }
 
   function handleDragOver(e: DragEvent<HTMLDivElement>) {
@@ -68,8 +68,9 @@ export default function UploadDropzone({
     setIsDragging?.(false);
   }
 
-  function handleInputChange(e: ChangeEvent<HTMLInputElement>) {
-    onFiles(e.target.files);
+  async function handleInputChange(e: ChangeEvent<HTMLInputElement>) {
+    await onFiles(e.target.files);
+    e.target.value = "";
   }
 
   async function handleTakePhoto() {
@@ -77,7 +78,7 @@ export default function UploadDropzone({
     setCameraLoading(true);
     try {
       const file = await takePhoto();
-      onFiles([file]);
+      await onFiles([file]);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       if (!msg.toLowerCase().includes("cancel")) {
@@ -93,7 +94,7 @@ export default function UploadDropzone({
     setCameraLoading(true);
     try {
       const files = await pickPhotos();
-      if (files.length > 0) onFiles(files);
+      if (files.length > 0) await onFiles(files);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       if (!msg.toLowerCase().includes("cancel")) {

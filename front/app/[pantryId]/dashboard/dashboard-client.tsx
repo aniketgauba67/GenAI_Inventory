@@ -1256,56 +1256,7 @@ export default function DashboardClient({
                     </button>
 
                     {openRowMenu === cred.pantryId && (
-                      <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-800/60">
-                        <p className="mb-2 text-xs text-zinc-500 dark:text-zinc-400">
-                          Leave any field blank to keep its current value.
-                        </p>
-                        <div className="flex flex-col gap-2">
-                          <input
-                            value={rowDrafts[cred.pantryId]?.name ?? ""}
-                            onChange={(e) =>
-                              updateRowDraftField(cred.pantryId, "name", e.target.value)
-                            }
-                            type="text"
-                            placeholder="New name"
-                            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-zinc-500 dark:focus:ring-zinc-800"
-                          />
-                          <input
-                            value={rowDrafts[cred.pantryId]?.location ?? ""}
-                            onChange={(e) =>
-                              updateRowDraftField(cred.pantryId, "location", e.target.value)
-                            }
-                            type="text"
-                            placeholder="New location"
-                            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-zinc-500 dark:focus:ring-zinc-800"
-                          />
-                          <input
-                            value={rowDrafts[cred.pantryId]?.newPassword ?? ""}
-                            onChange={(e) =>
-                              updateRowDraftField(cred.pantryId, "newPassword", e.target.value)
-                            }
-                            type="password"
-                            placeholder="New password"
-                            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-zinc-500 dark:focus:ring-zinc-800"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => saveRowUpdate(cred.pantryId)}
-                            disabled={savingRows[cred.pantryId]}
-                            className="self-start rounded-lg bg-zinc-900 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-zinc-800 disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
-                          >
-                            {savingRows[cred.pantryId] ? "Saving..." : "Update"}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setDeleteTargetPantryId(cred.pantryId)}
-                            disabled={savingRows[cred.pantryId]}
-                            className="self-start rounded-lg border border-red-300 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-wide text-red-700 transition hover:bg-red-50 disabled:opacity-60 dark:border-red-800 dark:bg-zinc-900 dark:text-red-300 dark:hover:bg-red-950/30"
-                          >
-                            {savingRows[cred.pantryId] ? "Working..." : "Remove Login Credentials"}
-                          </button>
-                        </div>
-                      </div>
+                      renderManagePanel(cred)
                     )}
 
                     {rowError[cred.pantryId] && (

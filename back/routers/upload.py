@@ -41,6 +41,49 @@ log = logging.getLogger(__name__)
 router = APIRouter(tags=["upload"])
 
 
+def _combine_inventory_results(
+    inventories: list[dict],
+    max_quantities: dict[str, int] | None = None,
+) -> dict[str, int]:
+    """Sum one-image Gemini results into the same fixed category schema."""
+    totals = {category: 0 for category in INVENTORY_CATEGORIES}
+    for inventory in inventories:
+        for category in INVENTORY_CATEGORIES:
+            try:
+                totals[category] += max(0, int(inventory.get(category, 0)))
+            except (TypeError, ValueError):
+                continue
+
+    if max_quantities:
+        for category, max_quantity in max_quantities.items():
+            if category in totals and max_quantity > 0:
+                totals[category] = min(totals[category], max_quantity)
+    return totals
+
+
+def _detect_inventory_with_retry(
+    image_parts: list[tuple[bytes, str]],
+    max_quantities: dict[str, int] | None = None,
+) -> dict | None:
+    """Detect inventory, retrying per-image when a multi-image AI call fails."""
+    inventory = call_gemini_inventory_images(image_parts, max_quantities=max_quantities)
+    if inventory is not None or len(image_parts) <= 1:
+        return inventory
+
+    log.warning("Multi-image Gemini detection failed; retrying images individually")
+    individual_results: list[dict] = []
+    for index, image_part in enumerate(image_parts, start=1):
+        result = call_gemini_inventory_images([image_part], max_quantities=max_quantities)
+        if result is None:
+            log.warning("Individual Gemini retry failed for image %s", index)
+            continue
+        individual_results.append(result)
+
+    if not individual_results:
+        return None
+    return _combine_inventory_results(individual_results, max_quantities=max_quantities)
+
+
 @router.get("/")
 def root():
     """Return a small health response for the upload router.
@@ -139,7 +182,7 @@ async def upload_images(
     inventory: dict[str, int] | None = None
     if image_parts:
         log.info("Calling Gemini with %s image(s) in one request", len(image_parts))
-        inventory = call_gemini_inventory_images(image_parts, max_quantities=max_quantities)
+        inventory = _detect_inventory_with_retry(image_parts, max_quantities=max_quantities)
     log.info("Upload done: %s file(s) received", len(results))
 
     if inventory is None:
