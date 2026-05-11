@@ -38,7 +38,10 @@ CORS_ORIGINS = (
     else ["http://localhost:3000", "http://localhost:3001"]
 )
 
-GEMINI_MODEL = "gemini-3.1-pro-preview"
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+GEMINI_REQUEST_TIMEOUT_SECONDS = float(os.environ.get("GEMINI_REQUEST_TIMEOUT_SECONDS", "40"))
+GEMINI_RETRIES = int(os.environ.get("GEMINI_RETRIES", "1"))
+GEMINI_THINKING_BUDGET = int(os.environ.get("GEMINI_THINKING_BUDGET", "0"))
 
 
 def get_gemini_api_key() -> str | None:

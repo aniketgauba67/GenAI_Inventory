@@ -28,7 +28,13 @@
 import base64
 import logging
 
-from back.config import GEMINI_MODEL, get_gemini_api_key
+from back.config import (
+    GEMINI_MODEL,
+    GEMINI_REQUEST_TIMEOUT_SECONDS,
+    GEMINI_RETRIES,
+    GEMINI_THINKING_BUDGET,
+    get_gemini_api_key,
+)
 from back.inventory_domain import INVENTORY_CATEGORIES
 from back.schemas import InventoryCount
 
@@ -47,6 +53,20 @@ Rules:
 - Do not add or use any category other than the 19 listed above.
 - When a maximum capacity hint is provided for a category, use it as a hard ceiling: your count must not exceed that number.
 {max_quantities_section}"""
+
+
+def _build_gemini_model(api_key: str):
+    """Create a Gemini chat model configured for responsive web requests."""
+    from langchain_google_genai import ChatGoogleGenerativeAI
+
+    return ChatGoogleGenerativeAI(
+        model=GEMINI_MODEL,
+        google_api_key=api_key,
+        temperature=0,
+        request_timeout=GEMINI_REQUEST_TIMEOUT_SECONDS,
+        retries=GEMINI_RETRIES,
+        thinking_budget=GEMINI_THINKING_BUDGET,
+    )
 
 
 def _build_max_quantities_section(max_quantities: dict[str, int] | None) -> str:
@@ -106,13 +126,9 @@ def call_gemini_inventory_images(
         log.warning("GEMINI_API_KEY (or GOOGLE_API_KEY) not set; skipping Gemini call")
         return None
     try:
-        from langchain_google_genai import ChatGoogleGenerativeAI
         from langchain_core.messages import HumanMessage
 
-        model = ChatGoogleGenerativeAI(
-            model=GEMINI_MODEL,
-            google_api_key=api_key,
-        )
+        model = _build_gemini_model(api_key)
         structured_model = model.with_structured_output(InventoryCount)
         content: list[dict] = []
         for image_bytes, mime_type in images:
@@ -173,13 +189,9 @@ def call_gemini_order_form(image_bytes: bytes, mime_type: str) -> dict | None:
         log.warning("GEMINI_API_KEY (or GOOGLE_API_KEY) not set; skipping Gemini call")
         return None
     try:
-        from langchain_google_genai import ChatGoogleGenerativeAI
         from langchain_core.messages import HumanMessage
 
-        model = ChatGoogleGenerativeAI(
-            model=GEMINI_MODEL,
-            google_api_key=api_key,
-        )
+        model = _build_gemini_model(api_key)
         structured_model = model.with_structured_output(InventoryCount)
         b64 = base64.b64encode(image_bytes).decode("utf-8")
         mime = mime_type or "image/jpeg"
