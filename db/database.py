@@ -27,24 +27,26 @@ import os
 from pathlib import Path
 
 from dotenv import load_dotenv
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, URL
 from sqlalchemy.orm import sessionmaker, Session, declarative_base
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 load_dotenv(ROOT_DIR / "back" / ".env")
 
-# Create database URL from environment variables
-DATABASE_URL = (
-    f"postgresql://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}"
-    f"@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT', 5432)}/{os.getenv('DB_NAME')}"
+DATABASE_URL = URL.create(
+    drivername="postgresql+psycopg2",
+    username=os.getenv("DB_USER"),
+    password=os.getenv("DB_PASSWORD"),
+    host=os.getenv("DB_HOST"),
+    port=int(os.getenv("DB_PORT", 5432)),
+    database=os.getenv("DB_NAME"),
 )
 
-# Create SQLAlchemy engine
 engine = create_engine(
     DATABASE_URL,
-    echo=False,  # Set to True for SQL debugging
-    pool_pre_ping=True,  # Test connection before using
-    connect_args={"connect_timeout": 5}
+    echo=False,
+    pool_pre_ping=True,
+    connect_args={"connect_timeout": 5, "sslmode": "require"},
 )
 
 # Create session factory
