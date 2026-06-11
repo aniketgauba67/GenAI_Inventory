@@ -1,0 +1,39 @@
+# Render.
+#
+# This file supports the GenAI Inventory application.
+#
+# The file provides:
+# - a Render Blueprint that deploys the FastAPI backend as a free web service.
+#
+# Key Structures Used:
+# - repository-level source or configuration files.
+#
+# This file ensures:
+# - the backend deploys to Render with one click from this repository.
+#
+# Editors: Aniket, Dipankar, Liam, Jin, and Philip.
+services:
+  - type: web
+    name: genai-inventory-api
+    runtime: python
+    plan: free
+    buildCommand: pip install -r back/requirements.txt
+    startCommand: uvicorn back.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        value: "5432"
+      - key: DB_NAME
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
